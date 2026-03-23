@@ -17,7 +17,7 @@ import type {
   TapemarkResponse,
 } from "./types";
 
-const CSS_CONTENT = loadAsset("tapemark.css");
+const CSS_CONTENT = loadAsset("fonts.css") + "\n" + loadAsset("tapemark.css");
 const JS_CONTENT = loadAsset("tapemark.js");
 
 // ---------------------------------------------------------------------------

@@ -19,7 +19,8 @@ export async function rowDetailRoute(
   const pkValues = decodePk(tableInfo.primaryKey, pkParam);
   const row = await repo.getRow(table, pkValues);
 
-  const isReadonly = ctx.readonly || ctx.tableOptions.get(table)?.readonly;
+  const isView = tableInfo.kind === "view";
+  const isReadonly = isView || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
 
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },
@@ -46,19 +47,25 @@ export async function rowDetailRoute(
         values={row}
         action={`${ctx.prefix}/${table}/${pkParam}`}
         submitLabel="save"
+        formId={isReadonly ? undefined : "tm-edit-form"}
       />
       {!isReadonly && (
-        <form
-          method="post"
-          action={`${ctx.prefix}/${table}/${pkParam}/delete`}
-          class="tm-delete-section"
-        >
-          <tm-confirm-button data-message={`delete row ${pkParam}?`}>
-            <button type="submit" class="tm-btn tm-btn-danger">
-              delete row
-            </button>
-          </tm-confirm-button>
-        </form>
+        <div class="tm-row-actions">
+          <button type="submit" form="tm-edit-form" class="tm-btn tm-btn-primary">
+            save
+          </button>
+          <form
+            method="post"
+            action={`${ctx.prefix}/${table}/${pkParam}/delete`}
+            class="tm-delete-inline"
+          >
+            <tm-confirm-button data-message={`delete row ${pkParam}?`}>
+              <button type="submit" class="tm-btn tm-btn-danger">
+                delete row
+              </button>
+            </tm-confirm-button>
+          </form>
+        </div>
       )}
     </TapemarkLayout>,
   );

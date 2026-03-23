@@ -84,8 +84,14 @@ function createDemoDb(): BetterSqlite3.Database {
     INSERT INTO tags (name, color) VALUES ('general', '#4a90d9');
     INSERT INTO tags (name, color) VALUES ('tech', '#d94a4a');
     INSERT INTO tags (name, color) VALUES ('design', '#4ad94a');
+
+    CREATE VIEW published_posts AS
+      SELECT posts.id, posts.title, posts.cover_image, users.name AS author
+      FROM posts
+      JOIN users ON users.id = posts.author_id
+      WHERE posts.published = 1;
   `);
-  console.log("Using in-memory demo database (3 tables: users, posts, tags)");
+  console.log("Using in-memory demo database (4 tables, 1 view)");
   return db;
 }
 

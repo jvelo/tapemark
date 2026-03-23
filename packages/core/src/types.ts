@@ -41,6 +41,8 @@ export interface Column {
 
 export interface Table {
   name: string;
+  /** Whether this is a table or a view. */
+  kind: "table" | "view";
   columns: Column[];
   /** Ordered list of primary key column names. */
   primaryKey: string[];

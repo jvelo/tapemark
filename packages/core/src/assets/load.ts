@@ -13,21 +13,14 @@ try {
   assetDir = "";
 }
 
-let CSS_CACHE: string | undefined;
-let JS_CACHE: string | undefined;
+const cache = new Map<string, string>();
 
 export function loadAsset(filename: string): string {
-  if (filename === "tapemark.css") {
-    if (CSS_CACHE !== undefined) return CSS_CACHE;
-    CSS_CACHE = readFromDisk(filename);
-    return CSS_CACHE;
-  }
-  if (filename === "tapemark.js") {
-    if (JS_CACHE !== undefined) return JS_CACHE;
-    JS_CACHE = readFromDisk(filename);
-    return JS_CACHE;
-  }
-  return "";
+  const cached = cache.get(filename);
+  if (cached !== undefined) return cached;
+  const content = readFromDisk(filename);
+  cache.set(filename, content);
+  return content;
 }
 
 function readFromDisk(filename: string): string {

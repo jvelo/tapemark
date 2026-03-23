@@ -78,24 +78,31 @@ interface PragmaColumnRow {
 export class SchemaIntrospector {
   constructor(private db: Database) {}
 
-  /** All user-facing table names (excludes internal tables). */
+  /** All user-facing table and view names (excludes internal tables). */
   async getTableNames(): Promise<string[]> {
-    const stmt = this.db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
-    );
-    const rows = await stmt.all<{ name: string }>();
-    return rows
-      .map((r) => r.name)
-      .filter((n) => !isInternalTable(n));
+    const entries = await this.getTableEntries();
+    return entries.map((e) => e.name);
   }
 
-  /** Validate that a table name exists and is safe to use in SQL. */
+  /** All user-facing tables and views with their kind. */
+  async getTableEntries(): Promise<{ name: string; kind: "table" | "view" }[]> {
+    const rows = await this.db
+      .prepare(
+        "SELECT name, type FROM sqlite_master WHERE type IN ('table', 'view') ORDER BY type, name",
+      )
+      .all<{ name: string; type: string }>();
+    return rows
+      .filter((r) => !isInternalTable(r.name))
+      .map((r) => ({ name: r.name, kind: r.type as "table" | "view" }));
+  }
+
+  /** Validate that a table or view name exists and is safe to use in SQL. */
   async assertTable(name: string): Promise<void> {
     if (!SAFE_NAME.test(name)) {
       throw new NameValidationError("table", name);
     }
-    const tables = await this.getTableNames();
-    if (!tables.includes(name)) {
+    const names = await this.getTableNames();
+    if (!names.includes(name)) {
       throw new NameValidationError("table", name);
     }
   }
@@ -111,9 +118,14 @@ export class SchemaIntrospector {
     }
   }
 
-  /** Full column and PK info for a single table. */
+  /** Full column and PK info for a single table or view. */
   async getTable(name: string): Promise<Table> {
     await this.assertTable(name);
+
+    // Determine if this is a table or view
+    const entries = await this.getTableEntries();
+    const entry = entries.find((e) => e.name === name);
+    const kind = entry?.kind ?? "table";
 
     const pragmaRows = await this.db
       .prepare(`PRAGMA table_info("${name}")`)
@@ -128,10 +140,13 @@ export class SchemaIntrospector {
       primaryKeyPosition: row.pk > 0 ? row.pk : null,
     }));
 
-    const primaryKey = columns
-      .filter((c) => c.primaryKeyPosition !== null)
-      .sort((a, b) => a.primaryKeyPosition! - b.primaryKeyPosition!)
-      .map((c) => c.name);
+    // Views don't have primary keys
+    const primaryKey = kind === "view"
+      ? []
+      : columns
+          .filter((c) => c.primaryKeyPosition !== null)
+          .sort((a, b) => a.primaryKeyPosition! - b.primaryKeyPosition!)
+          .map((c) => c.name);
 
     const countRow = await this.db
       .prepare(`SELECT COUNT(*) as cnt FROM "${name}"`)
@@ -139,6 +154,7 @@ export class SchemaIntrospector {
 
     return {
       name,
+      kind,
       columns,
       primaryKey,
       rowCount: countRow?.cnt ?? 0,

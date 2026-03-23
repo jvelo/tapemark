@@ -61,10 +61,7 @@ class TmDisplayOptions extends HTMLElement {
         const wrapper = document.createElement("div");
         wrapper.className = "tm-opt-field";
 
-        const label = document.createElement("label");
-        label.textContent = prop.description || key;
-        label.setAttribute("for", fieldName);
-        wrapper.appendChild(label);
+        const desc = prop.description || key;
 
         let input;
         if (prop.type === "boolean") {
@@ -72,22 +69,34 @@ class TmDisplayOptions extends HTMLElement {
           input.type = "checkbox";
           input.name = fieldName;
           input.value = "1";
+          input.title = desc;
           if (currentVal !== undefined ? currentVal : prop.default) {
             input.checked = true;
           }
+          // Booleans need a visible label next to the checkbox
+          const label = document.createElement("label");
+          label.textContent = desc;
+          label.setAttribute("for", fieldName);
+          wrapper.appendChild(input);
+          wrapper.appendChild(label);
+          input.id = fieldName;
+          this.appendChild(wrapper);
+          continue;
         } else if (prop.type === "number") {
           input = document.createElement("input");
           input.type = "number";
           input.name = fieldName;
           input.step = "any";
-          input.value = currentVal !== undefined ? String(currentVal) : (prop.default !== undefined ? String(prop.default) : "");
-          input.placeholder = prop.default !== undefined ? String(prop.default) : "";
+          input.value = currentVal !== undefined ? String(currentVal) : "";
+          input.placeholder = desc;
+          input.title = desc;
         } else {
           input = document.createElement("input");
           input.type = "text";
           input.name = fieldName;
-          input.value = currentVal !== undefined ? String(currentVal) : (prop.default !== undefined ? String(prop.default) : "");
-          input.placeholder = prop.default !== undefined ? String(prop.default) : "";
+          input.value = currentVal !== undefined ? String(currentVal) : "";
+          input.placeholder = desc;
+          input.title = desc;
         }
 
         input.id = fieldName;

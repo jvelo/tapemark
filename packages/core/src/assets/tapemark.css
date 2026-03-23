@@ -1,13 +1,4 @@
 /* tapemark — admin panel styles */
-
-@font-face {
-  font-family: "Departure Mono";
-  src: url("/_tapemark/fonts/DepartureMono-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
 :root {
   --tm-bg: #181818;
   --tm-text: #ffffff;
@@ -79,6 +70,19 @@ body {
   font-size: 1.08rem;
   margin: 0 0 0.72rem 0;
   letter-spacing: -0.5px;
+}
+.tm-section-views {
+  margin-top: 1.8rem;
+}
+
+/* Compact table (table/view listing) */
+.tm-table-compact {
+  width: auto;
+  table-layout: auto;
+}
+.tm-table-compact td,
+.tm-table-compact th {
+  padding-right: 2rem;
 }
 
 .tm-muted {
@@ -213,6 +217,7 @@ body {
   gap: 0.45rem;
   align-items: center;
   margin-top: 0.72rem;
+  margin-right: auto;
   font-size: 0.72rem;
 }
 .tm-pager a {
@@ -310,6 +315,7 @@ body {
 .tm-form-wide th {
   white-space: nowrap;
   overflow: visible;
+  vertical-align: middle;
 }
 
 /* Display type options (web component) */
@@ -317,22 +323,22 @@ tm-display-options {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
-  padding: 0.18rem 0;
+  min-height: 1.6rem;
 }
 .tm-opt-field {
   display: flex;
-  flex-direction: column;
-  gap: 0.09rem;
+  align-items: center;
+  gap: 0.36rem;
 }
 .tm-opt-field label {
   opacity: 0.5;
   text-transform: none;
-  font-size: 0.54rem;
+  font-size: 0.63rem;
   white-space: nowrap;
 }
 .tm-opt-field input[type="number"],
 .tm-opt-field input[type="text"] {
-  width: 8rem;
+  width: 100%;
   font-family: inherit;
   font-size: 0.72rem;
   padding: 0.18rem 0.27rem;
@@ -426,14 +432,22 @@ tm-display-options {
 /* Table footer */
 .tm-table-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+  gap: 0.72rem;
   margin-top: 0.72rem;
 }
 
-/* Delete section */
-.tm-delete-section {
-  margin-top: 1.8rem;
+/* Row detail: save + delete on same line */
+.tm-row-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 36rem;
+  margin-top: 0.72rem;
+}
+.tm-delete-inline {
+  margin: 0;
 }
 
 /* Responsive */

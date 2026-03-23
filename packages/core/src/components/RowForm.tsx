@@ -6,6 +6,8 @@ interface RowFormProps {
   values?: Record<string, CellValue>;
   action: string;
   submitLabel: string;
+  /** Form id for external submit buttons. When set, hides the built-in submit. */
+  formId?: string;
 }
 
 function inputType(col: Column): string {
@@ -29,12 +31,13 @@ export function RowForm({
   values,
   action,
   submitLabel,
+  formId,
 }: RowFormProps) {
   const isEdit = !!values;
   const pkSet = new Set(primaryKey);
 
   return (
-    <form method="post" action={action} class="tm-form">
+    <form method="post" action={action} class="tm-form" id={formId}>
       {columns.map((col) => {
         const val = values?.[col.name];
         const strVal = val === null || val === undefined ? "" : String(val);
@@ -84,11 +87,13 @@ export function RowForm({
           </div>
         );
       })}
-      <div class="tm-actions">
-        <button type="submit" class="tm-btn tm-btn-primary">
-          {submitLabel}
-        </button>
-      </div>
+      {!formId && (
+        <div class="tm-actions">
+          <button type="submit" class="tm-btn tm-btn-primary">
+            {submitLabel}
+          </button>
+        </div>
+      )}
     </form>
   );
 }

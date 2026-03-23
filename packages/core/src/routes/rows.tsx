@@ -24,7 +24,8 @@ export async function rowsRoute(
   const tableConfig = await configStore.getTableConfig(table);
 
   const hasPk = tableInfo.primaryKey.length > 0;
-  const isReadonly = ctx.readonly || ctx.tableOptions.get(table)?.readonly;
+  const isView = tableInfo.kind === "view";
+  const isReadonly = isView || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
 
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },
