@@ -123,6 +123,7 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
       tableOptions: tableOptionsMap,
       scripts,
       siteUrl: options.siteUrl,
+      siteName: options.siteName ?? "site",
       name: options.name ?? "tapemark",
       readonly: options.readonly ?? false,
     };

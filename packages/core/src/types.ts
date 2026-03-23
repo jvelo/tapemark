@@ -175,9 +175,11 @@ export interface TapemarkOptions {
   tables?: Record<string, TableOptions>;
   /** Additional client-side scripts to load. */
   scripts?: string[];
-  /** URL to link back to the host site (shows "← site" in the bar). */
+  /** URL to link back to the host site. */
   siteUrl?: string;
-  /** Display name shown in the top bar. Defaults to "tapemark". */
+  /** Label for the site link (e.g. "jvelo.at"). Defaults to "site". */
+  siteName?: string;
+  /** Display name shown in the top-left of the bar. Defaults to "tapemark". */
   name?: string;
   /** Global read-only mode — disables all writes and deletes. */
   readonly?: boolean;
@@ -191,6 +193,7 @@ export interface TapemarkContext {
   db: Database;
   prefix: string;
   siteUrl?: string;
+  siteName: string;
   name: string;
   readonly: boolean;
   displayTypes: Map<string, DisplayType>;

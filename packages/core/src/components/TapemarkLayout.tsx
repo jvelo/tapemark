@@ -10,6 +10,7 @@ interface TapemarkLayoutProps {
   prefix: string;
   name: string;
   siteUrl?: string;
+  siteName?: string;
   crumbs?: Crumb[];
   scripts?: string[];
   children?: ComponentChildren;
@@ -20,6 +21,7 @@ export function TapemarkLayout({
   prefix,
   name,
   siteUrl,
+  siteName = "site",
   crumbs = [],
   scripts = [],
   children,
@@ -60,7 +62,7 @@ export function TapemarkLayout({
               </div>
             )}
             {siteUrl && (
-              <a href={siteUrl} class="tm-bar-site">{"\u2190 site"}</a>
+              <a href={siteUrl} class="tm-bar-site">{"\u2190 "}{siteName}</a>
             )}
           </div>
           <div class="tm-body">{children}</div>

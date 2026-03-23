@@ -36,7 +36,7 @@ export async function rowsRoute(
       title={table}
       prefix={ctx.prefix}
       name={ctx.name}
-      siteUrl={ctx.siteUrl}
+      siteUrl={ctx.siteUrl} siteName={ctx.siteName}
       crumbs={crumbs}
       scripts={ctx.scripts}
     >

@@ -25,7 +25,7 @@ export async function rowCreateRoute(
       title={`${table} / new`}
       prefix={ctx.prefix}
       name={ctx.name}
-      siteUrl={ctx.siteUrl}
+      siteUrl={ctx.siteUrl} siteName={ctx.siteName}
       crumbs={crumbs}
       scripts={ctx.scripts}
     >
