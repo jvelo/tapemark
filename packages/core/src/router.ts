@@ -9,6 +9,14 @@ import type {
 import { TapemarkError } from "./errors";
 import { TapemarkMigrator } from "./migrator";
 import { createDisplayTypeRegistry } from "./display";
+import { tablesRoute } from "./routes/tables";
+import { rowsRoute } from "./routes/rows";
+import { rowDetailRoute, rowUpdateRoute, rowDeleteRoute } from "./routes/row-detail";
+import { rowCreateRoute, rowInsertRoute } from "./routes/row-create";
+import { tableConfigRoute, tableConfigUpdateRoute } from "./routes/table-config";
+import { bulkDeleteRoute } from "./routes/bulk-delete";
+import CSS_CONTENT from "./assets/tapemark.css?raw";
+import JS_CONTENT from "./assets/tapemark.js?raw";
 
 // ---------------------------------------------------------------------------
 // Route definition
@@ -163,6 +171,37 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
   ): void {
     routes.push({ method, pattern, handler });
   }
+
+  // Asset routes (served before auth — CSS/JS are not sensitive)
+  addRoute("GET", "/_tapemark/styles.css", async () => ({
+    status: 200,
+    headers: {
+      "content-type": "text/css; charset=utf-8",
+      "cache-control": "public, max-age=86400",
+    },
+    html: CSS_CONTENT,
+  }));
+  addRoute("GET", "/_tapemark/admin.js", async () => ({
+    status: 200,
+    headers: {
+      "content-type": "application/javascript; charset=utf-8",
+      "cache-control": "public, max-age=86400",
+    },
+    html: JS_CONTENT,
+  }));
+
+  // Register built-in routes
+  // Order matters: more specific patterns must come before general ones
+  addRoute("GET", "/", tablesRoute);
+  addRoute("GET", "/:table/new", rowCreateRoute);
+  addRoute("POST", "/:table/new", rowInsertRoute);
+  addRoute("GET", "/:table/_config", tableConfigRoute);
+  addRoute("POST", "/:table/_config", tableConfigUpdateRoute);
+  addRoute("POST", "/:table/_bulk-delete", bulkDeleteRoute);
+  addRoute("GET", "/:table/:pk", rowDetailRoute);
+  addRoute("POST", "/:table/:pk", rowUpdateRoute);
+  addRoute("POST", "/:table/:pk/delete", rowDeleteRoute);
+  addRoute("GET", "/:table", rowsRoute);
 
   return { handle, addRoute };
 }

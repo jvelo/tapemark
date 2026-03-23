@@ -5,6 +5,7 @@ import type { Database, TapemarkRequest } from "../types";
 
 const SCHEMA = `
   CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);
+  INSERT INTO users VALUES (1, 'Alice');
 `;
 
 function makeReq(overrides: Partial<TapemarkRequest> = {}): TapemarkRequest {
@@ -26,46 +27,30 @@ describe("createAdminCore", () => {
 
   it("returns 404 for unmatched routes", async () => {
     const core = createAdminCore({ db });
-    const res = await core.handle(makeReq({ path: "/nonexistent" }));
+    // /_tapemark/nonexistent doesn't match any route pattern
+    const res = await core.handle(makeReq({ path: "/_tapemark/nonexistent/extra" }));
     expect(res.status).toBe(404);
   });
 
-  it("dispatches to registered route handlers", async () => {
+  it("dispatches built-in table list route at /", async () => {
     const core = createAdminCore({ db });
-    core.addRoute("GET", "/", async () => ({
-      status: 200,
-      headers: { "content-type": "text/html" },
-      html: "<h1>Home</h1>",
-    }));
-
     const res = await core.handle(makeReq());
     expect(res.status).toBe(200);
-    expect(res.html).toBe("<h1>Home</h1>");
+    expect(res.html).toContain("users");
   });
 
-  it("matches parameterized routes", async () => {
+  it("dispatches parameterized route /:table", async () => {
     const core = createAdminCore({ db });
-    core.addRoute("GET", "/:table", async (req) => ({
-      status: 200,
-      headers: {},
-      html: `table=${req.params.table}`,
-    }));
-
     const res = await core.handle(makeReq({ path: "/users" }));
     expect(res.status).toBe(200);
-    expect(res.html).toBe("table=users");
+    expect(res.html).toContain("Alice");
   });
 
-  it("matches nested parameterized routes", async () => {
+  it("dispatches nested parameterized route /:table/:pk", async () => {
     const core = createAdminCore({ db });
-    core.addRoute("GET", "/:table/:pk", async (req) => ({
-      status: 200,
-      headers: {},
-      html: `table=${req.params.table},pk=${req.params.pk}`,
-    }));
-
-    const res = await core.handle(makeReq({ path: "/users/42" }));
-    expect(res.html).toBe("table=users,pk=42");
+    const res = await core.handle(makeReq({ path: "/users/1" }));
+    expect(res.status).toBe(200);
+    expect(res.html).toContain("Alice");
   });
 
   it("returns 403 when authorize rejects", async () => {
@@ -73,12 +58,6 @@ describe("createAdminCore", () => {
       db,
       authorize: async () => false,
     });
-    core.addRoute("GET", "/", async () => ({
-      status: 200,
-      headers: {},
-      html: "ok",
-    }));
-
     const res = await core.handle(makeReq());
     expect(res.status).toBe(403);
   });
@@ -88,41 +67,38 @@ describe("createAdminCore", () => {
       db,
       authorize: async () => true,
     });
-    core.addRoute("GET", "/", async () => ({
-      status: 200,
-      headers: {},
-      html: "ok",
-    }));
-
     const res = await core.handle(makeReq());
     expect(res.status).toBe(200);
   });
 
-  it("handles POST routes", async () => {
+  it("handles POST /:table/new", async () => {
     const core = createAdminCore({ db });
-    core.addRoute("POST", "/:table/new", async (req) => ({
-      status: 201,
-      headers: {},
-      html: `created in ${req.params.table}`,
-    }));
-
     const res = await core.handle(
-      makeReq({ method: "POST", path: "/users/new" }),
+      makeReq({
+        method: "POST",
+        path: "/users/new",
+        body: { id: "2", name: "Bob" },
+      }),
     );
-    expect(res.status).toBe(201);
-    expect(res.html).toBe("created in users");
+    expect(res.status).toBe(302);
+    expect(res.redirect).toContain("/users/2");
   });
 
   it("strips trailing slash for matching", async () => {
     const core = createAdminCore({ db });
-    core.addRoute("GET", "/:table", async (req) => ({
-      status: 200,
-      headers: {},
-      html: req.params.table!,
-    }));
-
     const res = await core.handle(makeReq({ path: "/users/" }));
     expect(res.status).toBe(200);
-    expect(res.html).toBe("users");
+    expect(res.html).toContain("Alice");
+  });
+
+  it("serves assets at /_tapemark/* paths", async () => {
+    const core = createAdminCore({ db });
+    const css = await core.handle(makeReq({ path: "/_tapemark/styles.css" }));
+    expect(css.status).toBe(200);
+    expect(css.headers["content-type"]).toContain("text/css");
+
+    const js = await core.handle(makeReq({ path: "/_tapemark/admin.js" }));
+    expect(js.status).toBe(200);
+    expect(js.headers["content-type"]).toContain("javascript");
   });
 });
