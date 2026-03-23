@@ -19,7 +19,7 @@ export async function rowDetailRoute(
   const pkValues = decodePk(tableInfo.primaryKey, pkParam);
   const row = await repo.getRow(table, pkValues);
 
-  const isReadonly = ctx.tableOptions.get(table)?.readonly;
+  const isReadonly = ctx.readonly || ctx.tableOptions.get(table)?.readonly;
 
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },
@@ -31,6 +31,8 @@ export async function rowDetailRoute(
     <TapemarkLayout
       title={`${table} / ${pkParam}`}
       prefix={ctx.prefix}
+      name={ctx.name}
+      siteUrl={ctx.siteUrl}
       crumbs={crumbs}
       scripts={ctx.scripts}
     >

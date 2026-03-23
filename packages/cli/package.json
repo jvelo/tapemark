@@ -1,29 +1,28 @@
 {
-  "name": "tapemark",
+  "name": "tapemark-cli",
   "version": "0.0.1",
   "type": "module",
   "license": "MIT",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./src/index.ts"
-    }
+  "bin": {
+    "tapemark": "./dist/index.js"
   },
   "files": ["dist"],
   "scripts": {
     "build": "vite build",
+    "dev": "tsx src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "preact": "^10.25.0",
-    "preact-render-to-string": "^6.5.0"
+    "tapemark": "workspace:*",
+    "tapemark-better-sqlite3": "workspace:*",
+    "better-sqlite3": "^11.0.0",
+    "citty": "^0.1.0"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.9.0",
-    "better-sqlite3": "^11.0.0",
     "@types/better-sqlite3": "^7.6.0",
     "node-gyp": "^12.2.0",
+    "tsx": "^4.0.0",
     "vite": "^6.0.0",
     "vite-plugin-dts": "^4.0.0",
     "vitest": "^3.0.0",

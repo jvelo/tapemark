@@ -16,7 +16,7 @@ export async function tablesRoute(
   );
 
   const html = renderPage(
-    <TapemarkLayout title="tables" prefix={ctx.prefix} scripts={ctx.scripts}>
+    <TapemarkLayout title="tables" prefix={ctx.prefix} name={ctx.name} siteUrl={ctx.siteUrl} scripts={ctx.scripts}>
       <h2 class="tm-section-title">tables</h2>
       <table>
         <thead>

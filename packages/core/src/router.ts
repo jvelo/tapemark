@@ -122,6 +122,9 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
       displayTypes,
       tableOptions: tableOptionsMap,
       scripts,
+      siteUrl: options.siteUrl,
+      name: options.name ?? "tapemark",
+      readonly: options.readonly ?? false,
     };
   }
 

@@ -24,6 +24,8 @@ export async function rowCreateRoute(
     <TapemarkLayout
       title={`${table} / new`}
       prefix={ctx.prefix}
+      name={ctx.name}
+      siteUrl={ctx.siteUrl}
       crumbs={crumbs}
       scripts={ctx.scripts}
     >

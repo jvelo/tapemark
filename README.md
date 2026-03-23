@@ -8,21 +8,37 @@ Framework-agnostic core with thin adapters for Hono, Express, Next.js, and other
 
 ```bash
 pnpm install
-npx tsx examples/standalone/serve.ts
+npx tsx packages/cli/src/index.ts serve ~/path/to/your.db
 ```
 
-Opens a demo server at **http://localhost:3333** with sample tables.
+Opens an admin UI at **http://localhost:3333**.
 
-Point it at your own database:
+### CLI commands
+
+**Serve** — browse and edit a database in the browser:
 
 ```bash
-npx tsx examples/standalone/serve.ts ~/path/to/your.db
+# Single database
+npx tsx packages/cli/src/index.ts serve ./data.db
+
+# Multiple databases (each gets its own section)
+npx tsx packages/cli/src/index.ts serve ./users.db ./content.db
+
+# Custom port, read-only mode
+npx tsx packages/cli/src/index.ts serve ./data.db --port 4000 --readonly
 ```
 
-Options:
+**Inspect** — quick schema overview from the terminal:
 
 ```bash
-npx tsx examples/standalone/serve.ts ./data.db --port 4000
+# List tables and row counts
+npx tsx packages/cli/src/index.ts inspect ./data.db
+
+# Show columns for a specific table
+npx tsx packages/cli/src/index.ts inspect ./data.db --table users
+
+# Compare schemas between two databases
+npx tsx packages/cli/src/index.ts inspect ./local.db --diff ./production.db
 ```
 
 ## Embed in your app
@@ -59,7 +75,6 @@ const res = await core.handle({
   query: {},
 });
 // res.status, res.headers, res.html or res.redirect
-
 ```
 
 ## Packages
@@ -67,6 +82,7 @@ const res = await core.handle({
 | Package | Description |
 |---------|-------------|
 | `tapemark` | Core — router, schema introspection, CRUD, rendering, display types |
+| `tapemark-cli` | CLI — `serve` and `inspect` commands |
 | `tapemark-hono` | Hono sub-app adapter |
 | `tapemark-better-sqlite3` | better-sqlite3 → tapemark Database adapter |
 
@@ -74,6 +90,6 @@ const res = await core.handle({
 
 ```bash
 pnpm install
-pnpm -r test        # run all tests (117 across 3 packages)
+pnpm -r test        # run all tests (122 across 4 packages)
 pnpm -r build       # build all packages
 ```

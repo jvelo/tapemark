@@ -8,6 +8,8 @@ export interface Crumb {
 interface TapemarkLayoutProps {
   title: string;
   prefix: string;
+  name: string;
+  siteUrl?: string;
   crumbs?: Crumb[];
   scripts?: string[];
   children?: ComponentChildren;
@@ -16,6 +18,8 @@ interface TapemarkLayoutProps {
 export function TapemarkLayout({
   title,
   prefix,
+  name,
+  siteUrl,
   crumbs = [],
   scripts = [],
   children,
@@ -28,7 +32,7 @@ export function TapemarkLayout({
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>{title} — tapemark</title>
+        <title>{title} — {name}</title>
         <link rel="stylesheet" href={cssHref} />
         <script src={jsHref} defer></script>
         {scripts.map((src) => (
@@ -39,7 +43,7 @@ export function TapemarkLayout({
         <div class="tm">
           <div class="tm-bar">
             <span class="tm-bar-title">
-              <a href={prefix || "/"}>tapemark</a>
+              <a href={prefix || "/"}>{name}</a>
             </span>
             {crumbs.length > 0 && (
               <div class="tm-crumbs">
@@ -54,6 +58,9 @@ export function TapemarkLayout({
                   </>
                 ))}
               </div>
+            )}
+            {siteUrl && (
+              <a href={siteUrl} class="tm-bar-site">{"\u2190 site"}</a>
             )}
           </div>
           <div class="tm-body">{children}</div>

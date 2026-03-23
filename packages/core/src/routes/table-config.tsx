@@ -33,6 +33,8 @@ export async function tableConfigRoute(
     <TapemarkLayout
       title={`${table} config`}
       prefix={ctx.prefix}
+      name={ctx.name}
+      siteUrl={ctx.siteUrl}
       crumbs={crumbs}
       scripts={ctx.scripts}
     >

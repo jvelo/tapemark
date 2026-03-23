@@ -24,7 +24,7 @@ export async function rowsRoute(
   const tableConfig = await configStore.getTableConfig(table);
 
   const hasPk = tableInfo.primaryKey.length > 0;
-  const isReadonly = ctx.tableOptions.get(table)?.readonly;
+  const isReadonly = ctx.readonly || ctx.tableOptions.get(table)?.readonly;
 
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },
@@ -35,6 +35,8 @@ export async function rowsRoute(
     <TapemarkLayout
       title={table}
       prefix={ctx.prefix}
+      name={ctx.name}
+      siteUrl={ctx.siteUrl}
       crumbs={crumbs}
       scripts={ctx.scripts}
     >
