@@ -56,12 +56,25 @@ function createDemoDb(): BetterSqlite3.Database {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       body TEXT,
+      cover_image TEXT,
       author_id INTEGER REFERENCES users(id),
       published INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
-    INSERT INTO posts (title, body, author_id, published) VALUES ('Hello World', 'This is the first post.', 1, 1);
-    INSERT INTO posts (title, body, author_id, published) VALUES ('Draft Post', 'Work in progress...', 2, 0);
+    INSERT INTO posts (title, body, cover_image, author_id, published) VALUES ('Hello World', 'This is the first post.', 'https://picsum.photos/id/10/800/600', 1, 1);
+    INSERT INTO posts (title, body, cover_image, author_id, published) VALUES ('Draft Post', 'Work in progress...', 'https://picsum.photos/id/22/800/600', 2, 0);
+    INSERT INTO posts (title, body, cover_image, author_id, published) VALUES ('Mountain Views', 'A post about nature.', 'https://picsum.photos/id/29/800/600', 1, 1);
+
+    CREATE TABLE movies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      year INTEGER,
+      poster TEXT,
+      rating REAL
+    );
+    INSERT INTO movies (title, year, poster, rating) VALUES ('Blade Runner', 1982, 'https://picsum.photos/id/1031/400/600', 8.1);
+    INSERT INTO movies (title, year, poster, rating) VALUES ('Alien', 1979, 'https://picsum.photos/id/1025/400/600', 8.5);
+    INSERT INTO movies (title, year, poster, rating) VALUES ('2001: A Space Odyssey', 1968, 'https://picsum.photos/id/1062/400/600', 8.3);
 
     CREATE TABLE tags (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
