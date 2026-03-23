@@ -24,10 +24,12 @@ describe("builtinDisplayTypes", () => {
     expect(html).toContain("&lt;script&gt;");
   });
 
-  it("image renders an img tag", () => {
+  it("image renders a tm-image-cell web component", () => {
     const html = builtinDisplayTypes.image.render("https://example.com/img.png", {});
-    expect(html).toContain("<img");
-    expect(html).toContain('src="https://example.com/img.png"');
+    expect(html).toContain("<tm-image-cell");
+    expect(html).toContain('data-src="https://example.com/img.png"');
+    expect(html).toContain('data-height="48"');
+    expect(html).toContain('data-preview="240"');
   });
 
   it("image returns empty for falsy value", () => {
