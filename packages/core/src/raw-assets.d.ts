@@ -17,5 +17,10 @@ declare namespace preact.JSX {
       "data-column"?: string;
       "data-options"?: string;
     };
+    "tm-image-cell": preact.JSX.HTMLAttributes<HTMLElement> & {
+      "data-src"?: string;
+      "data-height"?: string;
+      "data-preview"?: string;
+    };
   }
 }

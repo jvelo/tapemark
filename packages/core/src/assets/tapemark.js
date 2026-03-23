@@ -108,6 +108,51 @@ if (!customElements.get("tm-display-options")) {
   customElements.define("tm-display-options", TmDisplayOptions);
 }
 
+// <tm-image-cell> web component
+// Renders a thumbnail with hover preview. The preview <img> is only
+// created on first hover, avoiding ghost images in the DOM.
+class TmImageCell extends HTMLElement {
+  connectedCallback() {
+    const src = this.getAttribute("data-src");
+    const height = this.getAttribute("data-height") || "48";
+    const previewHeight = this.getAttribute("data-preview") || "240";
+    if (!src) return;
+
+    this.classList.add("tm-cell-image");
+
+    const thumb = document.createElement("img");
+    thumb.src = src;
+    thumb.loading = "lazy";
+    thumb.alt = "";
+    thumb.style.height = height + "px";
+    thumb.style.width = "auto";
+    thumb.style.display = "block";
+    this.appendChild(thumb);
+
+    let preview = null;
+
+    this.addEventListener("mouseenter", () => {
+      if (!preview) {
+        preview = document.createElement("img");
+        preview.src = src;
+        preview.alt = "";
+        preview.className = "tm-cell-image-preview";
+        preview.style.maxHeight = previewHeight + "px";
+        this.appendChild(preview);
+      }
+      preview.style.display = "block";
+    });
+
+    this.addEventListener("mouseleave", () => {
+      if (preview) preview.style.display = "none";
+    });
+  }
+}
+
+if (!customElements.get("tm-image-cell")) {
+  customElements.define("tm-image-cell", TmImageCell);
+}
+
 // Select-all checkbox and bulk delete button wiring
 document.addEventListener("DOMContentLoaded", () => {
   const selectAll = document.getElementById("tm-select-all");

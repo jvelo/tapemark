@@ -151,30 +151,21 @@ body {
   position: relative;
   display: inline-block;
 }
-.tm-cell-image img {
+.tm-cell-image img:not(.tm-cell-image-preview) {
   height: var(--tm-thumb-h, 48px);
   width: auto;
   display: block;
 }
-.tm-cell-image::after {
-  content: "";
+.tm-cell-image-preview {
   display: none;
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   left: 0;
   z-index: 100;
-  width: 360px;
-  height: var(--tm-preview-h, 240px);
-  margin-bottom: 0.27rem;
-  background-image: var(--tm-img-url);
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-color: var(--tm-bg);
-  border: 1px solid var(--tm-border);
+  width: auto;
+  margin-top: 0.27rem;
   pointer-events: none;
-}
-.tm-cell-image:hover::after {
-  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
 }
 .tm-cell-link {
   color: var(--tm-accent);
