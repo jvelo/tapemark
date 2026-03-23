@@ -204,11 +204,35 @@ body {
   opacity: 0.8;
 }
 
-/* Bulk select */
-.tm-row-select {
-  width: 0.9rem;
-  height: 0.9rem;
+/* Checkboxes — monospace style */
+.tm input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1em;
+  height: 1em;
+  font-family: inherit;
+  font-size: 0.81rem;
+  border: 1px solid #555;
+  background: var(--tm-bg);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+.tm input[type="checkbox"]::after {
+  content: "\00a0";
+  font-family: "Departure Mono", monospace;
+}
+.tm input[type="checkbox"]:checked {
+  border-color: var(--tm-accent);
+}
+.tm input[type="checkbox"]:checked::after {
+  content: "\00d7";
+  color: var(--tm-accent);
+}
+.tm input[type="checkbox"]:hover {
+  border-color: var(--tm-text);
 }
 
 /* Pagination */
@@ -345,10 +369,6 @@ tm-display-options {
   border: 1px solid #555;
   background: var(--tm-bg);
   color: #bbb;
-}
-.tm-opt-field input[type="checkbox"] {
-  width: 0.9rem;
-  height: 0.9rem;
 }
 .tm-opt-field input:focus {
   color: #ffffff;
