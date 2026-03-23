@@ -6,11 +6,16 @@
   },
   "packageManager": "pnpm@10.8.1",
   "scripts": {
-    "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "build": "pnpm -r --workspace-concurrency=1 run build",
+    "test": "pnpm -r run test",
     "check": "tsc -b",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "prerelease": "pnpm run lint && pnpm run test && pnpm run build",
+    "version:bump": "pnpm -r exec -- npm version",
+    "release:patch": "pnpm run prerelease && pnpm -r exec -- npm version patch --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push --follow-tags",
+    "release:minor": "pnpm run prerelease && pnpm -r exec -- npm version minor --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push --follow-tags",
+    "release:major": "pnpm run prerelease && pnpm -r exec -- npm version major --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push --follow-tags"
   },
   "devDependencies": {
     "eslint": "^10.1.0",

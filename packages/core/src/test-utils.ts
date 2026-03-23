@@ -3,7 +3,7 @@
  * Not shipped in the published package.
  */
 import BetterSqlite3 from "better-sqlite3";
-import { createSqliteAdapter } from "tapemark-better-sqlite3";
+import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
 import type { Database } from "./types";
 
 export function createTestDb(

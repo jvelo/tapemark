@@ -10,7 +10,7 @@ export default defineConfig({
       fileName: "index",
     },
     rollupOptions: {
-      external: ["hono", "@jvelo/tapemark"],
+      external: ["@jvelo/tapemark"],
     },
   },
 });

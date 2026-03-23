@@ -1,13 +1,13 @@
 {
-  "name": "tapemark-example-standalone",
+  "name": "@jvelo/tapemark-example-standalone",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx serve.ts"
   },
   "dependencies": {
-    "tapemark": "workspace:*",
-    "tapemark-better-sqlite3": "workspace:*",
+    "@jvelo/tapemark": "workspace:*",
+    "@jvelo/tapemark-better-sqlite3": "workspace:*",
     "better-sqlite3": "^11.0.0"
   },
   "devDependencies": {

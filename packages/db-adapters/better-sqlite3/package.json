@@ -1,12 +1,20 @@
 {
-  "name": "tapemark-better-sqlite3",
+  "name": "@jvelo/tapemark-better-sqlite3",
   "version": "0.0.1",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jvelo/tapemark.git",
+    "directory": "packages/db-adapters/better-sqlite3"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./src/index.ts"
+      "import": "./dist/index.js"
     }
   },
   "files": ["dist"],
@@ -16,7 +24,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "tapemark": "workspace:*"
+    "@jvelo/tapemark": "workspace:*"
   },
   "peerDependencies": {
     "better-sqlite3": ">=9.0.0"

@@ -3,9 +3,9 @@ import { resolve, basename } from "node:path";
 import { existsSync, globSync  } from "node:fs";
 import { defineCommand } from "citty";
 import BetterSqlite3 from "better-sqlite3";
-import { createSqliteAdapter } from "tapemark-better-sqlite3";
-import { createAdminCore } from "tapemark";
-import type { TapemarkCore } from "tapemark";
+import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
+import { createAdminCore } from "@jvelo/tapemark";
+import type { TapemarkCore } from "@jvelo/tapemark";
 
 interface DbEntry {
   name: string;

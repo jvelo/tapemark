@@ -9,8 +9,8 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [
-        "tapemark",
-        "tapemark-better-sqlite3",
+        "@jvelo/tapemark",
+        "@jvelo/tapemark-better-sqlite3",
         "better-sqlite3",
         "citty",
         "node:http",

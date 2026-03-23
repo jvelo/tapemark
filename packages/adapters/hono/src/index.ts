@@ -4,7 +4,7 @@ import {
   type Database,
   type TapemarkOptions,
   type TapemarkRequest,
-} from "tapemark";
+} from "@jvelo/tapemark";
 import type { Context } from "hono";
 
 /**

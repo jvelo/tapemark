@@ -2,8 +2,8 @@ import { resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { defineCommand } from "citty";
 import BetterSqlite3 from "better-sqlite3";
-import { createSqliteAdapter } from "tapemark-better-sqlite3";
-import { SchemaIntrospector } from "tapemark";
+import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
+import { SchemaIntrospector } from "@jvelo/tapemark";
 
 export const inspectCommand = defineCommand({
   meta: {

@@ -1,12 +1,12 @@
 {
-  "name": "@jvelo/tapemark",
+  "name": "@jvelo/tapemark-d1",
   "version": "0.0.1",
   "type": "module",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/jvelo/tapemark.git",
-    "directory": "packages/core"
+    "directory": "packages/db-adapters/d1"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
@@ -20,19 +20,12 @@
   "files": ["dist"],
   "scripts": {
     "build": "vite build",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "echo 'no tests (D1 is a runtime API)'"
   },
   "dependencies": {
-    "preact": "^10.25.0",
-    "preact-render-to-string": "^6.5.0"
+    "@jvelo/tapemark": "workspace:*"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.9.0",
-    "better-sqlite3": "^11.0.0",
-    "@types/better-sqlite3": "^7.6.0",
-    "@jvelo/tapemark-better-sqlite3": "workspace:*",
-    "node-gyp": "^12.2.0",
     "vite": "^6.0.0",
     "vite-plugin-dts": "^4.0.0",
     "vitest": "^3.0.0",

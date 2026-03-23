@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Hono } from "hono";
 import BetterSqlite3 from "better-sqlite3";
-import { createSqliteAdapter } from "tapemark-better-sqlite3";
+import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
 import { createAdmin } from "../index";
-import type { Database } from "tapemark";
+import type { Database } from "@jvelo/tapemark";
 
 const SCHEMA = `
   CREATE TABLE users (

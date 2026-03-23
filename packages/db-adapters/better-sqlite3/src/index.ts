@@ -1,5 +1,5 @@
 import type BetterSqlite3 from "better-sqlite3";
-import type { Database, PreparedStatement } from "tapemark";
+import type { Database, PreparedStatement } from "@jvelo/tapemark";
 
 /**
  * Wraps a better-sqlite3 database instance to match tapemark's async

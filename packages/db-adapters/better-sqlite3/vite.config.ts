@@ -10,7 +10,7 @@ export default defineConfig({
       fileName: "index",
     },
     rollupOptions: {
-      external: ["better-sqlite3", "tapemark"],
+      external: ["better-sqlite3", "@jvelo/tapemark"],
     },
   },
 });

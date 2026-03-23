@@ -1,8 +1,16 @@
 {
-  "name": "tapemark-cli",
+  "name": "@jvelo/tapemark-cli",
   "version": "0.0.1",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jvelo/tapemark.git",
+    "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "bin": {
     "tapemark": "./dist/index.js"
   },
@@ -14,8 +22,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "tapemark": "workspace:*",
-    "tapemark-better-sqlite3": "workspace:*",
+    "@jvelo/tapemark": "workspace:*",
+    "@jvelo/tapemark-better-sqlite3": "workspace:*",
     "better-sqlite3": "^11.0.0",
     "citty": "^0.1.0"
   },
