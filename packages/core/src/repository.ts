@@ -69,14 +69,14 @@ export class TableRepository {
       .first<{ cnt: number }>();
     const total = countRow?.cnt ?? 0;
 
-    const { results } = await this.db
+    const rows = await this.db
       .prepare(`SELECT * FROM "${tableName}" LIMIT ? OFFSET ?`)
       .bind(pageSize, offset)
       .all();
 
     return {
       columns: table.columns,
-      rows: results as Record<string, CellValue>[],
+      rows: rows as Record<string, CellValue>[],
       total,
       page,
       pageSize,

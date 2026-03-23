@@ -78,8 +78,8 @@ export class SchemaIntrospector {
     const stmt = this.db.prepare(
       "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
     );
-    const { results } = await stmt.all<{ name: string }>();
-    return results
+    const rows = await stmt.all<{ name: string }>();
+    return rows
       .map((r) => r.name)
       .filter((n) => !isInternalTable(n));
   }
@@ -110,7 +110,7 @@ export class SchemaIntrospector {
   async getTable(name: string): Promise<Table> {
     await this.assertTable(name);
 
-    const { results: pragmaRows } = await this.db
+    const pragmaRows = await this.db
       .prepare(`PRAGMA table_info("${name}")`)
       .all<PragmaColumnRow>();
 
@@ -153,7 +153,7 @@ export class SchemaIntrospector {
   async getSchema(): Promise<Schema> {
     const tables = await this.getTables();
 
-    const { results: createStmts } = await this.db
+    const createStmts = await this.db
       .prepare(
         "SELECT sql FROM sqlite_master WHERE type='table' AND sql IS NOT NULL ORDER BY name",
       )

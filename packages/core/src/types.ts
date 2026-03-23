@@ -12,7 +12,7 @@ export interface Database {
 
 export interface PreparedStatement {
   bind(...values: unknown[]): PreparedStatement;
-  all<T = Record<string, unknown>>(): Promise<{ results: T[] }>;
+  all<T = Record<string, unknown>>(): Promise<T[]>;
   first<T = Record<string, unknown>>(): Promise<T | null>;
   run(): Promise<void>;
 }
@@ -133,6 +133,9 @@ export interface TapemarkRequest {
   method: string;
   /** Path relative to the mount point (e.g. "/users", "/users/42"). */
   path: string;
+  /** Route parameters extracted from path patterns (e.g. { table: "users", pk: "42" }). */
+  params: Record<string, string>;
+  /** URL query string parameters. */
   query: Record<string, string>;
   body?: Record<string, string | string[]>;
 }

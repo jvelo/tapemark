@@ -11,6 +11,7 @@ function makeReq(overrides: Partial<TapemarkRequest> = {}): TapemarkRequest {
   return {
     method: "GET",
     path: "/",
+    params: {},
     query: {},
     ...overrides,
   };
@@ -47,7 +48,7 @@ describe("createAdminCore", () => {
     core.addRoute("GET", "/:table", async (req) => ({
       status: 200,
       headers: {},
-      html: `table=${req.query.table}`,
+      html: `table=${req.params.table}`,
     }));
 
     const res = await core.handle(makeReq({ path: "/users" }));
@@ -60,7 +61,7 @@ describe("createAdminCore", () => {
     core.addRoute("GET", "/:table/:pk", async (req) => ({
       status: 200,
       headers: {},
-      html: `table=${req.query.table},pk=${req.query.pk}`,
+      html: `table=${req.params.table},pk=${req.params.pk}`,
     }));
 
     const res = await core.handle(makeReq({ path: "/users/42" }));
@@ -102,7 +103,7 @@ describe("createAdminCore", () => {
     core.addRoute("POST", "/:table/new", async (req) => ({
       status: 201,
       headers: {},
-      html: `created in ${req.query.table}`,
+      html: `created in ${req.params.table}`,
     }));
 
     const res = await core.handle(
@@ -117,7 +118,7 @@ describe("createAdminCore", () => {
     core.addRoute("GET", "/:table", async (req) => ({
       status: 200,
       headers: {},
-      html: req.query.table!,
+      html: req.params.table!,
     }));
 
     const res = await core.handle(makeReq({ path: "/users/" }));

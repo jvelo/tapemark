@@ -104,13 +104,13 @@ export class TapemarkMigrator {
   }
 
   private async updateAppSchemaHash(): Promise<void> {
-    const { results } = await this.db
+    const rows = await this.db
       .prepare(
         "SELECT sql FROM sqlite_master WHERE type='table' AND sql IS NOT NULL ORDER BY name",
       )
       .all<{ sql: string }>();
 
-    const concatenated = results.map((r) => r.sql).join("\n");
+    const concatenated = rows.map((r) => r.sql).join("\n");
     const hash = await computeHash(concatenated);
 
     await this.db

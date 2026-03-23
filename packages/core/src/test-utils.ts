@@ -32,7 +32,7 @@ export function wrapSqlite(raw: BetterSqlite3.Database): Database {
               ? stmt.all(...boundValues)
               : stmt.all()
           ) as T[];
-          return { results };
+          return results;
         },
         async first<T>() {
           const row = (

@@ -137,7 +137,7 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
     // Inject matched params into the request
     const enrichedReq: TapemarkRequest = {
       ...req,
-      query: { ...req.query, ...match.params },
+      params: { ...req.params, ...match.params },
     };
 
     const ctx = buildContext();
