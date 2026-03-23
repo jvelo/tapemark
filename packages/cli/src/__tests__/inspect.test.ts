@@ -1,12 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { execSync } from "node:child_process";
-import { writeFileSync, unlinkSync } from "node:fs";
+import { unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import BetterSqlite3 from "better-sqlite3";
-
-import { dirname } from "node:path";
+import { join, dirname  } from "node:path";
 import { fileURLToPath } from "node:url";
+import BetterSqlite3 from "better-sqlite3";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "../../../..");

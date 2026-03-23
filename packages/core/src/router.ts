@@ -1,11 +1,3 @@
-import type {
-  Database,
-  RouteHandler,
-  TapemarkContext,
-  TapemarkOptions,
-  TapemarkRequest,
-  TapemarkResponse,
-} from "./types";
 import { TapemarkError } from "./errors";
 import { TapemarkMigrator } from "./migrator";
 import { createDisplayTypeRegistry } from "./display";
@@ -16,6 +8,14 @@ import { rowCreateRoute, rowInsertRoute } from "./routes/row-create";
 import { tableConfigRoute, tableConfigUpdateRoute } from "./routes/table-config";
 import { bulkDeleteRoute } from "./routes/bulk-delete";
 import { loadAsset } from "./assets/load";
+import type {
+  Database,
+  RouteHandler,
+  TapemarkContext,
+  TapemarkOptions,
+  TapemarkRequest,
+  TapemarkResponse,
+} from "./types";
 
 const CSS_CONTENT = loadAsset("tapemark.css");
 const JS_CONTENT = loadAsset("tapemark.js");

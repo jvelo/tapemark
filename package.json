@@ -8,6 +8,13 @@
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "check": "tsc -b"
+    "check": "tsc -b",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "devDependencies": {
+    "eslint": "^10.1.0",
+    "eslint-plugin-import-x": "^4.16.2",
+    "typescript-eslint": "^8.57.1"
   }
 }

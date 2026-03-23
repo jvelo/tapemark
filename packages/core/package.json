@@ -23,6 +23,7 @@
     "@preact/preset-vite": "^2.9.0",
     "better-sqlite3": "^11.0.0",
     "@types/better-sqlite3": "^7.6.0",
+    "tapemark-better-sqlite3": "workspace:*",
     "node-gyp": "^12.2.0",
     "vite": "^6.0.0",
     "vite-plugin-dts": "^4.0.0",

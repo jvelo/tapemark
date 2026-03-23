@@ -1,5 +1,6 @@
-import type { Column, ColumnAffinity, Database, Schema, Table } from "./types";
 import { NotFoundError } from "./errors";
+import { computeHash } from "./hash";
+import type { Column, ColumnAffinity, Database, Schema, Table } from "./types";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -170,20 +171,3 @@ export class SchemaIntrospector {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-async function computeHash(input: string): Promise<string> {
-  // Use Web Crypto API (available in Node 20+, Cloudflare Workers, Deno)
-  if (typeof globalThis.crypto?.subtle?.digest === "function") {
-    const data = new TextEncoder().encode(input);
-    const buf = await globalThis.crypto.subtle.digest("SHA-256", data);
-    return Array.from(new Uint8Array(buf))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-  // Fallback: Node.js crypto
-  const { createHash } = await import("node:crypto");
-  return createHash("sha256").update(input).digest("hex");
-}

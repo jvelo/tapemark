@@ -1,12 +1,11 @@
-import { createServer } from "node:http";
+import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { resolve, basename } from "node:path";
-import { existsSync } from "node:fs";
-import { globSync } from "node:fs";
+import { existsSync, globSync  } from "node:fs";
 import { defineCommand } from "citty";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "tapemark-better-sqlite3";
 import { createAdminCore } from "tapemark";
-import type { TapemarkCore, TapemarkRequest } from "tapemark";
+import type { TapemarkCore } from "tapemark";
 
 interface DbEntry {
   name: string;
@@ -103,7 +102,7 @@ export const serveCommand = defineCommand({
           if (path === "/") {
             // Landing page: list databases
             res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-            res.end(renderDbList(databases, port));
+            res.end(renderDbList(databases));
             return;
           }
 
@@ -186,7 +185,7 @@ function resolveFilePaths(rawPaths: string[]): string[] {
 }
 
 function sendResponse(
-  res: import("node:http").ServerResponse,
+  res: ServerResponse,
   tapemarkRes: { status: number; headers: Record<string, string>; html?: string; redirect?: string },
 ): void {
   if (tapemarkRes.redirect) {
@@ -202,7 +201,7 @@ function sendResponse(
 }
 
 function parseFormBody(
-  req: import("node:http").IncomingMessage,
+  req: IncomingMessage,
 ): Promise<Record<string, string | string[]>> {
   return new Promise((resolve) => {
     let data = "";
@@ -225,7 +224,7 @@ function parseFormBody(
   });
 }
 
-function renderDbList(databases: DbEntry[], port: number): string {
+function renderDbList(databases: DbEntry[]): string {
   const rows = databases
     .map(
       (db) =>

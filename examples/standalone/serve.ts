@@ -1,12 +1,15 @@
 /**
- * Standalone tapemark server — open a SQLite file, serve the admin UI.
+ * Standalone tapemark demo — thin wrapper around the CLI serve command.
  *
  * Usage:
  *   npx tsx examples/standalone/serve.ts [path-to-db] [--port 3333]
  *
+ * This is equivalent to:
+ *   npx tsx packages/cli/src/index.ts serve [path-to-db] [--port 3333]
+ *
  * If no path is given, creates a demo database in memory.
  */
-import { createServer } from "node:http";
+import { createServer, type IncomingMessage } from "node:http";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "../../packages/db-adapters/better-sqlite3/src/index.js";
 import { createAdminCore } from "../../packages/core/src/index.js";
@@ -84,46 +87,51 @@ const core = createAdminCore({ db, prefix: "" });
 // ---------------------------------------------------------------------------
 
 const server = createServer(async (req, res) => {
-  const url = new URL(req.url || "/", `http://localhost:${port}`);
-  const path = url.pathname;
-  const query: Record<string, string> = {};
-  url.searchParams.forEach((v, k) => {
-    query[k] = v;
-  });
-
-  // Parse body for POST
-  let body: Record<string, string | string[]> | undefined;
-  if (req.method === "POST") {
-    body = await parseFormBody(req);
-  }
-
-  const tapemarkRes = await core.handle({
-    method: req.method || "GET",
-    path,
-    params: {},
-    query,
-    body,
-  });
-
-  if (tapemarkRes.redirect) {
-    res.writeHead(tapemarkRes.status, {
-      location: tapemarkRes.redirect,
-      ...tapemarkRes.headers,
+  try {
+    const url = new URL(req.url || "/", `http://localhost:${port}`);
+    const path = url.pathname;
+    const query: Record<string, string> = {};
+    url.searchParams.forEach((v, k) => {
+      query[k] = v;
     });
-    res.end();
-    return;
-  }
 
-  res.writeHead(tapemarkRes.status, tapemarkRes.headers);
-  res.end(tapemarkRes.html ?? "");
+    let body: Record<string, string | string[]> | undefined;
+    if (req.method === "POST") {
+      body = await parseFormBody(req);
+    }
+
+    const tapemarkRes = await core.handle({
+      method: req.method || "GET",
+      path,
+      params: {},
+      query,
+      body,
+    });
+
+    if (tapemarkRes.redirect) {
+      res.writeHead(tapemarkRes.status, {
+        location: tapemarkRes.redirect,
+        ...tapemarkRes.headers,
+      });
+      res.end();
+      return;
+    }
+
+    res.writeHead(tapemarkRes.status, tapemarkRes.headers);
+    res.end(tapemarkRes.html ?? "");
+  } catch (err) {
+    console.error(err);
+    res.writeHead(500, { "content-type": "text/plain" });
+    res.end("Internal Server Error");
+  }
 });
 
 function parseFormBody(
-  req: import("node:http").IncomingMessage,
+  req: IncomingMessage,
 ): Promise<Record<string, string | string[]>> {
   return new Promise((resolve) => {
     let data = "";
-    req.on("data", (chunk) => (data += chunk));
+    req.on("data", (chunk: string) => (data += chunk));
     req.on("end", () => {
       const result: Record<string, string | string[]> = {};
       const params = new URLSearchParams(data);

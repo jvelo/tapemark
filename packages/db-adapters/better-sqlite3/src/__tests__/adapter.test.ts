@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import BetterSqlite3 from "better-sqlite3";
-import { createSqliteAdapter } from "../index";
 import { SchemaIntrospector, TableRepository } from "tapemark";
+import { createSqliteAdapter } from "../index";
 
 const SCHEMA = `
   CREATE TABLE users (

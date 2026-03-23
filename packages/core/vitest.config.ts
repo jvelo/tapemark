@@ -1,3 +1,4 @@
+import path from "path";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -5,6 +6,14 @@ export default defineConfig({
     globals: true,
     css: {
       include: [/.*/],
+    },
+  },
+  resolve: {
+    alias: {
+      "tapemark-better-sqlite3": path.resolve(
+        __dirname,
+        "../db-adapters/better-sqlite3/src/index.ts",
+      ),
     },
   },
 });
