@@ -59,7 +59,7 @@ const imageDisplay: DisplayType = {
     if (!url) return "";
     const height = (options.height as number) ?? 48;
     const maxPreview = (options.maxPreview as number) ?? 240;
-    return `<img src="${escapeHtml(url)}" class="tm-cell-image" style="--tm-thumb-h:${height}px;--tm-preview-h:${maxPreview}px" loading="lazy" alt="" />`;
+    return `<span class="tm-cell-image" style="--tm-thumb-h:${height}px;--tm-preview-h:${maxPreview}px;--tm-img-url:url(${escapeHtml(url)})"><img src="${escapeHtml(url)}" loading="lazy" alt="" /></span>`;
   },
 };
 

@@ -1,6 +1,17 @@
 // Assets are loaded differently depending on the environment:
-// - Vite build: the build plugin replaces these with inlined content
+// - Vite build: the build plugin replaces this entire module with inlined content
 // - Node.js dev (tsx/vitest): reads from filesystem at runtime
+
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+let assetDir: string;
+try {
+  assetDir = dirname(fileURLToPath(import.meta.url));
+} catch {
+  assetDir = "";
+}
 
 let CSS_CACHE: string | undefined;
 let JS_CACHE: string | undefined;
@@ -20,16 +31,9 @@ export function loadAsset(filename: string): string {
 }
 
 function readFromDisk(filename: string): string {
+  if (!assetDir) return "";
   try {
-    // Dynamic requires to avoid bundler issues
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const fs = require("node:fs");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const path = require("node:path");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const url = require("node:url");
-    const dir = path.dirname(url.fileURLToPath(import.meta.url));
-    return fs.readFileSync(path.resolve(dir, filename), "utf-8");
+    return readFileSync(resolve(assetDir, filename), "utf-8");
   } catch {
     return "";
   }

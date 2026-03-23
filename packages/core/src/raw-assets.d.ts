@@ -13,5 +13,9 @@ declare namespace preact.JSX {
     "tm-confirm-button": preact.JSX.HTMLAttributes<HTMLElement> & {
       "data-message"?: string;
     };
+    "tm-display-options": preact.JSX.HTMLAttributes<HTMLElement> & {
+      "data-column"?: string;
+      "data-options"?: string;
+    };
   }
 }

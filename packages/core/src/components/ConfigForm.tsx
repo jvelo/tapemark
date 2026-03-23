@@ -17,18 +17,31 @@ export function ConfigForm({
 }: ConfigFormProps) {
   const displayOptions = Array.from(displayTypes.keys());
 
+  // Serialize display type schemas for the web component
+  const schemas: Record<string, unknown> = {};
+  for (const [name, dt] of displayTypes) {
+    schemas[name] = dt.schema;
+  }
+  const schemasJson = JSON.stringify(schemas);
+
   return (
     <form
       method="post"
       action={`${prefix}/${table}/_config`}
       class="tm-form tm-form-wide"
     >
+      <script
+        type="application/json"
+        id="tm-display-schemas"
+        dangerouslySetInnerHTML={{ __html: schemasJson }}
+      />
       <table>
         <thead>
           <tr>
             <th>column</th>
             <th>type</th>
             <th>display</th>
+            <th>options</th>
             <th>label</th>
             <th>hidden</th>
           </tr>
@@ -36,6 +49,7 @@ export function ConfigForm({
         <tbody>
           {columns.map((col) => {
             const cc: ColumnConfig = config.columns?.[col.name] ?? {};
+            const optionsJson = JSON.stringify(cc.options ?? {});
             return (
               <tr>
                 <td>{col.name}</td>
@@ -48,6 +62,12 @@ export function ConfigForm({
                       </option>
                     ))}
                   </select>
+                </td>
+                <td>
+                  <tm-display-options
+                    data-column={col.name}
+                    data-options={optionsJson}
+                  />
                 </td>
                 <td>
                   <input

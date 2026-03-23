@@ -156,20 +156,24 @@ body {
   width: auto;
   display: block;
 }
-.tm-cell-image-preview {
+.tm-cell-image::after {
+  content: "";
   display: none;
   position: absolute;
   bottom: 100%;
   left: 0;
   z-index: 100;
-  max-height: var(--tm-preview-h, 240px);
-  width: auto;
-  max-width: 360px;
+  width: 360px;
+  height: var(--tm-preview-h, 240px);
   margin-bottom: 0.27rem;
+  background-image: var(--tm-img-url);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-color: var(--tm-bg);
   border: 1px solid var(--tm-border);
-  background: var(--tm-bg);
+  pointer-events: none;
 }
-.tm-cell-image:hover .tm-cell-image-preview {
+.tm-cell-image:hover::after {
   display: block;
 }
 .tm-cell-link {
@@ -302,6 +306,57 @@ body {
 }
 .tm-center {
   text-align: center;
+}
+
+/* Config form: auto layout so options column can breathe */
+.tm-form-wide {
+  max-width: none;
+}
+.tm-form-wide table {
+  table-layout: auto;
+}
+.tm-form-wide td,
+.tm-form-wide th {
+  white-space: nowrap;
+  overflow: visible;
+}
+
+/* Display type options (web component) */
+tm-display-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.18rem 0;
+}
+.tm-opt-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.09rem;
+}
+.tm-opt-field label {
+  opacity: 0.5;
+  text-transform: none;
+  font-size: 0.54rem;
+  white-space: nowrap;
+}
+.tm-opt-field input[type="number"],
+.tm-opt-field input[type="text"] {
+  width: 8rem;
+  font-family: inherit;
+  font-size: 0.72rem;
+  padding: 0.18rem 0.27rem;
+  border: 1px solid #555;
+  background: var(--tm-bg);
+  color: #bbb;
+}
+.tm-opt-field input[type="checkbox"] {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.tm-opt-field input:focus {
+  color: #ffffff;
+  border-color: #ffffff;
+  outline: none;
 }
 
 /* Buttons */

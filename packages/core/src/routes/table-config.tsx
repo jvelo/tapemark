@@ -73,16 +73,51 @@ export async function tableConfigUpdateRoute(
 
   if (req.body) {
     for (const col of tableInfo.columns) {
-      const display =
+      const display: string =
         (req.body[`${col.name}__display`] as string) || "text";
-      const label =
+      const label: string =
         (req.body[`${col.name}__label`] as string) || "";
       const hidden = !!req.body[`${col.name}__hidden`];
+
+      // Parse display type options (fields named colName__opt__key)
+      const dtSchema = ctx.displayTypes.get(display)?.schema;
+      const options: Record<string, unknown> = {};
+      const optPrefix = `${col.name}__opt__`;
+      for (const [key, val] of Object.entries(req.body)) {
+        if (key.startsWith(optPrefix)) {
+          const optName = key.slice(optPrefix.length);
+          const strVal = String(val);
+          const propDef = dtSchema?.properties?.[optName];
+          if (propDef?.type === "number" && strVal !== "") {
+            const n = Number(strVal);
+            if (!Number.isNaN(n)) options[optName] = n;
+          } else if (propDef?.type === "boolean") {
+            options[optName] = strVal === "1" || strVal === "true";
+          } else if (strVal !== "") {
+            options[optName] = strVal;
+          }
+        }
+      }
+      // For boolean options not present in the body (unchecked checkboxes)
+      if (dtSchema?.properties) {
+        for (const [optName, propDef] of Object.entries(dtSchema.properties)) {
+          if (propDef.type === "boolean" && !((`${col.name}__opt__${optName}`) in req.body)) {
+            options[optName] = false;
+          }
+        }
+      }
 
       const cc: ColumnConfig = {};
       if (display !== "text") cc.display = display;
       if (label) cc.label = label;
       if (hidden) cc.hidden = true;
+      // Only store options that differ from defaults
+      const cleanedOptions: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(options)) {
+        const defaultVal = dtSchema?.properties?.[k]?.default;
+        if (v !== defaultVal) cleanedOptions[k] = v;
+      }
+      if (Object.keys(cleanedOptions).length > 0) cc.options = cleanedOptions;
 
       if (Object.keys(cc).length > 0) {
         config.columns![col.name] = cc;
