@@ -410,7 +410,8 @@ tm-display-options {
   color: #181818;
   border-color: #ffffff;
 }
-.tm-btn-primary:hover {
+.tm-btn-primary:hover,
+.tm a.tm-btn-primary:hover {
   background: var(--tm-accent);
   border-color: var(--tm-accent);
   color: #000000;

@@ -185,6 +185,8 @@ export interface TapemarkOptions {
   name?: string;
   /** Global read-only mode — disables all writes and deletes. */
   readonly?: boolean;
+  /** Set to false to skip bundled fonts (when the host app already serves them). Defaults to true. */
+  fonts?: boolean;
 }
 
 /**

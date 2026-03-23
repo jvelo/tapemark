@@ -18,7 +18,8 @@ import type {
   TapemarkResponse,
 } from "./types";
 
-const CSS_CONTENT = loadAsset("fonts.css") + "\n" + loadAsset("tapemark.css");
+const FONTS_CSS = loadAsset("fonts.css");
+const BASE_CSS = loadAsset("tapemark.css");
 const JS_CONTENT = loadAsset("tapemark.js");
 
 // ---------------------------------------------------------------------------
@@ -188,13 +189,15 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
   }
 
   // Asset routes (served before auth — CSS/JS are not sensitive)
+  const includeFonts = options.fonts !== false;
+  const cssContent = includeFonts ? FONTS_CSS + "\n" + BASE_CSS : BASE_CSS;
   addRoute("GET", "/_tapemark/styles.css", async () => ({
     status: 200,
     headers: {
       "content-type": "text/css; charset=utf-8",
       "cache-control": "public, max-age=86400",
     },
-    html: CSS_CONTENT,
+    html: cssContent,
   }));
   addRoute("GET", "/_tapemark/admin.js", async () => ({
     status: 200,
