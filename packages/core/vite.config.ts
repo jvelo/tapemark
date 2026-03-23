@@ -14,7 +14,15 @@ export default defineConfig({
       fileName: "index",
     },
     rollupOptions: {
-      external: ["preact", "preact/jsx-runtime", "preact-render-to-string"],
+      external: [
+        "preact",
+        "preact/jsx-runtime",
+        "preact-render-to-string",
+        "node:fs",
+        "node:path",
+        "node:url",
+        "node:crypto",
+      ],
     },
   },
 });

@@ -1,4 +1,5 @@
 import type { Column, ColumnAffinity, Database, Schema, Table } from "./types";
+import { NotFoundError } from "./errors";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -46,12 +47,15 @@ export function isInternalTable(name: string): boolean {
   return INTERNAL_PREFIXES.some((prefix) => name.startsWith(prefix));
 }
 
-export class NameValidationError extends Error {
+export class NameValidationError extends NotFoundError {
   constructor(
     public readonly kind: "table" | "column",
-    public readonly name: string,
+    public readonly invalidName: string,
   ) {
-    super(`Invalid ${kind} name: ${name}`);
+    super(
+      `${kind} not found: ${invalidName}`,
+      `Validated against sqlite_master`,
+    );
     this.name = "NameValidationError";
   }
 }

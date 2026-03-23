@@ -15,8 +15,10 @@ import { rowDetailRoute, rowUpdateRoute, rowDeleteRoute } from "./routes/row-det
 import { rowCreateRoute, rowInsertRoute } from "./routes/row-create";
 import { tableConfigRoute, tableConfigUpdateRoute } from "./routes/table-config";
 import { bulkDeleteRoute } from "./routes/bulk-delete";
-import CSS_CONTENT from "./assets/tapemark.css?raw";
-import JS_CONTENT from "./assets/tapemark.js?raw";
+import { loadAsset } from "./assets/load";
+
+const CSS_CONTENT = loadAsset("tapemark.css");
+const JS_CONTENT = loadAsset("tapemark.js");
 
 // ---------------------------------------------------------------------------
 // Route definition
@@ -100,10 +102,17 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
   );
   const scripts = options.scripts ?? [];
 
-  const migrator = new TapemarkMigrator(resolveDb(options.db));
+  let migrator: TapemarkMigrator | null = null;
 
   function resolveDb(db: Database | (() => Database)): Database {
     return typeof db === "function" ? db() : db;
+  }
+
+  function getMigrator(db: Database): TapemarkMigrator {
+    if (!migrator) {
+      migrator = new TapemarkMigrator(db);
+    }
+    return migrator;
   }
 
   function buildContext(): TapemarkContext {
@@ -129,8 +138,9 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
       }
     }
 
-    // Ensure tapemark tables exist
-    await migrator.ensureReady();
+    // Ensure tapemark tables exist (lazy-init migrator on first request)
+    const db = resolveDb(options.db);
+    await getMigrator(db).ensureReady();
 
     // Match route
     const match = matchRoute(routes, req.method, req.path);
