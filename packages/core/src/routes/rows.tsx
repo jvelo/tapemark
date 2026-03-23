@@ -69,6 +69,8 @@ export async function rowsRoute(
         tableConfig={tableConfig}
         displayTypes={ctx.displayTypes}
         page={page}
+        pageSize={pageSize}
+        kind={tableInfo.kind}
       />
       <div class="tm-table-footer">
         <Pagination

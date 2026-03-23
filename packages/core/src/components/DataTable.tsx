@@ -9,6 +9,9 @@ interface DataTableProps {
   tableConfig: TableConfig;
   displayTypes: Map<string, DisplayType>;
   page?: number;
+  pageSize?: number;
+  /** "table" enables edit links and bulk select; "view" enables read-only row links. */
+  kind?: "table" | "view";
 }
 
 function escapeHtml(str: string): string {
@@ -52,9 +55,12 @@ export function DataTable({
   tableConfig,
   displayTypes,
   page = 1,
+  pageSize = 50,
+  kind = "table",
 }: DataTableProps) {
   const pkSet = new Set(primaryKey);
   const hasPk = primaryKey.length > 0;
+  const isView = kind === "view";
 
   const visibleColumns = columns.filter((col) => {
     const cc = tableConfig.columns?.[col.name];
@@ -80,7 +86,7 @@ export function DataTable({
                 </th>
               );
             })}
-            {hasPk && (
+            {hasPk && !isView && (
               <th class="tm-select-col">
                 <input type="checkbox" class="tm-row-select" id="tm-select-all" />
               </th>
@@ -88,8 +94,10 @@ export function DataTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => {
-            const pk = encodePk(row);
+          {rows.map((row, index) => {
+            const rowLink = isView
+              ? `${linkBase}/_row/${(page - 1) * pageSize + index}`
+              : `${linkBase}/${encodePk(row)}`;
             return (
               <tr>
                 {visibleColumns.map((col) => {
@@ -99,18 +107,18 @@ export function DataTable({
                   return (
                     <td>
                       <a
-                        href={`${linkBase}/${pk}`}
+                        href={rowLink}
                         dangerouslySetInnerHTML={{ __html: html }}
                       />
                     </td>
                   );
                 })}
-                {hasPk && (
+                {hasPk && !isView && (
                   <td class="tm-select-col">
                     <input
                       type="checkbox"
                       name="pk"
-                      value={pk}
+                      value={encodePk(row)}
                       class="tm-row-select"
                     />
                   </td>

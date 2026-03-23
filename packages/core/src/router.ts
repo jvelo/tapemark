@@ -7,6 +7,7 @@ import { rowDetailRoute, rowUpdateRoute, rowDeleteRoute } from "./routes/row-det
 import { rowCreateRoute, rowInsertRoute } from "./routes/row-create";
 import { tableConfigRoute, tableConfigUpdateRoute } from "./routes/table-config";
 import { bulkDeleteRoute } from "./routes/bulk-delete";
+import { rowViewRoute } from "./routes/row-view";
 import { loadAsset } from "./assets/load";
 import type {
   Database,
@@ -212,6 +213,7 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
   addRoute("GET", "/:table/_config", tableConfigRoute);
   addRoute("POST", "/:table/_config", tableConfigUpdateRoute);
   addRoute("POST", "/:table/_bulk-delete", bulkDeleteRoute);
+  addRoute("GET", "/:table/_row/:index", rowViewRoute);
   addRoute("GET", "/:table/:pk", rowDetailRoute);
   addRoute("POST", "/:table/:pk", rowUpdateRoute);
   addRoute("POST", "/:table/:pk/delete", rowDeleteRoute);
