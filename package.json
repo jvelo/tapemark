@@ -13,9 +13,9 @@
     "lint:fix": "eslint . --fix",
     "prerelease": "pnpm run lint && pnpm run test && pnpm run build",
     "version:bump": "pnpm -r exec -- npm version",
-    "release:patch": "pnpm run prerelease && pnpm -r exec -- npm version patch --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push --follow-tags",
-    "release:minor": "pnpm run prerelease && pnpm -r exec -- npm version minor --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push --follow-tags",
-    "release:major": "pnpm run prerelease && pnpm -r exec -- npm version major --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push --follow-tags"
+    "release:patch": "pnpm run prerelease && pnpm -r exec -- npm version patch --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push && git push --tags",
+    "release:minor": "pnpm run prerelease && pnpm -r exec -- npm version minor --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push && git push --tags",
+    "release:major": "pnpm run prerelease && pnpm -r exec -- npm version major --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push && git push --tags"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["better-sqlite3", "esbuild", "unrs-resolver"]
