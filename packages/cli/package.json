@@ -1,6 +1,6 @@
 {
   "name": "@jvelo/tapemark-cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "license": "MIT",
   "repository": {
@@ -14,7 +14,9 @@
   "bin": {
     "tapemark": "./dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "vite build",
     "dev": "tsx src/index.ts",
