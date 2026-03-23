@@ -21,6 +21,7 @@ jobs:
           node-version: 22
           registry-url: https://npm.pkg.github.com
 
+      - run: sudo apt-get update && sudo apt-get install -y python3 make g++
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
       - run: pnpm run test
