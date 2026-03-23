@@ -1,0 +1,108 @@
+import { describe, it, expect } from "vitest";
+import { builtinDisplayTypes, createDisplayTypeRegistry } from "../display";
+import type { DisplayType } from "../types";
+
+describe("builtinDisplayTypes", () => {
+  it("includes all expected types", () => {
+    const names = Object.keys(builtinDisplayTypes);
+    expect(names).toEqual(
+      expect.arrayContaining([
+        "text", "image", "link", "json", "datetime", "color", "enum", "markdown",
+      ]),
+    );
+  });
+
+  it("text truncates long strings", () => {
+    const long = "a".repeat(100);
+    const html = builtinDisplayTypes.text.render(long, { maxLength: 10 });
+    expect(html).toBe("aaaaaaaaaa…");
+  });
+
+  it("text escapes HTML", () => {
+    const html = builtinDisplayTypes.text.render("<script>alert(1)</script>", {});
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("image renders an img tag", () => {
+    const html = builtinDisplayTypes.image.render("https://example.com/img.png", {});
+    expect(html).toContain("<img");
+    expect(html).toContain('src="https://example.com/img.png"');
+  });
+
+  it("image returns empty for falsy value", () => {
+    expect(builtinDisplayTypes.image.render("", {})).toBe("");
+    expect(builtinDisplayTypes.image.render(null, {})).toBe("");
+  });
+
+  it("link renders an anchor tag", () => {
+    const html = builtinDisplayTypes.link.render("https://example.com", {});
+    expect(html).toContain("<a");
+    expect(html).toContain('href="https://example.com"');
+    expect(html).toContain('target="_blank"');
+  });
+
+  it("json formats valid JSON", () => {
+    const html = builtinDisplayTypes.json.render('{"key":"value"}', {});
+    expect(html).toContain("<code");
+    expect(html).toContain("key");
+  });
+
+  it("json handles invalid JSON gracefully", () => {
+    const html = builtinDisplayTypes.json.render("not json", {});
+    expect(html).toContain("not json");
+  });
+
+  it("color renders a swatch", () => {
+    const html = builtinDisplayTypes.color.render("#ff0000", {});
+    expect(html).toContain("tm-swatch");
+    expect(html).toContain("#ff0000");
+  });
+
+  it("enum renders a badge", () => {
+    const html = builtinDisplayTypes.enum.render("active", {
+      colors: { active: "#4a4" },
+    });
+    expect(html).toContain("tm-cell-enum");
+    expect(html).toContain("#4a4");
+  });
+
+  it("each type has a valid schema", () => {
+    for (const type of Object.values(builtinDisplayTypes)) {
+      expect(type.schema.type).toBe("object");
+      expect(type.schema.properties).toBeDefined();
+    }
+  });
+});
+
+describe("createDisplayTypeRegistry", () => {
+  it("includes all builtins", () => {
+    const registry = createDisplayTypeRegistry();
+    expect(registry.size).toBeGreaterThanOrEqual(8);
+    expect(registry.has("text")).toBe(true);
+    expect(registry.has("image")).toBe(true);
+  });
+
+  it("merges custom types", () => {
+    const custom: DisplayType = {
+      name: "custom",
+      description: "A custom type",
+      schema: { type: "object", properties: {} },
+      render: (v) => String(v),
+    };
+    const registry = createDisplayTypeRegistry({ custom });
+    expect(registry.has("custom")).toBe(true);
+    expect(registry.has("text")).toBe(true); // builtins still there
+  });
+
+  it("custom types can override builtins", () => {
+    const override: DisplayType = {
+      name: "text",
+      description: "Override",
+      schema: { type: "object", properties: {} },
+      render: () => "overridden",
+    };
+    const registry = createDisplayTypeRegistry({ text: override });
+    expect(registry.get("text")!.render("x", {})).toBe("overridden");
+  });
+});
