@@ -37,9 +37,12 @@ export async function rowCreateRoute(
       <RowForm
         columns={tableInfo.columns}
         primaryKey={tableInfo.primaryKey}
+        foreignKeys={tableInfo.foreignKeys}
         action={`${ctx.prefix}/${table}/new`}
         submitLabel="create"
         tableConfig={tableConfig}
+        displayTypes={ctx.displayTypes}
+        prefix={ctx.prefix}
       />
     </TapemarkLayout>,
   );

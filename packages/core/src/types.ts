@@ -39,6 +39,15 @@ export interface Column {
   primaryKeyPosition: number | null;
 }
 
+export interface ForeignKey {
+  /** Local column names, ordered by position in the constraint. */
+  columns: string[];
+  referencedTable: string;
+  referencedColumns: string[];
+  onUpdate: string;
+  onDelete: string;
+}
+
 export interface Table {
   name: string;
   /** Whether this is a table or a view. */
@@ -46,6 +55,7 @@ export interface Table {
   columns: Column[];
   /** Ordered list of primary key column names. */
   primaryKey: string[];
+  foreignKeys: ForeignKey[];
   rowCount: number;
 }
 

@@ -6,6 +6,7 @@ export type {
   ColumnConfig,
   Database,
   DisplayType,
+  ForeignKey,
   OptionSchema,
   PreparedStatement,
   RouteHandler,
@@ -51,6 +52,9 @@ export {
   builtinDisplayTypes,
   createDisplayTypeRegistry,
 } from "./display";
+
+// Lookup
+export { pickLabelColumn } from "./routes/lookup";
 
 // Core
 export { createAdminCore } from "./router";

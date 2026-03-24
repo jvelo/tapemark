@@ -194,6 +194,46 @@ const enumDisplay: DisplayType = {
   },
 };
 
+const referenceDisplay: DisplayType = {
+  name: "reference",
+  description: "Foreign key reference with lookup",
+  schema: {
+    type: "object",
+    properties: {
+      table: {
+        type: "string",
+        description: "Referenced table name",
+      },
+      labelColumn: {
+        type: "string",
+        description: "Column to use as display label in the referenced table",
+      },
+    },
+  },
+  render(value, options) {
+    if (value === null || value === undefined) return "";
+    const table = options.table as string | undefined;
+    const labels = options._labels as Record<string, string> | undefined;
+    const str = String(value);
+    const label = labels?.[str] ?? str;
+    if (!table) return escapeHtml(label);
+    return `<a href="${escapeHtml(table)}/${escapeHtml(str)}" class="tm-cell-ref">${escapeHtml(label)}</a>`;
+  },
+  renderInput(column, value, options) {
+    const table = options.table as string | undefined;
+    const labelColumn = options.labelColumn as string | undefined;
+    const strVal = value === null || value === undefined ? "" : String(value);
+    if (!table) {
+      return `<input id="f-${escapeHtml(column.name)}" name="${escapeHtml(column.name)}" type="text" value="${escapeHtml(strVal)}" />`;
+    }
+    const labelAttr = labelColumn ? ` data-label-column="${escapeHtml(labelColumn)}"` : "";
+    return `<tm-reference-input data-table="${escapeHtml(table)}" data-column="${escapeHtml(column.name)}" data-value="${escapeHtml(strVal)}"${labelAttr}>`
+      + `<input id="f-${escapeHtml(column.name)}" name="${escapeHtml(column.name)}" type="hidden" value="${escapeHtml(strVal)}" />`
+      + `</tm-reference-input>`;
+  },
+  editorComponent: "tm-reference-input",
+};
+
 const markdownDisplay: DisplayType = {
   name: "markdown",
   description: "Rendered markdown preview",
@@ -226,6 +266,7 @@ export const builtinDisplayTypes: Record<string, DisplayType> = {
   datetime: datetimeDisplay,
   color: colorDisplay,
   enum: enumDisplay,
+  reference: referenceDisplay,
   markdown: markdownDisplay,
 };
 
