@@ -13,20 +13,20 @@ export class ConfigStore {
     const cached = this.cache.get(tableName);
     if (cached) return cached;
 
-    const row = await this.db
-      .prepare(
-        "SELECT config FROM _tapemark_table_config WHERE table_name = ?",
-      )
-      .bind(tableName)
-      .first<{ config: string }>();
-
     let config: TableConfig = {};
-    if (row?.config) {
-      try {
+    try {
+      const row = await this.db
+        .prepare(
+          "SELECT config FROM _tapemark_table_config WHERE table_name = ?",
+        )
+        .bind(tableName)
+        .first<{ config: string }>();
+
+      if (row?.config) {
         config = JSON.parse(row.config) as TableConfig;
-      } catch {
-        config = {};
       }
+    } catch {
+      // Table may not exist in readonly mode — return empty config
     }
 
     this.cache.set(tableName, config);

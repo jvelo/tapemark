@@ -4,6 +4,7 @@ import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, encodePk } from "../repository";
 import { ConfigStore } from "../config";
+import { assertWritable } from "./guard";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 export async function rowCreateRoute(
@@ -55,6 +56,7 @@ export async function rowInsertRoute(
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
   const table = req.params.table;
+  assertWritable(table, ctx);
 
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);

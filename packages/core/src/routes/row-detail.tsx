@@ -5,6 +5,7 @@ import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, decodePk, encodePk } from "../repository";
 import { ConfigStore } from "../config";
+import { assertWritable } from "./guard";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 export async function rowDetailRoute(
@@ -87,6 +88,7 @@ export async function rowUpdateRoute(
 ): Promise<TapemarkResponse> {
   const table = req.params.table;
   const pkParam = req.params.pk;
+  assertWritable(table, ctx);
 
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);
@@ -118,6 +120,7 @@ export async function rowDeleteRoute(
 ): Promise<TapemarkResponse> {
   const table = req.params.table;
   const pkParam = req.params.pk;
+  assertWritable(table, ctx);
 
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);

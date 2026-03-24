@@ -4,6 +4,7 @@ import { Flash } from "../components/Flash";
 import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { ConfigStore } from "../config";
+import { assertWritable } from "./guard";
 import type {
   ColumnConfig,
   TableConfig,
@@ -64,6 +65,7 @@ export async function tableConfigUpdateRoute(
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
   const table = req.params.table;
+  assertWritable(table, ctx);
 
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);

@@ -14,11 +14,20 @@ const CURRENT_VERSION = 1;
 export class TapemarkMigrator {
   private initialized = false;
 
-  constructor(private db: Database) {}
+  constructor(
+    private db: Database,
+    private readonly readonlyMode = false,
+  ) {}
 
   /** Ensure tapemark tables exist and are up to date. Idempotent. */
   async ensureReady(): Promise<void> {
     if (this.initialized) return;
+
+    // In readonly mode, skip all writes — tapemark tables may not exist
+    if (this.readonlyMode) {
+      this.initialized = true;
+      return;
+    }
 
     const hasMetaTable = await this.tableExists("_tapemark_meta");
 

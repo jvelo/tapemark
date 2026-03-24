@@ -112,7 +112,7 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
 
   function getMigrator(db: Database): TapemarkMigrator {
     if (!migrator) {
-      migrator = new TapemarkMigrator(db);
+      migrator = new TapemarkMigrator(db, options.readonly);
     }
     return migrator;
   }

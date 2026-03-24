@@ -1,4 +1,5 @@
 import { TableRepository } from "../repository";
+import { assertWritable } from "./guard";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 export async function bulkDeleteRoute(
@@ -6,6 +7,7 @@ export async function bulkDeleteRoute(
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
   const table = req.params.table;
+  assertWritable(table, ctx);
   const repo = new TableRepository(ctx.db);
 
   let pks: string[] = [];

@@ -47,9 +47,11 @@ export async function rowsRoute(
           {table} <span class="tm-muted">({result.total})</span>
         </h2>
         <div class="tm-actions">
-          <a href={`${ctx.prefix}/${table}/_config`} class="tm-btn">
-            config
-          </a>
+          {!ctx.readonly && (
+            <a href={`${ctx.prefix}/${table}/_config`} class="tm-btn">
+              config
+            </a>
+          )}
           {hasPk && !isReadonly && (
             <a
               href={`${ctx.prefix}/${table}/new`}
