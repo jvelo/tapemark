@@ -17,9 +17,13 @@
 body {
   margin: 0;
   padding: 0;
+  overscroll-behavior: none;
 }
 
 /* Root container */
+html {
+  overscroll-behavior: none;
+}
 .tm {
   font-family: "Departure Mono", "IBM Plex Mono", monospace;
   font-size: 0.81rem;
@@ -63,7 +67,6 @@ body {
 /* Body */
 .tm-body {
   padding: 0.9rem;
-  max-width: 1200px;
 }
 
 .tm-section-title {
@@ -97,7 +100,11 @@ body {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.72rem;
-  table-layout: fixed;
+  table-layout: auto;
+}
+.tm-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
 }
 .tm th {
   text-align: left;
@@ -112,7 +119,7 @@ body {
 .tm td {
   padding: 0.27rem 0.45rem;
   border-bottom: 1px solid var(--tm-border);
-  max-width: 18rem;
+  max-width: 24rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

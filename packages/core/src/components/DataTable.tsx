@@ -72,6 +72,7 @@ export function DataTable({
   }
 
   return (
+    <div class="tm-table-scroll">
     <form method="post" action={`${linkBase}/_bulk-delete`} id="tm-bulk-form">
       <input type="hidden" name="page" value={String(page)} />
       <table>
@@ -129,5 +130,6 @@ export function DataTable({
         </tbody>
       </table>
     </form>
+    </div>
   );
 }
