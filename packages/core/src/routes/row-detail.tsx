@@ -48,11 +48,14 @@ export async function rowDetailRoute(
       <RowForm
         columns={tableInfo.columns}
         primaryKey={tableInfo.primaryKey}
+        foreignKeys={tableInfo.foreignKeys}
         values={row}
         action={`${ctx.prefix}/${table}/${pkParam}`}
         submitLabel="save"
         formId={isReadonly ? undefined : "tm-edit-form"}
         tableConfig={tableConfig}
+        displayTypes={ctx.displayTypes}
+        prefix={ctx.prefix}
       />
       {!isReadonly && (
         <div class="tm-row-actions">

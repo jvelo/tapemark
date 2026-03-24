@@ -22,5 +22,14 @@ declare namespace preact.JSX {
       "data-height"?: string;
       "data-preview"?: string;
     };
+    "tm-modal": preact.JSX.HTMLAttributes<HTMLElement> & {
+      "data-title"?: string;
+    };
+    "tm-reference-input": preact.JSX.HTMLAttributes<HTMLElement> & {
+      "data-table"?: string;
+      "data-column"?: string;
+      "data-value"?: string;
+      "data-label-column"?: string;
+    };
   }
 }
