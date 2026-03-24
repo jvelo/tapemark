@@ -3,6 +3,7 @@ import { RowForm } from "../components/RowForm";
 import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, encodePk } from "../repository";
+import { ConfigStore } from "../config";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 export async function rowCreateRoute(
@@ -13,6 +14,8 @@ export async function rowCreateRoute(
 
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);
+  const configStore = new ConfigStore(ctx.db);
+  const tableConfig = await configStore.getTableConfig(table);
 
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },
@@ -35,6 +38,7 @@ export async function rowCreateRoute(
         primaryKey={tableInfo.primaryKey}
         action={`${ctx.prefix}/${table}/new`}
         submitLabel="create"
+        tableConfig={tableConfig}
       />
     </TapemarkLayout>,
   );

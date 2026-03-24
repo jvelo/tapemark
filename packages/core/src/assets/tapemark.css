@@ -302,6 +302,11 @@ body {
   border-color: #333;
   cursor: not-allowed;
 }
+.tm-field input[type="color"] {
+  height: 2rem;
+  padding: 0.18rem;
+  cursor: pointer;
+}
 .tm-field-hint {
   font-size: 0.54rem;
   opacity: 0.35;

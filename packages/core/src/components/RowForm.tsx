@@ -1,4 +1,4 @@
-import type { CellValue, Column } from "../types";
+import type { CellValue, Column, ColumnConfig, TableConfig } from "../types";
 
 interface RowFormProps {
   columns: Column[];
@@ -8,17 +8,38 @@ interface RowFormProps {
   submitLabel: string;
   /** Form id for external submit buttons. When set, hides the built-in submit. */
   formId?: string;
+  /** Table config for display-type-aware editor inference. */
+  tableConfig?: TableConfig;
 }
 
-function inputType(col: Column): string {
+/** Infer the best HTML input type from display config and column affinity. */
+function resolveInputType(
+  col: Column,
+  cc: ColumnConfig | undefined,
+): { type: string; useTextarea: boolean } {
+  const display = cc?.display;
+
+  // Display-type-aware defaults
+  switch (display) {
+    case "color":
+      return { type: "color", useTextarea: false };
+    case "datetime":
+      return { type: "datetime-local", useTextarea: false };
+    case "link":
+    case "image":
+      return { type: "url", useTextarea: false };
+  }
+
+  // Affinity-based fallback
   if (
     col.affinity === "integer" ||
     col.affinity === "real" ||
     col.affinity === "numeric"
   ) {
-    return "number";
+    return { type: "number", useTextarea: false };
   }
-  return "text";
+
+  return { type: "text", useTextarea: col.affinity === "text" };
 }
 
 function isLongText(value: unknown): boolean {
@@ -32,6 +53,7 @@ export function RowForm({
   action,
   submitLabel,
   formId,
+  tableConfig,
 }: RowFormProps) {
   const isEdit = !!values;
   const pkSet = new Set(primaryKey);
@@ -43,9 +65,10 @@ export function RowForm({
         const strVal = val === null || val === undefined ? "" : String(val);
         const isPk = pkSet.has(col.name);
         const readOnly = isPk && isEdit;
-        const type = inputType(col);
-        const useTextarea =
-          isLongText(val) || col.affinity === "text";
+        const cc = tableConfig?.columns?.[col.name];
+        const { type, useTextarea } = resolveInputType(col, cc);
+        const shouldTextarea =
+          useTextarea || isLongText(val);
 
         return (
           <div class="tm-field">
@@ -53,7 +76,7 @@ export function RowForm({
               {col.name}
               {!col.nullable ? " *" : ""}
             </label>
-            {useTextarea && !readOnly ? (
+            {shouldTextarea && !readOnly ? (
               <textarea
                 id={`f-${col.name}`}
                 name={col.name}

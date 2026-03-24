@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { Hono } from "hono";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
-import { createAdmin } from "../index";
+import { tapemark } from "../index";
 import type { Database } from "@jvelo/tapemark";
 
 const SCHEMA = `
@@ -27,7 +27,7 @@ describe("Hono adapter", () => {
     app = new Hono();
     app.route(
       "/admin",
-      createAdmin({
+      tapemark({
         db,
         prefix: "/admin",
       }),
@@ -120,7 +120,7 @@ describe("Hono adapter", () => {
     const restrictedApp = new Hono();
     restrictedApp.route(
       "/admin",
-      createAdmin({
+      tapemark({
         db,
         prefix: "/admin",
         authorize: async () => false,
@@ -135,7 +135,7 @@ describe("Hono adapter", () => {
     const authApp = new Hono();
     authApp.route(
       "/admin",
-      createAdmin({
+      tapemark({
         db,
         prefix: "/admin",
         authorize: async () => true,
@@ -150,7 +150,7 @@ describe("Hono adapter", () => {
     const fnApp = new Hono();
     fnApp.route(
       "/admin",
-      createAdmin({
+      tapemark({
         db: () => db,
         prefix: "/admin",
       }),

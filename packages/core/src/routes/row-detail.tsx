@@ -4,6 +4,7 @@ import { Flash } from "../components/Flash";
 import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, decodePk, encodePk } from "../repository";
+import { ConfigStore } from "../config";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 export async function rowDetailRoute(
@@ -16,8 +17,10 @@ export async function rowDetailRoute(
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);
   const repo = new TableRepository(ctx.db);
+  const configStore = new ConfigStore(ctx.db);
   const pkValues = decodePk(tableInfo.primaryKey, pkParam);
   const row = await repo.getRow(table, pkValues);
+  const tableConfig = await configStore.getTableConfig(table);
 
   const isView = tableInfo.kind === "view";
   const isReadonly = isView || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
@@ -48,6 +51,7 @@ export async function rowDetailRoute(
         action={`${ctx.prefix}/${table}/${pkParam}`}
         submitLabel="save"
         formId={isReadonly ? undefined : "tm-edit-form"}
+        tableConfig={tableConfig}
       />
       {!isReadonly && (
         <div class="tm-row-actions">

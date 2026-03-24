@@ -26,19 +26,19 @@ export interface HonoAdminOptions
 }
 
 /**
- * Creates a Hono sub-app that serves the tapemark admin panel.
+ * Creates a Hono sub-app that serves the tapemark panel.
  *
  * Usage:
  * ```ts
- * import { createAdmin } from "tapemark-hono";
+ * import { tapemark } from "@jvelo/tapemark-hono";
  *
- * app.route("/admin", createAdmin({
+ * app.route("/admin", tapemark({
  *   db: (c) => c.env.DB,
  *   authorize: async (c) => checkAdmin(c),
  * }));
  * ```
  */
-export function createAdmin(opts: HonoAdminOptions): Hono {
+export function tapemark(opts: HonoAdminOptions): Hono {
   const app = new Hono();
   const prefix = opts.prefix ?? "";
 
