@@ -1,6 +1,6 @@
 import { NotFoundError } from "./errors";
 import { computeHash } from "./hash";
-import type { Column, ColumnAffinity, Database, Schema, Table } from "./types";
+import type { Column, ColumnAffinity, Database, ForeignKey, Schema, Table } from "./types";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -75,6 +75,17 @@ interface PragmaColumnRow {
   pk: number;
 }
 
+/** Raw PRAGMA foreign_key_list row. */
+interface PragmaForeignKeyRow {
+  id: number;
+  seq: number;
+  table: string;
+  from: string;
+  to: string;
+  on_update: string;
+  on_delete: string;
+}
+
 export class SchemaIntrospector {
   constructor(private db: Database) {}
 
@@ -118,6 +129,37 @@ export class SchemaIntrospector {
     }
   }
 
+  /** Foreign keys for a table (views have none). */
+  async getForeignKeys(name: string): Promise<ForeignKey[]> {
+    const rows = await this.db
+      .prepare(`PRAGMA foreign_key_list("${name}")`)
+      .all<PragmaForeignKeyRow>();
+
+    // Group by constraint id, preserving seq order
+    const grouped = new Map<number, PragmaForeignKeyRow[]>();
+    for (const row of rows) {
+      const group = grouped.get(row.id);
+      if (group) {
+        group.push(row);
+      } else {
+        grouped.set(row.id, [row]);
+      }
+    }
+
+    const result: ForeignKey[] = [];
+    for (const group of grouped.values()) {
+      group.sort((a, b) => a.seq - b.seq);
+      result.push({
+        columns: group.map((r) => r.from),
+        referencedTable: group[0].table,
+        referencedColumns: group.map((r) => r.to),
+        onUpdate: group[0].on_update,
+        onDelete: group[0].on_delete,
+      });
+    }
+    return result;
+  }
+
   /** Full column and PK info for a single table or view. */
   async getTable(name: string): Promise<Table> {
     await this.assertTable(name);
@@ -140,13 +182,15 @@ export class SchemaIntrospector {
       primaryKeyPosition: row.pk > 0 ? row.pk : null,
     }));
 
-    // Views don't have primary keys
+    // Views don't have primary keys or foreign keys
     const primaryKey = kind === "view"
       ? []
       : columns
           .filter((c) => c.primaryKeyPosition !== null)
           .sort((a, b) => a.primaryKeyPosition! - b.primaryKeyPosition!)
           .map((c) => c.name);
+
+    const foreignKeys = kind === "view" ? [] : await this.getForeignKeys(name);
 
     const countRow = await this.db
       .prepare(`SELECT COUNT(*) as cnt FROM "${name}"`)
@@ -157,6 +201,7 @@ export class SchemaIntrospector {
       kind,
       columns,
       primaryKey,
+      foreignKeys,
       rowCount: countRow?.cnt ?? 0,
     };
   }

@@ -6,6 +6,7 @@ import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, encodePk } from "../repository";
 import { ConfigStore } from "../config";
+import { resolveReferenceLabels } from "../references";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 export async function rowsRoute(
@@ -21,7 +22,10 @@ export async function rowsRoute(
   const repo = new TableRepository(ctx.db);
   const result = await repo.getRows(table, page, pageSize);
   const configStore = new ConfigStore(ctx.db);
-  const tableConfig = await configStore.getTableConfig(table);
+  const baseConfig = await configStore.getTableConfig(table);
+  const tableConfig = await resolveReferenceLabels(
+    ctx.db, tableInfo.foreignKeys, result.rows, baseConfig, ctx.prefix,
+  );
 
   const hasPk = tableInfo.primaryKey.length > 0;
   const isView = tableInfo.kind === "view";

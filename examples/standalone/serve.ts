@@ -85,13 +85,34 @@ function createDemoDb(): BetterSqlite3.Database {
     INSERT INTO tags (name, color) VALUES ('tech', '#d94a4a');
     INSERT INTO tags (name, color) VALUES ('design', '#4ad94a');
 
+    CREATE TABLE comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL REFERENCES posts(id),
+      author_id INTEGER NOT NULL REFERENCES users(id),
+      body TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+    INSERT INTO comments (post_id, author_id, body) VALUES (1, 2, 'Great post!');
+    INSERT INTO comments (post_id, author_id, body) VALUES (1, 3, 'Thanks for sharing.');
+    INSERT INTO comments (post_id, author_id, body) VALUES (2, 1, 'Looking forward to the final version.');
+
+    CREATE TABLE post_tags (
+      post_id INTEGER NOT NULL REFERENCES posts(id),
+      tag_id INTEGER NOT NULL REFERENCES tags(id),
+      PRIMARY KEY (post_id, tag_id)
+    );
+    INSERT INTO post_tags (post_id, tag_id) VALUES (1, 1);
+    INSERT INTO post_tags (post_id, tag_id) VALUES (1, 2);
+    INSERT INTO post_tags (post_id, tag_id) VALUES (2, 2);
+    INSERT INTO post_tags (post_id, tag_id) VALUES (3, 3);
+
     CREATE VIEW published_posts AS
       SELECT posts.id, posts.title, posts.cover_image, users.name AS author
       FROM posts
       JOIN users ON users.id = posts.author_id
       WHERE posts.published = 1;
   `);
-  console.log("Using in-memory demo database (4 tables, 1 view)");
+  console.log("Using in-memory demo database (6 tables, 1 view)");
   return db;
 }
 
