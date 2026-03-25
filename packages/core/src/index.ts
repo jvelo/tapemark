@@ -21,6 +21,7 @@ export type {
   TapemarkRequest,
   TapemarkResponse,
   ThemeName,
+  ConstraintMode,
 } from "./types";
 
 // Themes

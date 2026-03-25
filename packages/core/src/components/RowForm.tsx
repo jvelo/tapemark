@@ -1,4 +1,4 @@
-import type { CellValue, Column, ColumnConfig, DisplayType, ForeignKey, TableConfig } from "../types";
+import type { CellValue, Column, ColumnConfig, ConstraintMode, DisplayType, ForeignKey, TableConfig } from "../types";
 
 interface RowFormProps {
   columns: Column[];
@@ -15,6 +15,8 @@ interface RowFormProps {
   displayTypes?: Map<string, DisplayType>;
   /** URL prefix for resolving lookup endpoints. */
   prefix?: string;
+  /** Constraint enforcement mode. When "relaxed", required attributes are skipped. */
+  constraints?: ConstraintMode;
 }
 
 /** Infer the best HTML input type from display config and column affinity. */
@@ -62,9 +64,11 @@ export function RowForm({
   tableConfig,
   displayTypes,
   prefix,
+  constraints = "enforce",
 }: RowFormProps) {
   const isEdit = !!values;
   const pkSet = new Set(primaryKey);
+  const enforcing = constraints === "enforce";
 
   // Build a map from column name to its single-column FK
   const fkByColumn = new Map<string, ForeignKey>();
@@ -101,7 +105,7 @@ export function RowForm({
             <div class="tm-field">
               <label for={`f-${col.name}`}>
                 {col.name}
-                {!col.nullable ? " *" : ""}
+                {enforcing && !col.nullable ? " *" : ""}
               </label>
               <div dangerouslySetInnerHTML={{ __html: html }} />
               <span class="tm-field-hint">
@@ -119,7 +123,7 @@ export function RowForm({
             <div class="tm-field">
               <label for={`f-${col.name}`}>
                 {col.name}
-                {!col.nullable ? " *" : ""}
+                {enforcing && !col.nullable ? " *" : ""}
               </label>
               <div dangerouslySetInnerHTML={{ __html: html }} />
               <span class="tm-field-hint">
@@ -138,13 +142,13 @@ export function RowForm({
           <div class="tm-field">
             <label for={`f-${col.name}`}>
               {col.name}
-              {!col.nullable ? " *" : ""}
+              {enforcing && !col.nullable ? " *" : ""}
             </label>
             {shouldTextarea && !readOnly ? (
               <textarea
                 id={`f-${col.name}`}
                 name={col.name}
-                required={!col.nullable && !isPk}
+                required={enforcing && !col.nullable && !isPk}
               >
                 {strVal}
               </textarea>
@@ -155,7 +159,7 @@ export function RowForm({
                 type={type}
                 value={strVal}
                 disabled={readOnly}
-                required={!col.nullable && !isPk && !isEdit}
+                required={enforcing && !col.nullable && !isPk && !isEdit}
                 placeholder={
                   col.defaultValue
                     ? `default: ${col.defaultValue}`

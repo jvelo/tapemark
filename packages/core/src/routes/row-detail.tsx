@@ -54,6 +54,7 @@ export async function rowDetailRoute(
         submitLabel="save"
         formId={isReadonly ? undefined : "tm-edit-form"}
         tableConfig={tableConfig}
+        constraints={ctx.constraints}
         displayTypes={ctx.displayTypes}
         prefix={ctx.prefix}
       />

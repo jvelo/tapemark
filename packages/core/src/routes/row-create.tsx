@@ -41,6 +41,7 @@ export async function rowCreateRoute(
         action={`${ctx.prefix}/${table}/new`}
         submitLabel="create"
         tableConfig={tableConfig}
+        constraints={ctx.constraints}
         displayTypes={ctx.displayTypes}
         prefix={ctx.prefix}
       />

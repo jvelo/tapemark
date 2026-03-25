@@ -5,7 +5,7 @@ import { defineCommand } from "citty";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
 import { createAdminCore } from "@jvelo/tapemark";
-import type { TapemarkCore } from "@jvelo/tapemark";
+import type { ConstraintMode, TapemarkCore, ThemeName } from "@jvelo/tapemark";
 
 interface DbEntry {
   name: string;
@@ -34,6 +34,11 @@ export const serveCommand = defineCommand({
       description: "Theme (plex or depart)",
       default: "plex",
     },
+    constraints: {
+      type: "string",
+      description: "Constraint mode (enforce or relaxed)",
+      default: "enforce",
+    },
     _: {
       type: "positional",
       description: "SQLite file paths (supports globs)",
@@ -43,10 +48,11 @@ export const serveCommand = defineCommand({
   async run({ args, rawArgs }) {
     const port = parseInt(args.port, 10);
     const readonly = args.readonly;
-    const theme = (args.theme === "depart" ? "depart" : "plex") as "plex" | "depart";
+    const theme: ThemeName = args.theme === "depart" ? "depart" : "plex";
+    const constraints: ConstraintMode = args.constraints === "relaxed" ? "relaxed" : "enforce";
     // citty positional args: extract file paths from rawArgs (skip flags)
     const rawPaths = (rawArgs ?? []).filter(
-      (a) => !a.startsWith("-") && a !== String(args.port) && a !== args.theme,
+      (a) => !a.startsWith("-") && a !== String(args.port) && a !== args.theme && a !== args.constraints,
     );
 
     // Resolve file paths (expand globs)
@@ -81,6 +87,7 @@ export const serveCommand = defineCommand({
         name: filePaths.length > 1 ? name : "tapemark",
         readonly,
         theme,
+        constraints,
       });
 
       return { name, path: absPath, core };

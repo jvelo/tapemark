@@ -7,7 +7,7 @@ import { rowDetailRoute, rowUpdateRoute, rowDeleteRoute } from "./routes/row-det
 import { rowCreateRoute, rowInsertRoute } from "./routes/row-create";
 import { tableConfigRoute, tableConfigUpdateRoute } from "./routes/table-config";
 import { bulkDeleteRoute } from "./routes/bulk-delete";
-import { rowViewRoute } from "./routes/row-view";
+import { rowViewRoute, rowViewUpdateRoute, rowViewDeleteRoute } from "./routes/row-view";
 import { lookupRoute } from "./routes/lookup";
 import { loadAsset } from "./assets/load";
 import { themes, defaultTheme } from "./themes";
@@ -117,7 +117,7 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
 
   function getMigrator(db: Database): TapemarkMigrator {
     if (!migrator) {
-      migrator = new TapemarkMigrator(db, options.readonly);
+      migrator = new TapemarkMigrator(db, options.readonly, options.constraints ?? "enforce");
     }
     return migrator;
   }
@@ -133,6 +133,7 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
       siteName: options.siteName ?? "site",
       name: options.name ?? "tapemark",
       readonly: options.readonly ?? false,
+      constraints: options.constraints ?? "enforce",
       theme: options.theme ?? defaultTheme,
       fonts: options.fonts !== false,
     };
@@ -183,6 +184,18 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
           html: `<h1>${err.message}</h1>`,
         };
       }
+      // For POST mutations, redirect back with the error as a flash message
+      if (req.method === "POST") {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        // Redirect to the GET version of the same path (strip /delete suffix)
+        const redirectPath = req.path.replace(/\/delete$/, "");
+        const location = `${prefix}${redirectPath}?flash=error&msg=${encodeURIComponent(msg)}`;
+        return {
+          status: 302,
+          headers: { location },
+          redirect: location,
+        };
+      }
       throw err;
     }
   }
@@ -229,6 +242,8 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
   addRoute("GET", "/:table/_lookup", lookupRoute);
   addRoute("POST", "/:table/_bulk-delete", bulkDeleteRoute);
   addRoute("GET", "/:table/_row/:index", rowViewRoute);
+  addRoute("POST", "/:table/_row/:index", rowViewUpdateRoute);
+  addRoute("POST", "/:table/_row/:index/delete", rowViewDeleteRoute);
   addRoute("GET", "/:table/:pk", rowDetailRoute);
   addRoute("POST", "/:table/:pk", rowUpdateRoute);
   addRoute("POST", "/:table/:pk/delete", rowDeleteRoute);

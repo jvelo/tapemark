@@ -1,5 +1,5 @@
 import { computeHash } from "./hash";
-import type { Database } from "./types";
+import type { ConstraintMode, Database } from "./types";
 
 /**
  * Current schema version for tapemark's internal tables.
@@ -17,6 +17,7 @@ export class TapemarkMigrator {
   constructor(
     private db: Database,
     private readonly readonlyMode = false,
+    private readonly constraints: ConstraintMode = "enforce",
   ) {}
 
   /** Ensure tapemark tables exist and are up to date. Idempotent. */
@@ -25,8 +26,17 @@ export class TapemarkMigrator {
 
     // In readonly mode, skip all writes — tapemark tables may not exist
     if (this.readonlyMode) {
+      // Still set FK pragma if enforcing (it's a read-side check too)
+      if (this.constraints === "enforce") {
+        await this.db.prepare("PRAGMA foreign_keys = ON").run();
+      }
       this.initialized = true;
       return;
+    }
+
+    // Enable FK constraint enforcement when in enforce mode
+    if (this.constraints === "enforce") {
+      await this.db.prepare("PRAGMA foreign_keys = ON").run();
     }
 
     const hasMetaTable = await this.tableExists("_tapemark_meta");

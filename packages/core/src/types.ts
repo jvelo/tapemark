@@ -199,9 +199,14 @@ export interface TapemarkOptions {
   fonts?: boolean;
   /** Theme name. Defaults to "plex". */
   theme?: ThemeName;
+  /** Constraint enforcement mode. Defaults to "enforce". */
+  constraints?: ConstraintMode;
 }
 
 export type ThemeName = "plex" | "depart";
+
+/** "enforce" enables FK checks and HTML required attributes. "relaxed" disables both. */
+export type ConstraintMode = "enforce" | "relaxed";
 
 /**
  * Context passed to route handlers. Built once per request from
@@ -214,6 +219,7 @@ export interface TapemarkContext {
   siteName: string;
   name: string;
   readonly: boolean;
+  constraints: ConstraintMode;
   theme: ThemeName;
   fonts: boolean;
   displayTypes: Map<string, DisplayType>;

@@ -1,8 +1,29 @@
 import { TapemarkLayout } from "../components/TapemarkLayout";
+import { RowForm } from "../components/RowForm";
+import { Flash } from "../components/Flash";
 import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
+import { ConfigStore } from "../config";
 import { NotFoundError } from "../errors";
+import { castValue } from "../repository";
+import { assertWritable } from "./guard";
 import type { CellValue, TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
+
+async function getRowByIndex(
+  ctx: TapemarkContext,
+  table: string,
+  index: number,
+): Promise<Record<string, CellValue>> {
+  const rows = await ctx.db
+    .prepare(`SELECT rowid AS _rowid, * FROM "${table}" LIMIT 1 OFFSET ?`)
+    .bind(index)
+    .all<Record<string, CellValue>>();
+
+  if (rows.length === 0) {
+    throw new NotFoundError("Row not found");
+  }
+  return rows[0];
+}
 
 export async function rowViewRoute(
   req: TapemarkRequest,
@@ -17,17 +38,12 @@ export async function rowViewRoute(
 
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);
+  const configStore = new ConfigStore(ctx.db);
+  const tableConfig = await configStore.getTableConfig(table);
+  const row = await getRowByIndex(ctx, table, index);
 
-  const rows = await ctx.db
-    .prepare(`SELECT * FROM "${table}" LIMIT 1 OFFSET ?`)
-    .bind(index)
-    .all<Record<string, CellValue>>();
-
-  if (rows.length === 0) {
-    throw new NotFoundError("Row not found");
-  }
-
-  const row = rows[0];
+  const isView = tableInfo.kind === "view";
+  const isReadonly = isView || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
 
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },
@@ -45,26 +61,41 @@ export async function rowViewRoute(
       crumbs={crumbs}
       scripts={ctx.scripts}
     >
-      <h2 class="tm-section-title">view row</h2>
-      <div class="tm-form">
-        {tableInfo.columns.map((col) => {
-          const val = row[col.name];
-          const strVal = val === null || val === undefined ? "" : String(val);
-          return (
-            <div class="tm-field">
-              <label>{col.name}</label>
-              <input
-                type="text"
-                value={strVal}
-                disabled
-              />
-              <span class="tm-field-hint">
-                {col.rawType || "TEXT"}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <Flash type={req.query.flash} message={req.query.msg} />
+      <h2 class="tm-section-title">
+        {isReadonly ? "view row" : "edit row"}
+      </h2>
+      <RowForm
+        columns={tableInfo.columns}
+        primaryKey={tableInfo.primaryKey}
+        foreignKeys={tableInfo.foreignKeys}
+        values={row}
+        action={`${ctx.prefix}/${table}/_row/${index}`}
+        submitLabel="save"
+        formId={isReadonly ? undefined : "tm-edit-form"}
+        tableConfig={tableConfig}
+        constraints={ctx.constraints}
+        displayTypes={ctx.displayTypes}
+        prefix={ctx.prefix}
+      />
+      {!isReadonly && (
+        <div class="tm-row-actions">
+          <button type="submit" form="tm-edit-form" class="tm-btn tm-btn-primary">
+            save
+          </button>
+          <form
+            method="post"
+            action={`${ctx.prefix}/${table}/_row/${index}/delete`}
+            class="tm-delete-inline"
+          >
+            <tm-confirm-button data-message={`delete row ${index}?`}>
+              <button type="submit" class="tm-btn tm-btn-danger">
+                delete row
+              </button>
+            </tm-confirm-button>
+          </form>
+        </div>
+      )}
     </TapemarkLayout>,
   );
 
@@ -72,5 +103,93 @@ export async function rowViewRoute(
     status: 200,
     headers: { "content-type": "text/html; charset=utf-8" },
     html,
+  };
+}
+
+export async function rowViewUpdateRoute(
+  req: TapemarkRequest,
+  ctx: TapemarkContext,
+): Promise<TapemarkResponse> {
+  const table = req.params.table;
+  const index = parseInt(req.params.index, 10);
+  assertWritable(table, ctx);
+
+  const introspector = new SchemaIntrospector(ctx.db);
+  const tableInfo = await introspector.getTable(table);
+
+  // Fetch the current row to build a WHERE clause matching all original values
+  const originalRow = await getRowByIndex(ctx, table, index);
+  const rowid = originalRow._rowid;
+
+  // Build SET clause from form data
+  const columnMap = new Map(tableInfo.columns.map((c) => [c.name, c]));
+  const entries = Object.entries(req.body ?? {}).filter(
+    ([key]) => columnMap.has(key),
+  );
+  const setClause = entries.map(([k]) => `"${k}" = ?`).join(", ");
+  const setValues = entries.map(([k, v]) =>
+    castValue(String(v), columnMap.get(k)!),
+  );
+
+  if (rowid !== undefined && rowid !== null) {
+    // Use rowid for the update — most reliable
+    await ctx.db
+      .prepare(`UPDATE "${table}" SET ${setClause} WHERE rowid = ?`)
+      .bind(...setValues, rowid)
+      .run();
+  } else {
+    // Fallback for WITHOUT ROWID tables: match all original column values
+    const whereCols = tableInfo.columns.map((c) => `"${c.name}" IS ?`).join(" AND ");
+    const whereValues = tableInfo.columns.map((c) => originalRow[c.name] ?? null);
+    await ctx.db
+      .prepare(`UPDATE "${table}" SET ${setClause} WHERE ${whereCols}`)
+      .bind(...setValues, ...whereValues)
+      .run();
+  }
+
+  return {
+    status: 302,
+    headers: {
+      location: `${ctx.prefix}/${table}/_row/${index}?flash=success&msg=${encodeURIComponent("row updated")}`,
+    },
+    redirect: `${ctx.prefix}/${table}/_row/${index}?flash=success&msg=${encodeURIComponent("row updated")}`,
+  };
+}
+
+export async function rowViewDeleteRoute(
+  req: TapemarkRequest,
+  ctx: TapemarkContext,
+): Promise<TapemarkResponse> {
+  const table = req.params.table;
+  assertWritable(table, ctx);
+  const index = parseInt(req.params.index, 10);
+
+  // Fetch row to get rowid
+  const originalRow = await getRowByIndex(ctx, table, index);
+  const rowid = originalRow._rowid;
+
+  if (rowid !== undefined && rowid !== null) {
+    await ctx.db
+      .prepare(`DELETE FROM "${table}" WHERE rowid = ?`)
+      .bind(rowid)
+      .run();
+  } else {
+    // Fallback for WITHOUT ROWID tables: match all original column values
+    const introspector = new SchemaIntrospector(ctx.db);
+    const tableInfo = await introspector.getTable(table);
+    const whereCols = tableInfo.columns.map((c) => `"${c.name}" IS ?`).join(" AND ");
+    const whereValues = tableInfo.columns.map((c) => originalRow[c.name] ?? null);
+    await ctx.db
+      .prepare(`DELETE FROM "${table}" WHERE ${whereCols}`)
+      .bind(...whereValues)
+      .run();
+  }
+
+  return {
+    status: 302,
+    headers: {
+      location: `${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}`,
+    },
+    redirect: `${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}`,
   };
 }
