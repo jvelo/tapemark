@@ -53,6 +53,7 @@ export async function rowDetailRoute(
         action={`${ctx.prefix}/${table}/${pkParam}`}
         submitLabel="save"
         formId={isReadonly ? undefined : "tm-edit-form"}
+        formReadonly={isReadonly}
         tableConfig={tableConfig}
         constraints={ctx.constraints}
         displayTypes={ctx.displayTypes}

@@ -13,9 +13,14 @@ async function getRowByIndex(
   ctx: TapemarkContext,
   table: string,
   index: number,
+  hasRowid: boolean,
 ): Promise<Record<string, CellValue>> {
+  const query = hasRowid
+    ? `SELECT rowid AS _rowid, * FROM "${table}" LIMIT 1 OFFSET ?`
+    : `SELECT * FROM "${table}" LIMIT 1 OFFSET ?`;
+
   const rows = await ctx.db
-    .prepare(`SELECT rowid AS _rowid, * FROM "${table}" LIMIT 1 OFFSET ?`)
+    .prepare(query)
     .bind(index)
     .all<Record<string, CellValue>>();
 
@@ -40,7 +45,7 @@ export async function rowViewRoute(
   const tableInfo = await introspector.getTable(table);
   const configStore = new ConfigStore(ctx.db);
   const tableConfig = await configStore.getTableConfig(table);
-  const row = await getRowByIndex(ctx, table, index);
+  const row = await getRowByIndex(ctx, table, index, tableInfo.hasRowid);
 
   const isView = tableInfo.kind === "view";
   const isReadonly = isView || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
@@ -73,6 +78,7 @@ export async function rowViewRoute(
         action={`${ctx.prefix}/${table}/_row/${index}`}
         submitLabel="save"
         formId={isReadonly ? undefined : "tm-edit-form"}
+        formReadonly={isReadonly}
         tableConfig={tableConfig}
         constraints={ctx.constraints}
         displayTypes={ctx.displayTypes}
@@ -117,8 +123,8 @@ export async function rowViewUpdateRoute(
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);
 
-  // Fetch the current row to build a WHERE clause matching all original values
-  const originalRow = await getRowByIndex(ctx, table, index);
+  // Fetch the current row to get rowid for WHERE clause
+  const originalRow = await getRowByIndex(ctx, table, index, tableInfo.hasRowid);
   const rowid = originalRow._rowid;
 
   // Build SET clause from form data
@@ -165,7 +171,9 @@ export async function rowViewDeleteRoute(
   const index = parseInt(req.params.index, 10);
 
   // Fetch row to get rowid
-  const originalRow = await getRowByIndex(ctx, table, index);
+  const introspector = new SchemaIntrospector(ctx.db);
+  const tableInfo = await introspector.getTable(table);
+  const originalRow = await getRowByIndex(ctx, table, index, tableInfo.hasRowid);
   const rowid = originalRow._rowid;
 
   if (rowid !== undefined && rowid !== null) {

@@ -192,6 +192,18 @@ export class SchemaIntrospector {
 
     const foreignKeys = kind === "view" ? [] : await this.getForeignKeys(name);
 
+    // Detect WITHOUT ROWID by checking the CREATE TABLE SQL
+    let hasRowid = kind === "table"; // views never have rowid
+    if (kind === "table") {
+      const sqlRow = await this.db
+        .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name=?")
+        .bind(name)
+        .first<{ sql: string }>();
+      if (sqlRow?.sql && /WITHOUT\s+ROWID/i.test(sqlRow.sql)) {
+        hasRowid = false;
+      }
+    }
+
     const countRow = await this.db
       .prepare(`SELECT COUNT(*) as cnt FROM "${name}"`)
       .first<{ cnt: number }>();
@@ -199,6 +211,7 @@ export class SchemaIntrospector {
     return {
       name,
       kind,
+      hasRowid,
       columns,
       primaryKey,
       foreignKeys,

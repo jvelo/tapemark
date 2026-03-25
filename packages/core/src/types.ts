@@ -52,6 +52,8 @@ export interface Table {
   name: string;
   /** Whether this is a table or a view. */
   kind: "table" | "view";
+  /** Whether the table has an implicit rowid column. False for views and WITHOUT ROWID tables. */
+  hasRowid: boolean;
   columns: Column[];
   /** Ordered list of primary key column names. */
   primaryKey: string[];

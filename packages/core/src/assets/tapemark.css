@@ -130,10 +130,7 @@ html {
   overflow: visible;
 }
 .tm tr:hover td {
-  background: var(--tm-code-bg);
-}
-.tm tr:hover td a {
-  color: var(--tm-accent);
+  background: #252525;
 }
 .tm td a {
   text-decoration: none;

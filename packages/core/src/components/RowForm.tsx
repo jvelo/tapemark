@@ -17,6 +17,8 @@ interface RowFormProps {
   prefix?: string;
   /** Constraint enforcement mode. When "relaxed", required attributes are skipped. */
   constraints?: ConstraintMode;
+  /** When true, hides the submit button (view-only mode). */
+  formReadonly?: boolean;
 }
 
 /** Infer the best HTML input type from display config and column affinity. */
@@ -65,6 +67,7 @@ export function RowForm({
   displayTypes,
   prefix,
   constraints = "enforce",
+  formReadonly = false,
 }: RowFormProps) {
   const isEdit = !!values;
   const pkSet = new Set(primaryKey);
@@ -179,7 +182,7 @@ export function RowForm({
           </div>
         );
       })}
-      {!formId && (
+      {!formId && !formReadonly && (
         <div class="tm-actions">
           <button type="submit" class="tm-btn tm-btn-primary">
             {submitLabel}
