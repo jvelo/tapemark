@@ -91,6 +91,58 @@ describe("createTapemark", () => {
     expect(res.html).toContain("Alice");
   });
 
+  describe("styled error pages", () => {
+    it("renders 404 with layout and error styling", async () => {
+      const core = createTapemark({ db });
+      const res = await core.handle(makeReq({ path: "/_tapemark/nonexistent/extra" }));
+      expect(res.status).toBe(404);
+      expect(res.html).toContain("tm-error");
+      expect(res.html).toContain("404");
+      expect(res.html).toContain("Not Found");
+      expect(res.html).toContain("tm-bar");
+      expect(res.html).toContain("styles.css");
+    });
+
+    it("renders 403 with layout and error styling", async () => {
+      const core = createTapemark({
+        db,
+        authorize: async () => false,
+      });
+      const res = await core.handle(makeReq());
+      expect(res.status).toBe(403);
+      expect(res.html).toContain("tm-error");
+      expect(res.html).toContain("403");
+      expect(res.html).toContain("Forbidden");
+      expect(res.html).toContain("tm-bar");
+    });
+
+    it("renders TapemarkError with layout and error message", async () => {
+      const core = createTapemark({ db });
+      const res = await core.handle(makeReq({ path: "/nonexistent_table" }));
+      expect(res.status).toBe(404);
+      expect(res.html).toContain("tm-error");
+      expect(res.html).toContain("tm-bar");
+    });
+
+    it("includes back-to-tables link in error pages", async () => {
+      const core = createTapemark({ db });
+      const res = await core.handle(makeReq({ path: "/_tapemark/nonexistent/extra" }));
+      expect(res.html).toContain("back to tables");
+    });
+
+    it("respects custom name in error pages", async () => {
+      const core = createTapemark({ db, name: "my-admin" });
+      const res = await core.handle(makeReq({ path: "/_tapemark/nonexistent/extra" }));
+      expect(res.html).toContain("my-admin");
+    });
+
+    it("respects prefix in error page links", async () => {
+      const core = createTapemark({ db, prefix: "/admin" });
+      const res = await core.handle(makeReq({ path: "/_tapemark/nonexistent/extra" }));
+      expect(res.html).toContain('href="/admin"');
+    });
+  });
+
   it("serves assets at /_tapemark/* paths", async () => {
     const core = createTapemark({ db });
     const css = await core.handle(makeReq({ path: "/_tapemark/styles.css" }));

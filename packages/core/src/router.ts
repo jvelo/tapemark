@@ -1,4 +1,5 @@
 import { TapemarkError } from "./errors";
+import { renderErrorPage } from "./error-page.jsx";
 import { TapemarkMigrator } from "./migrator";
 import { createDisplayTypeRegistry } from "./display";
 import { tablesRoute } from "./routes/tables";
@@ -140,15 +141,19 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
   }
 
   async function handle(req: TapemarkRequest): Promise<TapemarkResponse> {
+    const errorCtx = {
+      prefix,
+      name: options.name ?? "tapemark",
+      siteUrl: options.siteUrl,
+      siteName: options.siteName ?? "site",
+      scripts: options.scripts,
+    };
+
     // Auth check
     if (options.authorize) {
       const allowed = await options.authorize(req);
       if (!allowed) {
-        return {
-          status: 403,
-          headers: { "content-type": "text/html; charset=utf-8" },
-          html: "<h1>Forbidden</h1>",
-        };
+        return renderErrorPage(403, "Forbidden", errorCtx);
       }
     }
 
@@ -159,11 +164,7 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
     // Match route
     const match = matchRoute(routes, req.method, req.path);
     if (!match) {
-      return {
-        status: 404,
-        headers: { "content-type": "text/html; charset=utf-8" },
-        html: "<h1>Not Found</h1>",
-      };
+      return renderErrorPage(404, "Not Found", errorCtx);
     }
 
     // Inject matched params into the request
@@ -178,11 +179,7 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
       return await match.handler(enrichedReq, ctx);
     } catch (err) {
       if (err instanceof TapemarkError) {
-        return {
-          status: err.status,
-          headers: { "content-type": "text/html; charset=utf-8" },
-          html: `<h1>${err.message}</h1>`,
-        };
+        return renderErrorPage(err.status, err.message, errorCtx);
       }
       // For POST mutations, redirect back with the error as a flash message
       if (req.method === "POST") {
