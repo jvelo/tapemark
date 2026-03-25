@@ -4,6 +4,7 @@ import { defineCommand } from "citty";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
 import { SchemaIntrospector } from "@jvelo/tapemark";
+import type { Database } from "@jvelo/tapemark";
 
 export const inspectCommand = defineCommand({
   meta: {
@@ -14,6 +15,10 @@ export const inspectCommand = defineCommand({
     show: {
       type: "string",
       description: "Show schema for a specific table or view",
+    },
+    sql: {
+      type: "boolean",
+      description: "Output the CREATE statement (use with --show)",
     },
     diff: {
       type: "string",
@@ -43,7 +48,11 @@ export const inspectCommand = defineCommand({
     }
 
     if (args.show) {
-      await showTable(introspector, args.show);
+      if (args.sql) {
+        await showSql(db, args.show);
+      } else {
+        await showTable(introspector, args.show);
+      }
       raw.close();
       return;
     }
@@ -216,6 +225,20 @@ async function diffSchemas(
   console.log(`Target hash: ${schema2.hash.slice(0, 12)}…`);
 
   otherRaw.close();
+}
+
+async function showSql(db: Database, name: string): Promise<void> {
+  const row = await db
+    .prepare("SELECT sql FROM sqlite_master WHERE name = ?")
+    .bind(name)
+    .first<{ sql: string }>();
+
+  if (!row?.sql) {
+    console.error(`No CREATE statement found for "${name}"`);
+    process.exit(1);
+  }
+
+  console.log(row.sql + ";");
 }
 
 // ---------------------------------------------------------------------------
