@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import {
-  createAdminCore,
+  createTapemark,
   type Database,
   type TapemarkOptions,
   type TapemarkRequest,
@@ -55,7 +55,7 @@ export function tapemark(opts: HonoAdminOptions): Hono {
     return opts.db;
   }
 
-  const core = createAdminCore({
+  const core = createTapemark({
     ...opts,
     db: resolveDb,
     authorize: opts.authorize

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { createAdminCore } from "../router";
+import { createTapemark } from "../router";
 import { createTestDb } from "../test-utils";
 import type { Database, TapemarkRequest } from "../types";
 
@@ -18,7 +18,7 @@ function makeReq(overrides: Partial<TapemarkRequest> = {}): TapemarkRequest {
   };
 }
 
-describe("createAdminCore", () => {
+describe("createTapemark", () => {
   let db: Database;
 
   beforeEach(() => {
@@ -26,35 +26,35 @@ describe("createAdminCore", () => {
   });
 
   it("returns 404 for unmatched routes", async () => {
-    const core = createAdminCore({ db });
+    const core = createTapemark({ db });
     // /_tapemark/nonexistent doesn't match any route pattern
     const res = await core.handle(makeReq({ path: "/_tapemark/nonexistent/extra" }));
     expect(res.status).toBe(404);
   });
 
   it("dispatches built-in table list route at /", async () => {
-    const core = createAdminCore({ db });
+    const core = createTapemark({ db });
     const res = await core.handle(makeReq());
     expect(res.status).toBe(200);
     expect(res.html).toContain("users");
   });
 
   it("dispatches parameterized route /:table", async () => {
-    const core = createAdminCore({ db });
+    const core = createTapemark({ db });
     const res = await core.handle(makeReq({ path: "/users" }));
     expect(res.status).toBe(200);
     expect(res.html).toContain("Alice");
   });
 
   it("dispatches nested parameterized route /:table/:pk", async () => {
-    const core = createAdminCore({ db });
+    const core = createTapemark({ db });
     const res = await core.handle(makeReq({ path: "/users/1" }));
     expect(res.status).toBe(200);
     expect(res.html).toContain("Alice");
   });
 
   it("returns 403 when authorize rejects", async () => {
-    const core = createAdminCore({
+    const core = createTapemark({
       db,
       authorize: async () => false,
     });
@@ -63,7 +63,7 @@ describe("createAdminCore", () => {
   });
 
   it("proceeds when authorize allows", async () => {
-    const core = createAdminCore({
+    const core = createTapemark({
       db,
       authorize: async () => true,
     });
@@ -72,7 +72,7 @@ describe("createAdminCore", () => {
   });
 
   it("handles POST /:table/new", async () => {
-    const core = createAdminCore({ db });
+    const core = createTapemark({ db });
     const res = await core.handle(
       makeReq({
         method: "POST",
@@ -85,14 +85,14 @@ describe("createAdminCore", () => {
   });
 
   it("strips trailing slash for matching", async () => {
-    const core = createAdminCore({ db });
+    const core = createTapemark({ db });
     const res = await core.handle(makeReq({ path: "/users/" }));
     expect(res.status).toBe(200);
     expect(res.html).toContain("Alice");
   });
 
   it("serves assets at /_tapemark/* paths", async () => {
-    const core = createAdminCore({ db });
+    const core = createTapemark({ db });
     const css = await core.handle(makeReq({ path: "/_tapemark/styles.css" }));
     expect(css.status).toBe(200);
     expect(css.headers["content-type"]).toContain("text/css");

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { SchemaIntrospector } from "../schema";
 import { createTestDb } from "../test-utils";
-import { createAdminCore } from "../router";
+import { createTapemark } from "../router";
 import { pickLabelColumn } from "../routes/lookup";
 import type { Database, TapemarkRequest } from "../types";
 import type { TapemarkCore } from "../router";
@@ -129,7 +129,7 @@ describe("_lookup endpoint", () => {
 
   beforeEach(() => {
     const { db } = createTestDb(FK_SCHEMA);
-    core = createAdminCore({ db, prefix: "/admin" });
+    core = createTapemark({ db, prefix: "/admin" });
   });
 
   it("returns { results, total } with value/label pairs", async () => {
@@ -197,7 +197,7 @@ describe("reference display in forms", () => {
 
   beforeEach(() => {
     const { db } = createTestDb(FK_SCHEMA);
-    core = createAdminCore({ db, prefix: "/admin" });
+    core = createTapemark({ db, prefix: "/admin" });
   });
 
   it("renders tm-reference-input for FK columns in create form", async () => {
@@ -233,7 +233,7 @@ describe("reference labels in table view", () => {
 
   beforeEach(() => {
     const { db } = createTestDb(FK_SCHEMA);
-    core = createAdminCore({ db, prefix: "/admin" });
+    core = createTapemark({ db, prefix: "/admin" });
   });
 
   it("resolves FK values to labels in the rows list", async () => {

@@ -61,12 +61,12 @@ app.route("/admin", tapemark({
 The core returns plain HTML strings — pipe them into any response:
 
 ```typescript
-import { createAdminCore } from "@jvelo/tapemark";
+import { createTapemark } from "@jvelo/tapemark";
 import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
 import Database from "better-sqlite3";
 
 const db = createSqliteAdapter(new Database("app.db"));
-const core = createAdminCore({ db, prefix: "/admin" });
+const core = createTapemark({ db, prefix: "/admin" });
 
 // In your request handler:
 const res = await core.handle({

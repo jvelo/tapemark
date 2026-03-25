@@ -100,7 +100,7 @@ export interface TapemarkCore {
   addRoute(method: "GET" | "POST", pattern: string, handler: RouteHandler): void;
 }
 
-export function createAdminCore(options: TapemarkOptions): TapemarkCore {
+export function createTapemark(options: TapemarkOptions): TapemarkCore {
   const routes: Route[] = [];
   const prefix = options.prefix ?? "";
   const displayTypes = createDisplayTypeRegistry(options.displayTypes);

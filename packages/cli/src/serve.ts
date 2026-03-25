@@ -4,7 +4,7 @@ import { existsSync, globSync  } from "node:fs";
 import { defineCommand } from "citty";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
-import { createAdminCore } from "@jvelo/tapemark";
+import { createTapemark } from "@jvelo/tapemark";
 import type { ConstraintMode, TapemarkCore, ThemeName } from "@jvelo/tapemark";
 
 interface DbEntry {
@@ -81,7 +81,7 @@ export const serveCommand = defineCommand({
       const db = createSqliteAdapter(raw);
 
       const prefix = filePaths.length > 1 ? `/${name}` : "";
-      const core = createAdminCore({
+      const core = createTapemark({
         db,
         prefix,
         name: filePaths.length > 1 ? name : "tapemark",

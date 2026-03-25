@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { createAdminCore } from "../router";
+import { createTapemark } from "../router";
 import { createTestDb } from "../test-utils";
 import type { Database, TapemarkRequest } from "../types";
 import type { TapemarkCore } from "../router";
@@ -39,7 +39,7 @@ describe("Integration: full request lifecycle", () => {
 
   beforeEach(() => {
     ({ db } = createTestDb(SCHEMA));
-    core = createAdminCore({ db, prefix: "/admin" });
+    core = createTapemark({ db, prefix: "/admin" });
   });
 
   describe("tables list", () => {
@@ -51,7 +51,7 @@ describe("Integration: full request lifecycle", () => {
     });
 
     it("respects hidden table option", async () => {
-      core = createAdminCore({
+      core = createTapemark({
         db,
         prefix: "/admin",
         tables: { posts: { hidden: true } },
@@ -224,7 +224,7 @@ describe("Integration: full request lifecycle", () => {
 
   describe("auth", () => {
     it("returns 403 when authorize rejects", async () => {
-      core = createAdminCore({
+      core = createTapemark({
         db,
         authorize: async () => false,
       });
@@ -235,7 +235,7 @@ describe("Integration: full request lifecycle", () => {
 
   describe("readonly tables", () => {
     it("hides new row and delete buttons for readonly tables", async () => {
-      core = createAdminCore({
+      core = createTapemark({
         db,
         prefix: "/admin",
         tables: { users: { readonly: true } },

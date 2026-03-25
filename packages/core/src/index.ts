@@ -63,5 +63,5 @@ export {
 export { pickLabelColumn } from "./routes/lookup";
 
 // Core
-export { createAdminCore } from "./router";
+export { createTapemark } from "./router";
 export type { TapemarkCore } from "./router";

@@ -12,7 +12,7 @@
 import { createServer, type IncomingMessage } from "node:http";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "../../packages/db-adapters/better-sqlite3/src/index.js";
-import { createAdminCore } from "../../packages/core/src/index.js";
+import { createTapemark } from "../../packages/core/src/index.js";
 
 // ---------------------------------------------------------------------------
 // Args
@@ -120,7 +120,7 @@ function createDemoDb(): BetterSqlite3.Database {
 // Core
 // ---------------------------------------------------------------------------
 
-const core = createAdminCore({ db, prefix: "" });
+const core = createTapemark({ db, prefix: "" });
 
 // ---------------------------------------------------------------------------
 // HTTP server
