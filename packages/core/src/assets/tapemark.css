@@ -725,6 +725,33 @@ tm-display-options {
   margin: 0;
 }
 
+/* Error pages */
+.tm-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.36rem;
+  padding-top: 2.7rem;
+}
+.tm-error-status {
+  font-size: 2.7rem;
+  letter-spacing: -1.5px;
+  line-height: 1;
+  opacity: 0.25;
+}
+.tm-error-label {
+  font-size: 1.08rem;
+  letter-spacing: -0.5px;
+}
+.tm-error-message {
+  font-size: 0.72rem;
+  opacity: 0.5;
+  margin: 0;
+}
+.tm-error .tm-btn {
+  margin-top: 0.72rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .tm {
