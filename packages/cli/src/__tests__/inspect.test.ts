@@ -53,8 +53,8 @@ describe("tapemark inspect", () => {
   });
 
   it("shows schema for a specific table", () => {
-    const output = run(`inspect ${DB1} --table users`);
-    expect(output).toContain("users (2 rows)");
+    const output = run(`inspect ${DB1} --show users`);
+    expect(output).toContain("users (table, 2 rows)");
     expect(output).toContain("id");
     expect(output).toContain("name");
     expect(output).toContain("email");

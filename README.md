@@ -34,8 +34,8 @@ pnpm exec tsx packages/cli/src/index.ts serve ./data.db --port 4000 --readonly -
 # List tables and row counts
 pnpm exec tsx packages/cli/src/index.ts inspect ./data.db
 
-# Show columns for a specific table
-pnpm exec tsx packages/cli/src/index.ts inspect ./data.db --table users
+# Show columns for a specific table or view
+pnpm exec tsx packages/cli/src/index.ts inspect ./data.db --show users
 
 # Compare schemas between two databases
 pnpm exec tsx packages/cli/src/index.ts inspect ./local.db --diff ./production.db

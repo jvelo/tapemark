@@ -11,9 +11,9 @@ export const inspectCommand = defineCommand({
     description: "Inspect SQLite database schema",
   },
   args: {
-    table: {
+    show: {
       type: "string",
-      description: "Show schema for a specific table",
+      description: "Show schema for a specific table or view",
     },
     diff: {
       type: "string",
@@ -42,8 +42,8 @@ export const inspectCommand = defineCommand({
       return;
     }
 
-    if (args.table) {
-      await showTable(introspector, args.table);
+    if (args.show) {
+      await showTable(introspector, args.show);
       raw.close();
       return;
     }
@@ -55,35 +55,51 @@ export const inspectCommand = defineCommand({
 });
 
 async function listTables(introspector: SchemaIntrospector): Promise<void> {
-  const tables = await introspector.getTables();
+  const all = await introspector.getTables();
 
-  if (tables.length === 0) {
-    console.log("No tables found.");
+  if (all.length === 0) {
+    console.log("No tables or views found.");
     return;
   }
 
-  // Calculate column widths
-  const nameWidth = Math.max(5, ...tables.map((t) => t.name.length));
-  const rowsWidth = Math.max(4, ...tables.map((t) => String(t.rowCount).length));
-  const colsWidth = Math.max(4, ...tables.map((t) => String(t.columns.length).length));
+  const tables = all.filter((t) => t.kind === "table");
+  const views = all.filter((t) => t.kind === "view");
+
+  if (tables.length > 0) {
+    printList("TABLE", tables);
+  }
+
+  if (views.length > 0) {
+    if (tables.length > 0) console.log();
+    printList("VIEW", views);
+  }
+
+  const schema = await introspector.getSchema();
+  const parts: string[] = [];
+  if (tables.length > 0) parts.push(`${tables.length} table${tables.length === 1 ? "" : "s"}`);
+  if (views.length > 0) parts.push(`${views.length} view${views.length === 1 ? "" : "s"}`);
+  console.log(`\n${parts.join(", ")}, schema hash: ${schema.hash.slice(0, 12)}…`);
+}
+
+function printList(label: string, items: { name: string; rowCount: number; columns: { length: number }[] }[]): void {
+  const nameWidth = Math.max(label.length, ...items.map((t) => t.name.length));
+  const rowsWidth = Math.max(4, ...items.map((t) => String(t.rowCount).length));
+  const colsWidth = Math.max(4, ...items.map((t) => String(t.columns.length).length));
 
   console.log(
-    pad("TABLE", nameWidth) + "  " +
+    pad(label, nameWidth) + "  " +
     padLeft("ROWS", rowsWidth) + "  " +
     padLeft("COLS", colsWidth),
   );
   console.log("-".repeat(nameWidth + rowsWidth + colsWidth + 4));
 
-  for (const table of tables) {
+  for (const item of items) {
     console.log(
-      pad(table.name, nameWidth) + "  " +
-      padLeft(String(table.rowCount), rowsWidth) + "  " +
-      padLeft(String(table.columns.length), colsWidth),
+      pad(item.name, nameWidth) + "  " +
+      padLeft(String(item.rowCount), rowsWidth) + "  " +
+      padLeft(String(item.columns.length), colsWidth),
     );
   }
-
-  const schema = await introspector.getSchema();
-  console.log(`\n${tables.length} tables, schema hash: ${schema.hash.slice(0, 12)}…`);
 }
 
 async function showTable(
@@ -91,8 +107,9 @@ async function showTable(
   tableName: string,
 ): Promise<void> {
   const table = await introspector.getTable(tableName);
+  const kindLabel = table.kind === "view" ? "view" : "table";
 
-  console.log(`${table.name} (${table.rowCount} rows)\n`);
+  console.log(`${table.name} (${kindLabel}, ${table.rowCount} rows)\n`);
 
   const nameWidth = Math.max(6, ...table.columns.map((c) => c.name.length));
   const typeWidth = Math.max(4, ...table.columns.map((c) => (c.rawType || "").length));
