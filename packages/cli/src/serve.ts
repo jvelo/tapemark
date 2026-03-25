@@ -29,6 +29,11 @@ export const serveCommand = defineCommand({
       description: "Read-only mode (no writes, no deletes)",
       default: false,
     },
+    theme: {
+      type: "string",
+      description: "Theme (plex or depart)",
+      default: "plex",
+    },
     _: {
       type: "positional",
       description: "SQLite file paths (supports globs)",
@@ -38,9 +43,10 @@ export const serveCommand = defineCommand({
   async run({ args, rawArgs }) {
     const port = parseInt(args.port, 10);
     const readonly = args.readonly;
+    const theme = (args.theme === "depart" ? "depart" : "plex") as "plex" | "depart";
     // citty positional args: extract file paths from rawArgs (skip flags)
     const rawPaths = (rawArgs ?? []).filter(
-      (a) => !a.startsWith("-") && a !== String(args.port),
+      (a) => !a.startsWith("-") && a !== String(args.port) && a !== args.theme,
     );
 
     // Resolve file paths (expand globs)
@@ -74,6 +80,7 @@ export const serveCommand = defineCommand({
         prefix,
         name: filePaths.length > 1 ? name : "tapemark",
         readonly,
+        theme,
       });
 
       return { name, path: absPath, core };

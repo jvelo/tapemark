@@ -29,7 +29,7 @@ export async function rowsRoute(
 
   const hasPk = tableInfo.primaryKey.length > 0;
   const isView = tableInfo.kind === "view";
-  const isReadonly = isView || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
+  const isReadonly = isView || !hasPk || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
 
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },

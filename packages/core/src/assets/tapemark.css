@@ -2,7 +2,7 @@
 :root {
   --tm-bg: #181818;
   --tm-text: #ffffff;
-  --tm-accent: #ffd043;
+  /* --tm-accent and --tm-font are injected by the active theme */
   --tm-border: #f3f3f3;
   --tm-code-bg: #1a1a1a;
   --tm-danger: #cc4444;
@@ -26,7 +26,7 @@ html {
   overscroll-behavior: none;
 }
 .tm {
-  font-family: "Departure Mono", "IBM Plex Mono", monospace;
+  font-family: var(--tm-font);
   font-size: 0.81rem;
   line-height: 1.35;
   color: var(--tm-text);
@@ -238,7 +238,7 @@ html {
 }
 .tm input[type="checkbox"]::after {
   content: "\00a0";
-  font-family: "Departure Mono", monospace;
+  font-family: var(--tm-font);
 }
 .tm input[type="checkbox"]:checked {
   border-color: var(--tm-accent);
@@ -473,7 +473,7 @@ tm-reference-input.has-value .tm-ref-search {
   justify-content: center;
   opacity: 0;
   transition: opacity 150ms ease-out;
-  font-family: "Departure Mono", "IBM Plex Mono", monospace;
+  font-family: var(--tm-font);
   font-size: 0.81rem;
   line-height: 1.35;
   color: var(--tm-text);

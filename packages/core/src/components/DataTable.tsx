@@ -96,9 +96,9 @@ export function DataTable({
         </thead>
         <tbody>
           {rows.map((row, index) => {
-            const rowLink = isView
-              ? `${linkBase}/_row/${(page - 1) * pageSize + index}`
-              : `${linkBase}/${encodePk(row)}`;
+            const rowLink = hasPk && !isView
+              ? `${linkBase}/${encodePk(row)}`
+              : `${linkBase}/_row/${(page - 1) * pageSize + index}`;
             return (
               <tr>
                 {visibleColumns.map((col) => {

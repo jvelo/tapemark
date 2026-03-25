@@ -20,7 +20,12 @@ export type {
   TapemarkOptions,
   TapemarkRequest,
   TapemarkResponse,
+  ThemeName,
 } from "./types";
+
+// Themes
+export { themes, defaultTheme } from "./themes";
+export type { ThemeDefinition } from "./themes";
 
 // Errors
 export { NotFoundError, TapemarkError, ValidationError } from "./errors";

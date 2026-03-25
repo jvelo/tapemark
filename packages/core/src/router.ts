@@ -10,6 +10,7 @@ import { bulkDeleteRoute } from "./routes/bulk-delete";
 import { rowViewRoute } from "./routes/row-view";
 import { lookupRoute } from "./routes/lookup";
 import { loadAsset } from "./assets/load";
+import { themes, defaultTheme } from "./themes";
 import type {
   Database,
   RouteHandler,
@@ -19,7 +20,10 @@ import type {
   TapemarkResponse,
 } from "./types";
 
-const FONTS_CSS = loadAsset("fonts.css");
+const FONT_CSS: Record<string, string> = {
+  depart: loadAsset("fonts-depart.css"),
+  plex: loadAsset("fonts-plex.css"),
+};
 const BASE_CSS = loadAsset("tapemark.css");
 const JS_CONTENT = loadAsset("tapemark.js");
 
@@ -129,6 +133,8 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
       siteName: options.siteName ?? "site",
       name: options.name ?? "tapemark",
       readonly: options.readonly ?? false,
+      theme: options.theme ?? defaultTheme,
+      fonts: options.fonts !== false,
     };
   }
 
@@ -190,8 +196,12 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
   }
 
   // Asset routes (served before auth — CSS/JS are not sensitive)
+  const themeName = options.theme ?? defaultTheme;
+  const theme = themes[themeName];
   const includeFonts = options.fonts !== false;
-  const cssContent = includeFonts ? FONTS_CSS + "\n" + BASE_CSS : BASE_CSS;
+  const fontCss = includeFonts ? (FONT_CSS[themeName] || "") : "";
+  const themeVars = `:root { --tm-font: ${theme.fontFamily}; --tm-accent: ${theme.accent}; }\n`;
+  const cssContent = fontCss + "\n" + themeVars + BASE_CSS;
   addRoute("GET", "/_tapemark/styles.css", async () => ({
     status: 200,
     headers: {

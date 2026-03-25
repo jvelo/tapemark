@@ -197,7 +197,11 @@ export interface TapemarkOptions {
   readonly?: boolean;
   /** Set to false to skip bundled fonts (when the host app already serves them). Defaults to true. */
   fonts?: boolean;
+  /** Theme name. Defaults to "plex". */
+  theme?: ThemeName;
 }
+
+export type ThemeName = "plex" | "depart";
 
 /**
  * Context passed to route handlers. Built once per request from
@@ -210,6 +214,8 @@ export interface TapemarkContext {
   siteName: string;
   name: string;
   readonly: boolean;
+  theme: ThemeName;
+  fonts: boolean;
   displayTypes: Map<string, DisplayType>;
   tableOptions: Map<string, TableOptions>;
   scripts: string[];

@@ -3,7 +3,8 @@ import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
 import dts from "vite-plugin-dts";
 
-const fontsContent = readFileSync("src/assets/fonts.css", "utf-8");
+const fontsDepartContent = readFileSync("src/assets/fonts-depart.css", "utf-8");
+const fontsPlexContent = readFileSync("src/assets/fonts-plex.css", "utf-8");
 const cssContent = readFileSync("src/assets/tapemark.css", "utf-8");
 const jsContent = readFileSync("src/assets/tapemark.js", "utf-8");
 
@@ -19,7 +20,8 @@ export default defineConfig({
           return {
             code: `
 const ASSETS = {
-  "fonts.css": ${JSON.stringify(fontsContent)},
+  "fonts-depart.css": ${JSON.stringify(fontsDepartContent)},
+  "fonts-plex.css": ${JSON.stringify(fontsPlexContent)},
   "tapemark.css": ${JSON.stringify(cssContent)},
   "tapemark.js": ${JSON.stringify(jsContent)},
 };
@@ -33,7 +35,8 @@ export function loadAsset(filename) {
       },
       closeBundle() {
         // Also copy raw files for Node.js fs.readFileSync fallback
-        copyFileSync("src/assets/fonts.css", "dist/fonts.css");
+        copyFileSync("src/assets/fonts-depart.css", "dist/fonts-depart.css");
+        copyFileSync("src/assets/fonts-plex.css", "dist/fonts-plex.css");
         copyFileSync("src/assets/tapemark.css", "dist/tapemark.css");
         copyFileSync("src/assets/tapemark.js", "dist/tapemark.js");
       },
