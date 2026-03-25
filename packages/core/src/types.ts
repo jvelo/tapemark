@@ -198,7 +198,7 @@ export interface TapemarkOptions {
   /** Global read-only mode — disables all writes and deletes. */
   readonly?: boolean;
   /** Set to false to skip bundled fonts (when the host app already serves them). Defaults to true. */
-  fonts?: boolean;
+  bundleFonts?: boolean;
   /** Theme name. Defaults to "plex". */
   theme?: ThemeName;
   /** Constraint enforcement mode. Defaults to "enforce". */
@@ -223,7 +223,7 @@ export interface TapemarkContext {
   readonly: boolean;
   constraints: ConstraintMode;
   theme: ThemeName;
-  fonts: boolean;
+  bundleFonts: boolean;
   displayTypes: Map<string, DisplayType>;
   tableOptions: Map<string, TableOptions>;
   scripts: string[];

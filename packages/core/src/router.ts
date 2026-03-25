@@ -135,7 +135,7 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
       readonly: options.readonly ?? false,
       constraints: options.constraints ?? "enforce",
       theme: options.theme ?? defaultTheme,
-      fonts: options.fonts !== false,
+      bundleFonts: options.bundleFonts !== false,
     };
   }
 
@@ -211,7 +211,7 @@ export function createAdminCore(options: TapemarkOptions): TapemarkCore {
   // Asset routes (served before auth — CSS/JS are not sensitive)
   const themeName = options.theme ?? defaultTheme;
   const theme = themes[themeName];
-  const includeFonts = options.fonts !== false;
+  const includeFonts = options.bundleFonts !== false;
   const fontCss = includeFonts ? (FONT_CSS[themeName] || "") : "";
   const themeVars = `:root { --tm-font: ${theme.fontFamily}; --tm-accent: ${theme.accent}; }\n`;
   const cssContent = fontCss + "\n" + themeVars + BASE_CSS;
