@@ -1,4 +1,4 @@
-import type { ComponentChildren } from "preact";
+import type { Child } from "hono/jsx";
 
 export interface Crumb {
   label: string;
@@ -13,7 +13,7 @@ interface TapemarkLayoutProps {
   siteName?: string;
   crumbs?: Crumb[];
   scripts?: string[];
-  children?: ComponentChildren;
+  children?: Child;
 }
 
 export function TapemarkLayout({

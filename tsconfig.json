@@ -13,7 +13,7 @@
     "declarationMap": true,
     "sourceMap": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "preact"
+    "jsxImportSource": "hono/jsx"
   },
   "references": [
     { "path": "packages/core" }

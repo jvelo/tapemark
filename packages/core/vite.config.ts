@@ -1,6 +1,5 @@
 import { copyFileSync, readFileSync } from "node:fs";
 import { defineConfig } from "vite";
-import preact from "@preact/preset-vite";
 import dts from "vite-plugin-dts";
 
 const fontsDepartContent = readFileSync("src/assets/fonts-depart.css", "utf-8");
@@ -10,7 +9,6 @@ const jsContent = readFileSync("src/assets/tapemark.js", "utf-8");
 
 export default defineConfig({
   plugins: [
-    preact(),
     dts({ rollupTypes: true }),
     {
       name: "inline-assets",
@@ -50,9 +48,10 @@ export function loadAsset(filename) {
     },
     rollupOptions: {
       external: [
-        "preact",
-        "preact/jsx-runtime",
-        "preact-render-to-string",
+        "hono",
+        "hono/jsx",
+        "hono/jsx/jsx-runtime",
+        "hono/jsx/dom/server",
         "node:crypto",
       ],
     },

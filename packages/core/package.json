@@ -31,12 +31,10 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {
-    "preact": "^10.25.0",
-    "preact-render-to-string": "^6.5.0"
+  "peerDependencies": {
+    "hono": ">=4.0.0"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.9.0",
     "better-sqlite3": "^11.0.0",
     "@types/better-sqlite3": "^7.6.0",
     "@jvelo/tapemark-better-sqlite3": "workspace:*",
