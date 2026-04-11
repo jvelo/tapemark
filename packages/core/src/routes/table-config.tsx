@@ -35,6 +35,7 @@ export async function tableConfigRoute(
       title={`${table} config`}
       prefix={ctx.prefix}
       name={ctx.name}
+      symbol={ctx.symbol}
       siteUrl={ctx.siteUrl} siteName={ctx.siteName}
       crumbs={crumbs}
       scripts={ctx.scripts}

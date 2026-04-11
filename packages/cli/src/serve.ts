@@ -31,8 +31,8 @@ export const serveCommand = defineCommand({
     },
     theme: {
       type: "string",
-      description: "Theme (plex or depart)",
-      default: "plex",
+      description: "Theme (hubot, plex, or depart)",
+      default: "hubot",
     },
     constraints: {
       type: "string",
@@ -48,7 +48,8 @@ export const serveCommand = defineCommand({
   async run({ args, rawArgs }) {
     const port = parseInt(args.port, 10);
     const readonly = args.readonly;
-    const theme: ThemeName = args.theme === "depart" ? "depart" : "plex";
+    const theme: ThemeName =
+      args.theme === "depart" ? "depart" : args.theme === "plex" ? "plex" : "hubot";
     const constraints: ConstraintMode = args.constraints === "relaxed" ? "relaxed" : "enforce";
     // citty positional args: extract file paths from rawArgs (skip flags)
     const rawPaths = (rawArgs ?? []).filter(
@@ -84,7 +85,9 @@ export const serveCommand = defineCommand({
       const core = createTapemark({
         db,
         prefix,
-        name: filePaths.length > 1 ? name : "tapemark",
+        // Only pass `name` in multi-DB mode — in single-DB mode we leave it
+        // unset so the core's default (and the symbol default) applies.
+        ...(filePaths.length > 1 ? { name } : {}),
         readonly,
         theme,
         constraints,

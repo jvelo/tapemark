@@ -7,7 +7,7 @@ describe("builtinDisplayTypes", () => {
     const names = Object.keys(builtinDisplayTypes);
     expect(names).toEqual(
       expect.arrayContaining([
-        "text", "image", "link", "json", "datetime", "color", "enum", "markdown",
+        "text", "image", "link", "json", "datetime", "color", "enum", "markdown", "uuid",
       ]),
     );
   });
@@ -69,6 +69,24 @@ describe("builtinDisplayTypes", () => {
     expect(html).toContain("#4a4");
   });
 
+  it("uuid renders a monospace code cell", () => {
+    const html = builtinDisplayTypes.uuid.render("df123ad0-ff54-4a87-bce3-488186567e63", {});
+    expect(html).toContain('class="tm-cell-uuid"');
+    expect(html).toContain("df123ad0-ff54-4a87-bce3-488186567e63");
+    expect(html).toMatch(/^<code/);
+  });
+
+  it("uuid truncates when the option is set", () => {
+    const html = builtinDisplayTypes.uuid.render("df123ad0-ff54-4a87-bce3-488186567e63", { truncate: 8 });
+    expect(html).toContain("df123ad0…");
+    expect(html).not.toContain("488186567e63");
+  });
+
+  it("uuid returns empty for falsy value", () => {
+    expect(builtinDisplayTypes.uuid.render("", {})).toBe("");
+    expect(builtinDisplayTypes.uuid.render(null, {})).toBe("");
+  });
+
   it("each type has a valid schema", () => {
     for (const type of Object.values(builtinDisplayTypes)) {
       expect(type.schema.type).toBe("object");
@@ -80,9 +98,10 @@ describe("builtinDisplayTypes", () => {
 describe("createDisplayTypeRegistry", () => {
   it("includes all builtins", () => {
     const registry = createDisplayTypeRegistry();
-    expect(registry.size).toBeGreaterThanOrEqual(8);
+    expect(registry.size).toBeGreaterThanOrEqual(10);
     expect(registry.has("text")).toBe(true);
     expect(registry.has("image")).toBe(true);
+    expect(registry.has("uuid")).toBe(true);
   });
 
   it("merges custom types", () => {

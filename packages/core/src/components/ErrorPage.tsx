@@ -5,6 +5,7 @@ interface ErrorPageProps {
   message: string;
   prefix: string;
   name: string;
+  symbol: string | false;
   siteUrl?: string;
   siteName?: string;
   scripts?: string[];
@@ -22,6 +23,7 @@ export function ErrorPage({
   message,
   prefix,
   name,
+  symbol,
   siteUrl,
   siteName,
   scripts,
@@ -34,6 +36,7 @@ export function ErrorPage({
       title={label}
       prefix={prefix}
       name={name}
+      symbol={symbol}
       siteUrl={siteUrl}
       siteName={siteName}
       scripts={scripts}

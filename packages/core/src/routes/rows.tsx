@@ -41,6 +41,7 @@ export async function rowsRoute(
       title={table}
       prefix={ctx.prefix}
       name={ctx.name}
+      symbol={ctx.symbol}
       siteUrl={ctx.siteUrl} siteName={ctx.siteName}
       crumbs={crumbs}
       scripts={ctx.scripts}
