@@ -65,3 +65,12 @@ export { pickLabelColumn } from "./routes/lookup";
 // Core
 export { createTapemark } from "./router";
 export type { TapemarkCore } from "./router";
+
+// Layout primitives
+export { TapemarkLayout } from "./components/TapemarkLayout";
+export type { Crumb } from "./components/TapemarkLayout";
+export { renderPage } from "./render";
+
+// Database list page
+export { renderDatabaseListPage } from "./database-list.jsx";
+export type { DatabaseListItem } from "./components/DatabaseListPage";

@@ -4,7 +4,7 @@ import { existsSync, globSync  } from "node:fs";
 import { defineCommand } from "citty";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
-import { createTapemark } from "@jvelo/tapemark";
+import { createTapemark, renderDatabaseListPage } from "@jvelo/tapemark";
 import type { ConstraintMode, TapemarkCore, ThemeName } from "@jvelo/tapemark";
 
 interface DbEntry {
@@ -85,9 +85,9 @@ export const serveCommand = defineCommand({
       const core = createTapemark({
         db,
         prefix,
-        // Only pass `name` in multi-DB mode — in single-DB mode we leave it
-        // unset so the core's default (and the symbol default) applies.
-        ...(filePaths.length > 1 ? { name } : {}),
+        // Passing name explicitly would suppress the default symbol
+        // (the "rebranded" heuristic), so re-assert it in multi-DB mode.
+        ...(filePaths.length > 1 ? { name, symbol: "🎞️" as const } : {}),
         readonly,
         theme,
         constraints,
@@ -117,9 +117,25 @@ export const serveCommand = defineCommand({
         if (isMultiDb) {
           // Multi-DB: route by first path segment
           if (path === "/") {
-            // Landing page: list databases
             res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-            res.end(renderDbList(databases));
+            res.end(
+              renderDatabaseListPage(
+                databases.map((db) => ({ name: db.name, path: db.path })),
+              ),
+            );
+            return;
+          }
+
+          // All cores serve identical assets, so any one works.
+          if (path.startsWith("/_tapemark/")) {
+            const tapemarkRes = await databases[0].core.handle({
+              method: req.method || "GET",
+              path,
+              params: {},
+              query,
+              body,
+            });
+            sendResponse(res, tapemarkRes);
             return;
           }
 
@@ -241,40 +257,3 @@ function parseFormBody(
   });
 }
 
-function renderDbList(databases: DbEntry[]): string {
-  const rows = databases
-    .map(
-      (db) =>
-        `<tr><td><a href="/${db.name}">${db.name}</a></td><td class="tm-muted">${db.path}</td></tr>`,
-    )
-    .join("");
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>tapemark</title>
-  <style>
-    body { margin: 0; padding: 0; font-family: 'IBM Plex Mono', monospace; font-size: 0.81rem; background: #181818; color: #fff; min-height: 100vh; }
-    .tm-landing { padding: 2rem; max-width: 800px; }
-    .tm-landing h1 { font-size: 1.2rem; margin: 0 0 1.5rem 0; letter-spacing: -0.5px; }
-    .tm-landing table { width: 100%; border-collapse: collapse; }
-    .tm-landing th { text-align: left; padding: 0.27rem 0.45rem; border-bottom: 1px solid #f3f3f3; font-weight: normal; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.72rem; }
-    .tm-landing td { padding: 0.27rem 0.45rem; border-bottom: 1px solid #333; }
-    .tm-landing a { color: #fff; text-decoration: none; }
-    .tm-landing a:hover { color: #FFD043; }
-    .tm-muted { opacity: 0.4; font-size: 0.72rem; }
-  </style>
-</head>
-<body>
-  <div class="tm-landing">
-    <h1>tapemark</h1>
-    <table>
-      <thead><tr><th>database</th><th>path</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>
-</body>
-</html>`;
-}
