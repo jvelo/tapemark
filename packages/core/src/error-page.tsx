@@ -5,6 +5,7 @@ import type { TapemarkResponse } from "./types";
 interface ErrorPageContext {
   prefix: string;
   name: string;
+  symbol: string | false;
   siteUrl?: string;
   siteName?: string;
   scripts?: string[];
@@ -21,6 +22,7 @@ export function renderErrorPage(
       message={message}
       prefix={ctx.prefix}
       name={ctx.name}
+      symbol={ctx.symbol}
       siteUrl={ctx.siteUrl}
       siteName={ctx.siteName}
       scripts={ctx.scripts}

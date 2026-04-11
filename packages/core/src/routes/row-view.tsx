@@ -61,6 +61,7 @@ export async function rowViewRoute(
       title={`${table} / row ${index}`}
       prefix={ctx.prefix}
       name={ctx.name}
+      symbol={ctx.symbol}
       siteUrl={ctx.siteUrl}
       siteName={ctx.siteName}
       crumbs={crumbs}

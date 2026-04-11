@@ -24,6 +24,7 @@ import type {
 const FONT_CSS: Record<string, string> = {
   depart: loadAsset("fonts-depart.css"),
   plex: loadAsset("fonts-plex.css"),
+  hubot: loadAsset("fonts-hubot.css"),
 };
 const BASE_CSS = loadAsset("tapemark.css");
 const JS_CONTENT = loadAsset("tapemark.js");
@@ -112,6 +113,12 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
 
   let migrator: TapemarkMigrator | null = null;
 
+  // Resolve once at setup: if `symbol` is explicitly provided (including false), use it.
+  // Otherwise default to the film-reel mark only when `name` wasn't customized —
+  // integrators who rebrand don't get tapemark's mark by accident.
+  const resolvedSymbol: string | false =
+    options.symbol !== undefined ? options.symbol : options.name === undefined ? "🎞️" : false;
+
   function resolveDb(db: Database | (() => Database)): Database {
     return typeof db === "function" ? db() : db;
   }
@@ -133,6 +140,7 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
       siteUrl: options.siteUrl,
       siteName: options.siteName ?? "site",
       name: options.name ?? "tapemark",
+      symbol: resolvedSymbol,
       readonly: options.readonly ?? false,
       constraints: options.constraints ?? "enforce",
       theme: options.theme ?? defaultTheme,
@@ -144,6 +152,7 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
     const errorCtx = {
       prefix,
       name: options.name ?? "tapemark",
+      symbol: resolvedSymbol,
       siteUrl: options.siteUrl,
       siteName: options.siteName ?? "site",
       scripts: options.scripts,
@@ -210,8 +219,18 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
   const theme = themes[themeName];
   const includeFonts = options.bundleFonts !== false;
   const fontCss = includeFonts ? (FONT_CSS[themeName] || "") : "";
-  const themeVars = `:root { --tm-font: ${theme.fontFamily}; --tm-accent: ${theme.accent}; }\n`;
-  const cssContent = fontCss + "\n" + themeVars + BASE_CSS;
+  const themeVars =
+    `:root {\n` +
+    `  --tm-font: ${theme.fontFamily};\n` +
+    `  --tm-font-mono: ${theme.fontFamilyMono};\n` +
+    `  --tm-font-size-base: ${theme.fontSizeBase};\n` +
+    `  --tm-bg: ${theme.bg};\n` +
+    `  --tm-text: ${theme.text};\n` +
+    `  --tm-border: ${theme.border};\n` +
+    `  --tm-accent: ${theme.accent};\n` +
+    `  --tm-accent-text: ${theme.accentText};\n` +
+    `}\n`;
+  const cssContent = fontCss + "\n" + BASE_CSS + "\n" + themeVars;
   addRoute("GET", "/_tapemark/styles.css", async () => ({
     status: 200,
     headers: {

@@ -1,12 +1,27 @@
 /* tapemark — admin panel styles */
 :root {
-  --tm-bg: #181818;
-  --tm-text: #ffffff;
-  /* --tm-accent and --tm-font are injected by the active theme */
-  --tm-border: #f3f3f3;
-  --tm-code-bg: #1a1a1a;
+  /* Theme-injected:
+       --tm-font, --tm-font-size-base, --tm-bg, --tm-text,
+       --tm-border, --tm-accent, --tm-accent-text */
+  --tm-font-size-sm: calc(var(--tm-font-size-base) * 0.89);
+
+  /* Surfaces derived from bg/text so they work on any theme */
+  --tm-row-hover-bg: color-mix(in srgb, var(--tm-bg) 93%, var(--tm-text));
+  --tm-surface-bg: color-mix(in srgb, var(--tm-bg) 90%, var(--tm-text));
+  --tm-btn-hover-bg: color-mix(in srgb, var(--tm-bg) 85%, var(--tm-text));
+
+  /* Borders and dividers */
+  --tm-input-border: color-mix(in srgb, var(--tm-bg) 70%, var(--tm-text));
+  --tm-input-border-hover: color-mix(in srgb, var(--tm-bg) 50%, var(--tm-text));
+  --tm-divider: color-mix(in srgb, var(--tm-bg) 92%, var(--tm-text));
+
+  /* Text tones */
+  --tm-input-color: color-mix(in srgb, var(--tm-text) 80%, var(--tm-bg));
+  --tm-text-dim: color-mix(in srgb, var(--tm-text) 55%, var(--tm-bg));
+  --tm-text-faint: color-mix(in srgb, var(--tm-text) 35%, var(--tm-bg));
+
+  /* Theme-invariant */
   --tm-danger: #cc4444;
-  --tm-input: #bbb;
   --tm-muted: 0.4;
 }
 
@@ -27,7 +42,7 @@ html {
 }
 .tm {
   font-family: var(--tm-font);
-  font-size: 0.81rem;
+  font-size: var(--tm-font-size-base);
   line-height: 1.35;
   color: var(--tm-text);
   background: var(--tm-bg);
@@ -52,13 +67,13 @@ html {
   border-bottom: 1px solid var(--tm-border);
 }
 .tm-bar-title {
-  font-size: 0.81rem;
+  font-size: var(--tm-font-size-base);
   letter-spacing: -0.5px;
 }
 .tm-crumbs {
   display: flex;
   gap: 0.36rem;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   opacity: 0.6;
 }
 .tm-crumbs span {
@@ -100,7 +115,7 @@ html {
 .tm table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   table-layout: auto;
 }
 .tm-table-scroll {
@@ -113,7 +128,7 @@ html {
   border-bottom: 1px solid var(--tm-border);
   font-weight: normal;
   opacity: 0.7;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -130,7 +145,7 @@ html {
   overflow: visible;
 }
 .tm tr:hover td {
-  background: #252525;
+  background: var(--tm-row-hover-bg);
 }
 .tm td a {
   text-decoration: none;
@@ -174,7 +189,7 @@ html {
   width: auto;
   margin-top: 0.27rem;
   pointer-events: none;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+  filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--tm-text) 40%, transparent));
 }
 .tm-cell-link {
   color: var(--tm-accent);
@@ -188,8 +203,14 @@ html {
   opacity: 0.8;
 }
 .tm-cell-json {
+  font-family: var(--tm-font-mono);
   opacity: 0.7;
   font-size: 0.63rem;
+}
+.tm-cell-uuid {
+  font-family: var(--tm-font-mono);
+  font-size: var(--tm-font-size-sm);
+  opacity: 0.8;
 }
 .tm-cell-color {
   display: flex;
@@ -206,7 +227,7 @@ html {
 .tm-cell-enum {
   display: inline-block;
   padding: 0.09rem 0.36rem;
-  background: var(--tm-enum-color, #555);
+  background: var(--tm-enum-color, var(--tm-input-border));
   font-size: 0.63rem;
   letter-spacing: 0.5px;
 }
@@ -224,8 +245,8 @@ html {
   width: 1em;
   height: 1em;
   font-family: inherit;
-  font-size: 0.81rem;
-  border: 1px solid #555;
+  font-size: var(--tm-font-size-base);
+  border: 1px solid var(--tm-input-border);
   background: var(--tm-bg);
   cursor: pointer;
   display: inline-flex;
@@ -255,14 +276,14 @@ html {
   align-items: center;
   margin-top: 0.72rem;
   margin-right: auto;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
 }
 .tm-pager a {
   padding: 0.18rem 0.36rem;
   border: 1px solid var(--tm-border);
 }
 .tm-pager a:hover {
-  background: #333;
+  background: var(--tm-btn-hover-bg);
 }
 .tm-pager-current {
   opacity: 0.5;
@@ -284,7 +305,7 @@ html {
   gap: 0.18rem;
 }
 .tm-field label {
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   opacity: 0.7;
@@ -293,17 +314,17 @@ html {
 .tm-field textarea,
 .tm-field select {
   font-family: inherit;
-  font-size: 0.81rem;
+  font-size: var(--tm-font-size-base);
   padding: 0.27rem 0.36rem;
-  border: 1px solid #555;
+  border: 1px solid var(--tm-input-border);
   background: var(--tm-bg);
-  color: var(--tm-input);
+  color: var(--tm-input-color);
 }
 .tm-field input:focus,
 .tm-field textarea:focus,
 .tm-field select:focus {
-  color: #ffffff;
-  border-color: #ffffff;
+  color: var(--tm-text);
+  border-color: var(--tm-text);
   outline: none;
 }
 .tm-field textarea {
@@ -311,8 +332,8 @@ html {
   resize: vertical;
 }
 .tm-field input:disabled {
-  color: #555;
-  border-color: #333;
+  color: var(--tm-text-faint);
+  border-color: var(--tm-divider);
   cursor: not-allowed;
 }
 .tm-field input[type="color"] {
@@ -331,15 +352,15 @@ html {
   font-family: inherit;
   font-size: inherit;
   padding: 0.18rem 0.27rem;
-  border: 1px solid #555;
+  border: 1px solid var(--tm-input-border);
   background: var(--tm-bg);
-  color: var(--tm-input);
+  color: var(--tm-input-color);
   width: 100%;
 }
 .tm-form table input:focus,
 .tm-form table select:focus {
-  color: #ffffff;
-  border-color: #ffffff;
+  color: var(--tm-text);
+  border-color: var(--tm-text);
   outline: none;
 }
 .tm-center {
@@ -391,14 +412,14 @@ tm-reference-input.has-value .tm-ref-search {
   align-items: center;
   gap: 0.36rem;
   padding: 0.27rem 0.36rem;
-  border: 1px solid #555;
+  border: 1px solid var(--tm-input-border);
   background: var(--tm-bg);
-  color: var(--tm-input);
-  font-size: 0.81rem;
+  color: var(--tm-input-color);
+  font-size: var(--tm-font-size-base);
   cursor: pointer;
 }
 .tm-ref-display:hover {
-  border-color: #888;
+  border-color: var(--tm-input-border-hover);
 }
 .tm-ref-display::after {
   content: "\00d7";
@@ -412,18 +433,18 @@ tm-reference-input.has-value .tm-ref-search {
 }
 .tm-ref-browse-btn {
   font-family: inherit;
-  font-size: 0.81rem;
+  font-size: var(--tm-font-size-base);
   padding: 0.27rem 0.45rem;
-  border: 1px solid #555;
+  border: 1px solid var(--tm-input-border);
   border-left: none;
   background: var(--tm-bg);
-  color: #888;
+  color: var(--tm-text-dim);
   cursor: pointer;
   flex-shrink: 0;
 }
 .tm-ref-browse-btn:hover {
-  background: #333;
-  color: #fff;
+  background: var(--tm-btn-hover-bg);
+  color: var(--tm-text);
 }
 .tm-ref-dropdown {
   position: absolute;
@@ -433,9 +454,9 @@ tm-reference-input.has-value .tm-ref-search {
   z-index: 100;
   max-height: 12rem;
   overflow-y: auto;
-  border: 1px solid #555;
+  border: 1px solid var(--tm-input-border);
   border-top: none;
-  background: #222;
+  background: var(--tm-surface-bg);
   display: none;
 }
 .tm-ref-dropdown.is-open {
@@ -443,14 +464,14 @@ tm-reference-input.has-value .tm-ref-search {
 }
 .tm-ref-option {
   padding: 0.27rem 0.36rem;
-  font-size: 0.81rem;
+  font-size: var(--tm-font-size-base);
   cursor: pointer;
-  color: var(--tm-input);
+  color: var(--tm-input-color);
 }
 .tm-ref-option:hover,
 .tm-ref-option.is-active {
-  background: #333;
-  color: #fff;
+  background: var(--tm-btn-hover-bg);
+  color: var(--tm-text);
 }
 .tm-ref-hint {
   padding: 0.27rem 0.36rem;
@@ -464,14 +485,14 @@ tm-reference-input.has-value .tm-ref-search {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.85);
+  background: color-mix(in srgb, var(--tm-text) 60%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transition: opacity 150ms ease-out;
   font-family: var(--tm-font);
-  font-size: 0.81rem;
+  font-size: var(--tm-font-size-base);
   line-height: 1.35;
   color: var(--tm-text);
 }
@@ -485,7 +506,9 @@ tm-reference-input.has-value .tm-ref-search {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6), 0 0 2px rgba(255, 208, 67, 0.08);
+  box-shadow:
+    0 0 40px color-mix(in srgb, var(--tm-text) 30%, transparent),
+    0 0 2px color-mix(in srgb, var(--tm-accent) 15%, transparent);
 }
 .tm-modal-header {
   display: flex;
@@ -497,10 +520,10 @@ tm-reference-input.has-value .tm-ref-search {
   align-items: center;
   justify-content: space-between;
   padding: 0.45rem 0.9rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid var(--tm-border);
 }
 .tm-modal-title {
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   opacity: 0.7;
@@ -516,14 +539,14 @@ tm-reference-input.has-value .tm-ref-search {
 .tm-modal-search {
   width: 100%;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   padding: 0.27rem 0.36rem;
-  border: 1px solid #555;
+  border: 1px solid var(--tm-input-border);
   background: var(--tm-bg);
-  color: var(--tm-input);
+  color: var(--tm-input-color);
 }
 .tm-modal-search:focus {
-  color: #fff;
+  color: var(--tm-text);
   border-color: var(--tm-border);
   outline: none;
 }
@@ -534,7 +557,7 @@ tm-reference-input.has-value .tm-ref-search {
   padding: 0.18rem 0.36rem;
   border: 1px solid transparent;
   background: none;
-  color: #555;
+  color: var(--tm-text-dim);
   cursor: pointer;
 }
 .tm-modal-close:hover {
@@ -552,27 +575,27 @@ tm-reference-input.has-value .tm-ref-search {
 .tm-modal-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
 }
 .tm-modal-row {
   cursor: pointer;
 }
 .tm-modal-row:hover td {
-  background: var(--tm-code-bg);
+  background: var(--tm-row-hover-bg);
 }
 .tm-modal-row:hover .tm-modal-cell-label {
   color: var(--tm-accent);
 }
 .tm-modal-cell-value {
   padding: 0.27rem 0.9rem;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--tm-divider);
   opacity: 0.4;
   width: 1%;
   white-space: nowrap;
 }
 .tm-modal-cell-label {
   padding: 0.27rem 0.9rem;
-  border-bottom: 1px solid #222;
+  border-bottom: 1px solid var(--tm-divider);
   color: var(--tm-text);
   transition: color 100ms;
 }
@@ -593,7 +616,7 @@ tm-reference-input.has-value .tm-ref-search {
 }
 .tm-modal-nav .tm-btn {
   padding: 0.18rem 0.45rem;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
 }
 
 /* Display type options (web component) */
@@ -618,15 +641,15 @@ tm-display-options {
 .tm-opt-field input[type="text"] {
   width: 100%;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   padding: 0.18rem 0.27rem;
-  border: 1px solid #555;
+  border: 1px solid var(--tm-input-border);
   background: var(--tm-bg);
-  color: var(--tm-input);
+  color: var(--tm-input-color);
 }
 .tm-opt-field input:focus {
-  color: #ffffff;
-  border-color: #ffffff;
+  color: var(--tm-text);
+  border-color: var(--tm-text);
   outline: none;
 }
 
@@ -638,7 +661,7 @@ tm-display-options {
 }
 .tm-btn {
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   padding: 0.27rem 0.54rem;
   border: 1px solid var(--tm-border);
   background: var(--tm-bg);
@@ -648,8 +671,8 @@ tm-display-options {
   display: inline-block;
 }
 .tm-btn:hover {
-  background: #333;
-  color: #ffffff;
+  background: var(--tm-btn-hover-bg);
+  color: var(--tm-text);
 }
 .tm-btn:disabled {
   opacity: 0.3;
@@ -660,15 +683,15 @@ tm-display-options {
   color: var(--tm-text);
 }
 .tm-btn-primary {
-  background: #ffffff;
-  color: #181818;
-  border-color: #ffffff;
+  background: var(--tm-text);
+  color: var(--tm-bg);
+  border-color: var(--tm-text);
 }
 .tm-btn-primary:hover,
 .tm a.tm-btn-primary:hover {
   background: var(--tm-accent);
   border-color: var(--tm-accent);
-  color: #000000;
+  color: var(--tm-accent-text);
 }
 .tm-btn-danger {
   border-color: var(--tm-danger);
@@ -684,7 +707,7 @@ tm-display-options {
 .tm-flash {
   padding: 0.36rem 0.54rem;
   margin-bottom: 0.72rem;
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   border: 1px solid var(--tm-border);
 }
 .tm-flash-success {
@@ -744,7 +767,7 @@ tm-display-options {
   letter-spacing: -0.5px;
 }
 .tm-error-message {
-  font-size: 0.72rem;
+  font-size: var(--tm-font-size-sm);
   opacity: 0.5;
   margin: 0;
 }
@@ -755,7 +778,7 @@ tm-display-options {
 /* Responsive */
 @media (max-width: 768px) {
   .tm {
-    font-size: 0.72rem;
+    font-size: var(--tm-font-size-sm);
   }
   .tm table {
     font-size: 0.63rem;

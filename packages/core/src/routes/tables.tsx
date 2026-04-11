@@ -42,7 +42,7 @@ export async function tablesRoute(
   const views = visible.filter((t) => t.kind === "view");
 
   const html = renderPage(
-    <TapemarkLayout title="tables" prefix={ctx.prefix} name={ctx.name} siteUrl={ctx.siteUrl} siteName={ctx.siteName} scripts={ctx.scripts}>
+    <TapemarkLayout title="tables" prefix={ctx.prefix} name={ctx.name} symbol={ctx.symbol} siteUrl={ctx.siteUrl} siteName={ctx.siteName} scripts={ctx.scripts}>
       <h2 class="tm-section-title">tables</h2>
       <TableList items={tables} prefix={ctx.prefix} />
       {views.length > 0 && (

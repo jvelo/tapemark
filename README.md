@@ -1,4 +1,4 @@
-# tapemark
+# 🎞️ tapemark
 
 A generic, self-contained database admin panel for SQLite. Browse and edit your data with a dark, monospace UI. Zero-config — point it at a `.db` file and go.
 
@@ -87,7 +87,7 @@ tapemark({
   name: "admin",              // display name in the top bar
   siteUrl: "/",               // "← site" link
   siteName: "myapp",          // label for the site link
-  theme: "plex",              // "plex" (default) or "depart"
+  theme: "hubot",             // "hubot" (default), "plex", or "depart"
   bundleFonts: true,          // false if the host app already serves the fonts
   readonly: false,            // global read-only mode
   constraints: "enforce",     // "enforce" (default) or "relaxed"

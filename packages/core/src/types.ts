@@ -195,17 +195,24 @@ export interface TapemarkOptions {
   siteName?: string;
   /** Display name shown in the top-left of the bar. Defaults to "tapemark". */
   name?: string;
+  /**
+   * Brand mark (emoji or short string) rendered before `name` and used as favicon.
+   * Defaults to "🎞️" when `name` is not set, and to `false` when `name` is customized —
+   * i.e. integrators who rebrand don't get tapemark's mark by accident. Pass a string
+   * to override, or `false` to hide explicitly.
+   */
+  symbol?: string | false;
   /** Global read-only mode — disables all writes and deletes. */
   readonly?: boolean;
   /** Set to false to skip bundled fonts (when the host app already serves them). Defaults to true. */
   bundleFonts?: boolean;
-  /** Theme name. Defaults to "plex". */
+  /** Theme name. Defaults to "hubot". */
   theme?: ThemeName;
   /** Constraint enforcement mode. Defaults to "enforce". */
   constraints?: ConstraintMode;
 }
 
-export type ThemeName = "plex" | "depart";
+export type ThemeName = "hubot" | "plex" | "depart";
 
 /** "enforce" enables FK checks and HTML required attributes. "relaxed" disables both. */
 export type ConstraintMode = "enforce" | "relaxed";
@@ -220,6 +227,7 @@ export interface TapemarkContext {
   siteUrl?: string;
   siteName: string;
   name: string;
+  symbol: string | false;
   readonly: boolean;
   constraints: ConstraintMode;
   theme: ThemeName;

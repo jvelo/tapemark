@@ -234,6 +234,28 @@ const referenceDisplay: DisplayType = {
   editorComponent: "tm-reference-input",
 };
 
+const uuidDisplay: DisplayType = {
+  name: "uuid",
+  description: "Identifier rendered in monospace (UUIDs, hashes, keys)",
+  schema: {
+    type: "object",
+    properties: {
+      truncate: {
+        type: "number",
+        default: 0,
+        description: "Truncate to N characters (0 = full value)",
+      },
+    },
+  },
+  render(value, options) {
+    const str = String(value ?? "");
+    if (!str) return "";
+    const max = (options.truncate as number) ?? 0;
+    const display = max > 0 ? truncate(str, max) : str;
+    return `<code class="tm-cell-uuid">${escapeHtml(display)}</code>`;
+  },
+};
+
 const markdownDisplay: DisplayType = {
   name: "markdown",
   description: "Rendered markdown preview",
@@ -268,6 +290,7 @@ export const builtinDisplayTypes: Record<string, DisplayType> = {
   enum: enumDisplay,
   reference: referenceDisplay,
   markdown: markdownDisplay,
+  uuid: uuidDisplay,
 };
 
 export function createDisplayTypeRegistry(
