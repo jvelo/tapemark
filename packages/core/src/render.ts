@@ -1,18 +1,10 @@
-import { type VNode } from "preact";
-import renderToString from "preact-render-to-string";
+import { renderToString } from "hono/jsx/dom/server";
+import type { Child } from "hono/jsx";
 
-/**
- * Render a Preact VNode to a full HTML string (with doctype).
- * This is the single entry point for all server-side rendering.
- */
-export function renderPage(vnode: VNode): string {
-  return "<!DOCTYPE html>" + renderToString(vnode);
+export function renderPage(node: Child): string {
+  return "<!DOCTYPE html>" + renderToString(node);
 }
 
-/**
- * Render a Preact VNode to an HTML fragment string (no doctype).
- * Used for partial rendering (e.g. display type cell content).
- */
-export function renderFragment(vnode: VNode): string {
-  return renderToString(vnode);
+export function renderFragment(node: Child): string {
+  return renderToString(node);
 }
