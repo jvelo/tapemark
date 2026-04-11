@@ -1,5 +1,5 @@
-import type { Child } from "hono/jsx";
 import { renderToString } from "hono/jsx/dom/server";
+import type { Child } from "hono/jsx";
 
 export function renderPage(node: Child): string {
   return "<!DOCTYPE html>" + renderToString(node);
