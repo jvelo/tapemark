@@ -4,7 +4,13 @@ import importX from "eslint-plugin-import-x";
 export default tseslint.config(
   // Global ignores
   {
-    ignores: ["**/dist/", "**/node_modules/", "**/*.js", "**/*.d.ts"],
+    ignores: [
+      "**/dist/",
+      "**/node_modules/",
+      "**/*.js",
+      "!**/assets/tapemark.js",
+      "**/*.d.ts",
+    ],
   },
 
   // Base: recommended TS rules
@@ -52,6 +58,17 @@ export default tseslint.config(
       // Off — style rules we don't enforce
       "@typescript-eslint/no-empty-object-type": "off",
       "@typescript-eslint/no-namespace": "off",
+    },
+  },
+
+  // Client-side JS: basic linting without TS rules
+  {
+    files: ["**/assets/tapemark.js"],
+    rules: {
+      "no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
+      "no-undef": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
 

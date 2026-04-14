@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import {
   createTapemark,
   type Database,
-  type TapemarkOptions,
+  type TapemarkBaseOptions,
   type TapemarkRequest,
 } from "@jvelo/tapemark";
 import type { Context } from "hono";
@@ -12,7 +12,7 @@ import type { Context } from "hono";
  * the `db` field with a Hono-aware accessor.
  */
 export interface HonoAdminOptions
-  extends Omit<TapemarkOptions, "db" | "authorize"> {
+  extends Omit<TapemarkBaseOptions, "authorize"> {
   /**
    * Database accessor. Receives the Hono context so you can extract
    * the DB from env bindings (e.g. `c.env.DB` for D1).
@@ -42,47 +42,30 @@ export function tapemark(opts: HonoAdminOptions): Hono {
   const app = new Hono();
   const prefix = opts.prefix ?? "";
 
-  // We need to resolve the DB per-request for D1 (it comes from c.env).
-  // The core expects a stable Database or factory. We use a factory that
-  // captures the current Hono context.
-  let currentCtx: Context | null = null;
-
-  function resolveDb(): Database {
-    if (typeof opts.db === "function") {
-      if (!currentCtx) throw new Error("No Hono context available");
-      return opts.db(currentCtx);
-    }
-    return opts.db;
-  }
-
-  const core = createTapemark({
-    ...opts,
-    db: resolveDb,
-    authorize: opts.authorize
-      ? async (_req: TapemarkRequest) => {
-          if (!currentCtx) return false;
-          return opts.authorize!(currentCtx);
-        }
-      : undefined,
-  });
+  const { db, authorize, ...coreOpts } = opts;
+  const core = createTapemark(coreOpts);
 
   app.all("*", async (c) => {
-    currentCtx = c;
-    try {
-      const tapemarkReq = await honoToTapemarkRequest(c, prefix);
-      const res = await core.handle(tapemarkReq);
+    const resolvedDb = typeof db === "function" ? db(c) : db;
 
-      if (res.redirect) {
-        return c.redirect(res.redirect, res.status as 301 | 302 | 303 | 307 | 308);
+    if (authorize) {
+      const allowed = await authorize(c);
+      if (!allowed) {
+        return c.text("Forbidden", 403);
       }
-
-      return new Response(res.html ?? "", {
-        status: res.status,
-        headers: res.headers,
-      });
-    } finally {
-      currentCtx = null;
     }
+
+    const tapemarkReq = await honoToTapemarkRequest(c, prefix);
+    const res = await core.handle(tapemarkReq, { db: resolvedDb });
+
+    if (res.redirect) {
+      return c.redirect(res.redirect, res.status as 301 | 302 | 303 | 307 | 308);
+    }
+
+    return new Response(res.html ?? "", {
+      status: res.status,
+      headers: res.headers,
+    });
   });
 
   return app;

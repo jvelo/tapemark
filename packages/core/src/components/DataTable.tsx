@@ -1,3 +1,4 @@
+import { escapeHtml } from "../html";
 import type { CellValue, Column, ColumnConfig, DisplayType, TableConfig } from "../types";
 
 interface DataTableProps {
@@ -12,14 +13,6 @@ interface DataTableProps {
   pageSize?: number;
   /** "table" enables edit links and bulk select; "view" enables read-only row links. */
   kind?: "table" | "view";
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function renderCellContent(

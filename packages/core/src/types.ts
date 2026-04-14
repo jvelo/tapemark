@@ -161,6 +161,11 @@ export interface TapemarkResponse {
   redirect?: string;
 }
 
+export interface RequestOverrides {
+  /** Pre-resolved database for this request (bypasses options.db). */
+  db?: Database;
+}
+
 /** A route handler is a pure async function. */
 export type RouteHandler = (
   req: TapemarkRequest,
@@ -176,9 +181,13 @@ export interface TableOptions {
   hidden?: boolean;
 }
 
-export interface TapemarkOptions {
-  /** Database instance or factory. */
-  db: Database | (() => Database);
+/**
+ * Base configuration shared by direct users and adapters.
+ * Adapters extend this to add framework-specific fields (like a
+ * context-aware `db` accessor) while `createTapemark` accepts it
+ * directly when the database is provided per-request via overrides.
+ */
+export interface TapemarkBaseOptions {
   /** Authorization callback. If omitted, the panel is unprotected. */
   authorize?: (req: TapemarkRequest) => Promise<boolean>;
   /** URL prefix for generating internal links (e.g. "/admin"). */
@@ -210,6 +219,12 @@ export interface TapemarkOptions {
   theme?: ThemeName;
   /** Constraint enforcement mode. Defaults to "enforce". */
   constraints?: ConstraintMode;
+}
+
+/** Full options for direct usage — `db` is required. */
+export interface TapemarkOptions extends TapemarkBaseOptions {
+  /** Database instance or factory. */
+  db: Database | (() => Database);
 }
 
 export type ThemeName = "hubot" | "plex" | "depart";

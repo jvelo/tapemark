@@ -5,6 +5,7 @@ import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { ConfigStore } from "../config";
 import { assertWritable } from "./guard";
+import { redirect } from "./response";
 import type {
   ColumnConfig,
   TableConfig,
@@ -135,9 +136,5 @@ export async function tableConfigUpdateRoute(
 
   await configStore.setTableConfig(table, config);
 
-  return {
-    status: 302,
-    headers: { location: `${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("config saved")}` },
-    redirect: `${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("config saved")}`,
-  };
+  return redirect(`${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("config saved")}`);
 }

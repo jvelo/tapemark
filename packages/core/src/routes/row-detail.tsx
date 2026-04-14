@@ -6,6 +6,7 @@ import { SchemaIntrospector } from "../schema";
 import { TableRepository, decodePk, encodePk } from "../repository";
 import { ConfigStore } from "../config";
 import { assertWritable } from "./guard";
+import { redirect } from "./response";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 export async function rowDetailRoute(
@@ -113,11 +114,7 @@ export async function rowUpdateRoute(
   await repo.updateRow(table, pkValues, data);
 
   const newPk = encodePk(tableInfo.primaryKey, { ...pkValues, ...data });
-  return {
-    status: 302,
-    headers: { location: `${ctx.prefix}/${table}/${newPk}?flash=success&msg=${encodeURIComponent("row updated")}` },
-    redirect: `${ctx.prefix}/${table}/${newPk}?flash=success&msg=${encodeURIComponent("row updated")}`,
-  };
+  return redirect(`${ctx.prefix}/${table}/${newPk}?flash=success&msg=${encodeURIComponent("row updated")}`);
 }
 
 export async function rowDeleteRoute(
@@ -135,9 +132,5 @@ export async function rowDeleteRoute(
 
   await repo.deleteRow(table, pkValues);
 
-  return {
-    status: 302,
-    headers: { location: `${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}` },
-    redirect: `${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}`,
-  };
+  return redirect(`${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}`);
 }

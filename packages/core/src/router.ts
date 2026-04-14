@@ -2,6 +2,7 @@ import { TapemarkError } from "./errors";
 import { renderErrorPage } from "./error-page.jsx";
 import { TapemarkMigrator } from "./migrator";
 import { createDisplayTypeRegistry } from "./display";
+import { redirect } from "./routes/response";
 import { tablesRoute } from "./routes/tables";
 import { rowsRoute } from "./routes/rows";
 import { rowDetailRoute, rowUpdateRoute, rowDeleteRoute } from "./routes/row-detail";
@@ -14,7 +15,9 @@ import { loadAsset } from "./assets/load";
 import { themes, defaultTheme } from "./themes";
 import type {
   Database,
+  RequestOverrides,
   RouteHandler,
+  TapemarkBaseOptions,
   TapemarkContext,
   TapemarkOptions,
   TapemarkRequest,
@@ -97,12 +100,14 @@ function matchRoute(
 
 export interface TapemarkCore {
   /** Handle an incoming request. */
-  handle(req: TapemarkRequest): Promise<TapemarkResponse>;
+  handle(req: TapemarkRequest, overrides?: RequestOverrides): Promise<TapemarkResponse>;
   /** Register a route. Used internally and by adapters for asset routes. */
   addRoute(method: "GET" | "POST", pattern: string, handler: RouteHandler): void;
 }
 
-export function createTapemark(options: TapemarkOptions): TapemarkCore {
+export function createTapemark(options: TapemarkOptions): TapemarkCore;
+export function createTapemark(options: TapemarkBaseOptions): TapemarkCore;
+export function createTapemark(options: TapemarkBaseOptions & { db?: Database | (() => Database) }): TapemarkCore {
   const routes: Route[] = [];
   const prefix = options.prefix ?? "";
   const displayTypes = createDisplayTypeRegistry(options.displayTypes);
@@ -119,8 +124,11 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
   const resolvedSymbol: string | false =
     options.symbol !== undefined ? options.symbol : options.name === undefined ? "🎞️" : false;
 
-  function resolveDb(db: Database | (() => Database)): Database {
-    return typeof db === "function" ? db() : db;
+  function resolveDb(): Database {
+    if (!options.db) {
+      throw new Error("No database configured — provide `db` in options or via per-request overrides");
+    }
+    return typeof options.db === "function" ? options.db() : options.db;
   }
 
   function getMigrator(db: Database): TapemarkMigrator {
@@ -130,9 +138,9 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
     return migrator;
   }
 
-  function buildContext(): TapemarkContext {
+  function buildContext(db: Database): TapemarkContext {
     return {
-      db: resolveDb(options.db),
+      db,
       prefix,
       displayTypes,
       tableOptions: tableOptionsMap,
@@ -148,7 +156,7 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
     };
   }
 
-  async function handle(req: TapemarkRequest): Promise<TapemarkResponse> {
+  async function handle(req: TapemarkRequest, overrides?: RequestOverrides): Promise<TapemarkResponse> {
     const errorCtx = {
       prefix,
       name: options.name ?? "tapemark",
@@ -158,7 +166,6 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
       scripts: options.scripts,
     };
 
-    // Auth check
     if (options.authorize) {
       const allowed = await options.authorize(req);
       if (!allowed) {
@@ -167,7 +174,7 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
     }
 
     // Ensure tapemark tables exist (lazy-init migrator on first request)
-    const db = resolveDb(options.db);
+    const db = overrides?.db ?? resolveDb();
     await getMigrator(db).ensureReady();
 
     // Match route
@@ -182,7 +189,7 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
       params: { ...req.params, ...match.params },
     };
 
-    const ctx = buildContext();
+    const ctx = buildContext(db);
 
     try {
       return await match.handler(enrichedReq, ctx);
@@ -195,12 +202,7 @@ export function createTapemark(options: TapemarkOptions): TapemarkCore {
         const msg = err instanceof Error ? err.message : "Unknown error";
         // Redirect to the GET version of the same path (strip /delete suffix)
         const redirectPath = req.path.replace(/\/delete$/, "");
-        const location = `${prefix}${redirectPath}?flash=error&msg=${encodeURIComponent(msg)}`;
-        return {
-          status: 302,
-          headers: { location },
-          redirect: location,
-        };
+        return redirect(`${prefix}${redirectPath}?flash=error&msg=${encodeURIComponent(msg)}`);
       }
       throw err;
     }

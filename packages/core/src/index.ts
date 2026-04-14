@@ -4,12 +4,15 @@ export type {
   Column,
   ColumnAffinity,
   ColumnConfig,
+  ConstraintMode,
   Database,
   DisplayType,
   ForeignKey,
   OptionSchema,
   PreparedStatement,
+  RequestOverrides,
   RouteHandler,
+  TapemarkBaseOptions,
   RowData,
   RowResult,
   Schema,
@@ -21,7 +24,6 @@ export type {
   TapemarkRequest,
   TapemarkResponse,
   ThemeName,
-  ConstraintMode,
 } from "./types";
 
 // Themes

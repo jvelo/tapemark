@@ -161,4 +161,46 @@ describe("Hono adapter", () => {
     const html = await res.text();
     expect(html).toContain("users");
   });
+
+  it("isolates concurrent requests with different databases", async () => {
+    const rawA = new BetterSqlite3(":memory:");
+    rawA.exec("CREATE TABLE items (id INTEGER PRIMARY KEY, label TEXT); INSERT INTO items VALUES (1, 'from-db-a');");
+    const dbA = createSqliteAdapter(rawA);
+
+    const rawB = new BetterSqlite3(":memory:");
+    rawB.exec("CREATE TABLE things (id INTEGER PRIMARY KEY, label TEXT); INSERT INTO things VALUES (1, 'from-db-b');");
+    const dbB = createSqliteAdapter(rawB);
+
+    // Both requests go through the same tapemark() instance, but
+    // should each see their own database via the per-request factory.
+    let callCount = 0;
+    const concurrentApp = new Hono();
+    concurrentApp.route(
+      "/admin",
+      tapemark({
+        db: () => {
+          callCount++;
+          return callCount % 2 === 1 ? dbA : dbB;
+        },
+        prefix: "/admin",
+      }),
+    );
+
+    const [resA, resB] = await Promise.all([
+      concurrentApp.request("/admin/"),
+      concurrentApp.request("/admin/"),
+    ]);
+
+    expect(resA.status).toBe(200);
+    expect(resB.status).toBe(200);
+
+    const htmlA = await resA.text();
+    const htmlB = await resB.text();
+
+    // Each response should reflect its own database's tables
+    const hasItems = htmlA.includes("items") || htmlB.includes("items");
+    const hasThings = htmlA.includes("things") || htmlB.includes("things");
+    expect(hasItems).toBe(true);
+    expect(hasThings).toBe(true);
+  });
 });

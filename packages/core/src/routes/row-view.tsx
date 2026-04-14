@@ -7,6 +7,7 @@ import { ConfigStore } from "../config";
 import { NotFoundError } from "../errors";
 import { castValue } from "../repository";
 import { assertWritable } from "./guard";
+import { redirect } from "./response";
 import type { CellValue, TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 async function getRowByIndex(
@@ -154,13 +155,7 @@ export async function rowViewUpdateRoute(
       .run();
   }
 
-  return {
-    status: 302,
-    headers: {
-      location: `${ctx.prefix}/${table}/_row/${index}?flash=success&msg=${encodeURIComponent("row updated")}`,
-    },
-    redirect: `${ctx.prefix}/${table}/_row/${index}?flash=success&msg=${encodeURIComponent("row updated")}`,
-  };
+  return redirect(`${ctx.prefix}/${table}/_row/${index}?flash=success&msg=${encodeURIComponent("row updated")}`);
 }
 
 export async function rowViewDeleteRoute(
@@ -184,8 +179,6 @@ export async function rowViewDeleteRoute(
       .run();
   } else {
     // Fallback for WITHOUT ROWID tables: match all original column values
-    const introspector = new SchemaIntrospector(ctx.db);
-    const tableInfo = await introspector.getTable(table);
     const whereCols = tableInfo.columns.map((c) => `"${c.name}" IS ?`).join(" AND ");
     const whereValues = tableInfo.columns.map((c) => originalRow[c.name] ?? null);
     await ctx.db
@@ -194,11 +187,5 @@ export async function rowViewDeleteRoute(
       .run();
   }
 
-  return {
-    status: 302,
-    headers: {
-      location: `${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}`,
-    },
-    redirect: `${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}`,
-  };
+  return redirect(`${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}`);
 }

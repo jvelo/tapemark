@@ -5,6 +5,7 @@ import { SchemaIntrospector } from "../schema";
 import { TableRepository, encodePk } from "../repository";
 import { ConfigStore } from "../config";
 import { assertWritable } from "./guard";
+import { redirect } from "./response";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 export async function rowCreateRoute(
@@ -79,9 +80,5 @@ export async function rowInsertRoute(
   await repo.insertRow(table, data);
 
   const pk = encodePk(tableInfo.primaryKey, data);
-  return {
-    status: 302,
-    headers: { location: `${ctx.prefix}/${table}/${pk}?flash=success&msg=${encodeURIComponent("row created")}` },
-    redirect: `${ctx.prefix}/${table}/${pk}?flash=success&msg=${encodeURIComponent("row created")}`,
-  };
+  return redirect(`${ctx.prefix}/${table}/${pk}?flash=success&msg=${encodeURIComponent("row created")}`);
 }

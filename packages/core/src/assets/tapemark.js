@@ -1,3 +1,4 @@
+// @ts-check
 // tapemark — client-side interactivity
 
 // <tm-confirm-button> web component
@@ -172,6 +173,19 @@ if (!customElements.get("tm-image-cell")) {
 // Provides .modalBody, .modalFooter, .modalHeaderSlot for populating content.
 // Dispatches "tm-modal-close" event when closed.
 class TmModal extends HTMLElement {
+  /** @type {boolean} */
+  _initialized = false;
+  /** @type {HTMLDivElement | null} */
+  _overlay = null;
+  /** @type {HTMLDivElement | null} */
+  _body = null;
+  /** @type {HTMLDivElement | null} */
+  _footer = null;
+  /** @type {HTMLDivElement | null} */
+  _headerSlot = null;
+  /** @type {((e: KeyboardEvent) => void) | null} */
+  _escHandler = null;
+
   connectedCallback() {
     if (this._initialized) return;
     this._initialized = true;
@@ -230,14 +244,17 @@ class TmModal extends HTMLElement {
     };
   }
 
+  /** @returns {HTMLDivElement | null} */
   get modalBody() { return this._body; }
+  /** @returns {HTMLDivElement | null} */
   get modalFooter() { return this._footer; }
+  /** @returns {HTMLDivElement | null} */
   get modalHeaderSlot() { return this._headerSlot; }
 
   open() {
     document.body.appendChild(this._overlay);
-    // Force layout then animate
-    this._overlay.offsetHeight;
+    // Force layout reflow before adding the class to trigger CSS transition
+    void this._overlay.offsetHeight;
     this._overlay.classList.add("is-open");
     document.addEventListener("keydown", this._escHandler);
   }
@@ -505,12 +522,12 @@ class TmReferenceInput extends HTMLElement {
       searchInput.autocomplete = "off";
       headerSlot.appendChild(searchInput);
 
-      let currentPage = 0;
+      let _currentPage = 0;
       let currentQuery = "";
       let modalDebounce = null;
 
       const loadPage = async (page, query) => {
-        currentPage = page;
+        _currentPage = page;
         currentQuery = query;
         body.innerHTML = '<div class="tm-ref-hint">loading\u2026</div>';
 

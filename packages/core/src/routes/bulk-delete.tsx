@@ -1,5 +1,6 @@
 import { TableRepository } from "../repository";
 import { assertWritable } from "./guard";
+import { redirect } from "./response";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 export async function bulkDeleteRoute(
@@ -19,11 +20,5 @@ export async function bulkDeleteRoute(
   const deleted = await repo.bulkDelete(table, pks);
   const page = (req.body?.page as string) || "1";
 
-  return {
-    status: 302,
-    headers: {
-      location: `${ctx.prefix}/${table}?page=${page}&flash=success&msg=${encodeURIComponent(`${deleted} row${deleted === 1 ? "" : "s"} deleted`)}`,
-    },
-    redirect: `${ctx.prefix}/${table}?page=${page}&flash=success&msg=${encodeURIComponent(`${deleted} row${deleted === 1 ? "" : "s"} deleted`)}`,
-  };
+  return redirect(`${ctx.prefix}/${table}?page=${page}&flash=success&msg=${encodeURIComponent(`${deleted} row${deleted === 1 ? "" : "s"} deleted`)}`);
 }
