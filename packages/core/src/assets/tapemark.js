@@ -30,7 +30,7 @@ class TmSchemaOptions extends HTMLElement {
   connectedCallback() {
     const colName = this.getAttribute("data-column");
     const kind = this.getAttribute("data-kind") || "display";
-    const selectName = colName + "__" + kind;
+    const selectName = colName + "__" + kind + "_type";
     const select = this.closest("tr")?.querySelector(`select[name="${selectName}"]`);
     if (!select) return;
 

@@ -87,7 +87,8 @@ export function ConfigForm({
         <tbody>
           {columns.map((col) => {
             const cc: ColumnConfig = config.columns?.[col.name] ?? {};
-            const displayOptsJson = JSON.stringify(cc.displayOptions ?? {});
+            const displayType = cc.display?.type ?? "text";
+            const displayOptsJson = JSON.stringify(cc.display?.options ?? {});
 
             // Infer the editor (and its defaults) as if cc.editor were unset
             const inferred = resolveEditor(
@@ -96,7 +97,7 @@ export function ConfigForm({
               displayTypes,
               fkByColumn.get(col.name),
             );
-            const selectedEditor = cc.editor ?? inferred.editor;
+            const selectedEditor = cc.editor?.type ?? inferred.editor;
 
             // Inferred options only apply when the selected editor matches
             // the inferred one. Otherwise the key set is different.
@@ -104,7 +105,7 @@ export function ConfigForm({
               selectedEditor === inferred.editor
                 ? inferredOptionsByColumn?.[col.name] ?? inferred.options
                 : {};
-            const storedOptions = cc.editorOptions ?? {};
+            const storedOptions = cc.editor?.options ?? {};
             const effectiveOptions = { ...inferredOptions, ...storedOptions };
             const inferredKeys = Object.keys(inferredOptions).filter(
               (k) => !(k in storedOptions),
@@ -116,9 +117,9 @@ export function ConfigForm({
                 <td>{col.name}</td>
                 <td class="tm-muted">{col.rawType || "TEXT"}</td>
                 <td>
-                  <select name={`${col.name}__display`}>
+                  <select name={`${col.name}__display_type`}>
                     {displayOptionsList.map((opt) => (
-                      <option value={opt} selected={cc.display === opt}>
+                      <option value={opt} selected={displayType === opt}>
                         {opt}
                       </option>
                     ))}
@@ -132,7 +133,7 @@ export function ConfigForm({
                   />
                 </td>
                 <td>
-                  <select name={`${col.name}__editor`}>
+                  <select name={`${col.name}__editor_type`}>
                     {editorOptionsList.map((opt) => (
                       <option value={opt} selected={selectedEditor === opt}>
                         {opt}

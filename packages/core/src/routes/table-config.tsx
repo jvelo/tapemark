@@ -102,10 +102,10 @@ export async function tableConfigUpdateRoute(
 
   if (req.body) {
     for (const col of tableInfo.columns) {
-      const display: string =
-        (req.body[`${col.name}__display`] as string) || "text";
-      const editor: string =
-        (req.body[`${col.name}__editor`] as string) || "";
+      const displayType: string =
+        (req.body[`${col.name}__display_type`] as string) || "text";
+      const editorType: string =
+        (req.body[`${col.name}__editor_type`] as string) || "";
       const label: string =
         (req.body[`${col.name}__label`] as string) || "";
       const hidden = !!req.body[`${col.name}__hidden`];
@@ -114,36 +114,39 @@ export async function tableConfigUpdateRoute(
         req.body,
         col.name,
         "display",
-        ctx.displayTypes.get(display)?.schema,
+        ctx.displayTypes.get(displayType)?.schema,
       );
-      let editorOptions = editor
+      let editorOptions = editorType
         ? parseSchemaOptions(
             req.body,
             col.name,
             "editor",
-            ctx.editorTypes.get(editor)?.schema,
+            ctx.editorTypes.get(editorType)?.schema,
           )
         : {};
 
       const cc: ColumnConfig = {};
-      if (display !== "text") cc.display = display;
       if (label) cc.label = label;
       if (hidden) cc.hidden = true;
-      if (Object.keys(displayOptions).length > 0) cc.displayOptions = displayOptions;
 
-      // Only store `editor` when it differs from what would be inferred.
-      // This keeps the config lean and lets future display/FK changes re-infer.
-      const inferredEditor = inferEditor(col, cc, ctx.displayTypes, fkByColumn.get(col.name));
-      if (editor && editor !== inferredEditor) cc.editor = editor;
-
-      // If the selected editor matches the inferred one, strip option values
-      // that match the inferred defaults — so opening+saving the page
-      // doesn't pin inferred values into the stored config.
-      if (editor === inferredEditor) {
-        const inferred = inferredByCol[col.name] ?? {};
-        editorOptions = stripMatching(editorOptions, inferred);
+      if (displayType !== "text" || Object.keys(displayOptions).length > 0) {
+        cc.display = { type: displayType };
+        if (Object.keys(displayOptions).length > 0) cc.display.options = displayOptions;
       }
-      if (Object.keys(editorOptions).length > 0) cc.editorOptions = editorOptions;
+
+      // Only store `editor` when its type differs from what would be
+      // inferred, or when it has options. Strip matching inferred options
+      // first so opening+saving doesn't pin inferred defaults.
+      const inferredEditor = inferEditor(col, cc, ctx.displayTypes, fkByColumn.get(col.name));
+      if (editorType === inferredEditor) {
+        editorOptions = stripMatching(editorOptions, inferredByCol[col.name] ?? {});
+      }
+      const storeEditorType = editorType && editorType !== inferredEditor;
+      const storeEditorOptions = Object.keys(editorOptions).length > 0;
+      if (storeEditorType || storeEditorOptions) {
+        cc.editor = { type: editorType || inferredEditor };
+        if (storeEditorOptions) cc.editor.options = editorOptions;
+      }
 
       if (Object.keys(cc).length > 0) {
         config.columns![col.name] = cc;

@@ -160,11 +160,15 @@ export interface EditorType {
 // Table configuration (stored in _tapemark_table_config)
 // ---------------------------------------------------------------------------
 
+/** Paired `type` + `options` for a configured concern (display or editor). */
+export interface Configured<Opts = Record<string, unknown>> {
+  type: string;
+  options?: Opts;
+}
+
 export interface ColumnConfig {
-  display?: string;
-  displayOptions?: Record<string, unknown>;
-  editor?: string;
-  editorOptions?: Record<string, unknown>;
+  display?: Configured;
+  editor?: Configured;
   label?: string;
   hidden?: boolean;
 }

@@ -20,8 +20,8 @@ export async function resolveSuggestions(
   const repo = new TableRepository(db);
   for (const col of columns) {
     const cc = tableConfig.columns[col.name];
-    if (cc?.editor !== "text") continue;
-    if (cc.editorOptions?.suggest !== true) continue;
+    if (cc?.editor?.type !== "text") continue;
+    if (cc.editor.options?.suggest !== true) continue;
     out[col.name] = await repo.getDistinctValues(table, col.name, limit);
   }
   return out;

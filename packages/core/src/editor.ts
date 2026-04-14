@@ -286,10 +286,10 @@ export function resolveEditor(
   fk: ForeignKey | undefined,
 ): { editor: string; options: Record<string, unknown> } {
   if (cc?.editor) {
-    return { editor: cc.editor, options: cc.editorOptions ?? {} };
+    return { editor: cc.editor.type, options: cc.editor.options ?? {} };
   }
   if (cc?.display) {
-    const dt = displayTypes?.get(cc.display);
+    const dt = displayTypes?.get(cc.display.type);
     if (dt?.defaultEditor) {
       return { editor: dt.defaultEditor, options: {} };
     }

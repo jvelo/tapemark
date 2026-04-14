@@ -4,6 +4,7 @@ export type {
   Column,
   ColumnAffinity,
   ColumnConfig,
+  Configured,
   ConstraintMode,
   Database,
   DisplayType,
