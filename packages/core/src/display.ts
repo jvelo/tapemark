@@ -8,20 +8,9 @@ function truncate(str: string, max: number): string {
 const textDisplay: DisplayType = {
   name: "text",
   description: "Truncated text (default)",
-  schema: {
-    type: "object",
-    properties: {
-      maxLength: {
-        type: "number",
-        default: 80,
-        description: "Maximum display length before truncation",
-      },
-    },
-  },
-  render(value, options) {
-    const max = (options.maxLength as number) ?? 80;
-    const str = String(value ?? "");
-    return escapeHtml(truncate(str, max));
+  schema: { type: "object", properties: {} },
+  render(value) {
+    return escapeHtml(truncate(String(value ?? ""), 80));
   },
 };
 
@@ -50,6 +39,7 @@ const imageDisplay: DisplayType = {
     const maxPreview = (options.maxPreview as number) ?? 240;
     return `<tm-image-cell data-src="${escapeHtml(url)}" data-height="${height}" data-preview="${maxPreview}"></tm-image-cell>`;
   },
+  defaultEditor: "url",
 };
 
 const linkDisplay: DisplayType = {
@@ -78,6 +68,7 @@ const linkDisplay: DisplayType = {
     const target = external ? ' target="_blank" rel="noopener"' : "";
     return `<a href="${escapeHtml(url)}"${target} class="tm-cell-link">${escapeHtml(truncate(url, max))}</a>`;
   },
+  defaultEditor: "url",
 };
 
 const jsonDisplay: DisplayType = {
@@ -132,6 +123,7 @@ const datetimeDisplay: DisplayType = {
     const str = String(value ?? "");
     return `<time class="tm-cell-datetime">${escapeHtml(str)}</time>`;
   },
+  defaultEditor: "datetime",
 };
 
 const colorDisplay: DisplayType = {
@@ -153,6 +145,7 @@ const colorDisplay: DisplayType = {
     const size = (options.swatchSize as number) ?? 12;
     return `<span class="tm-cell-color"><span class="tm-swatch" style="--tm-swatch-size:${size}px;--tm-swatch-color:${escapeHtml(color)}"></span>${escapeHtml(color)}</span>`;
   },
+  defaultEditor: "color",
 };
 
 const enumDisplay: DisplayType = {
@@ -208,19 +201,7 @@ const referenceDisplay: DisplayType = {
     if (!table) return escapeHtml(label);
     return `<a href="${escapeHtml(table)}/${escapeHtml(str)}" class="tm-cell-ref">${escapeHtml(label)}</a>`;
   },
-  renderInput(column, value, options) {
-    const table = options.table as string | undefined;
-    const labelColumn = options.labelColumn as string | undefined;
-    const strVal = value === null || value === undefined ? "" : String(value);
-    if (!table) {
-      return `<input id="f-${escapeHtml(column.name)}" name="${escapeHtml(column.name)}" type="text" value="${escapeHtml(strVal)}" />`;
-    }
-    const labelAttr = labelColumn ? ` data-label-column="${escapeHtml(labelColumn)}"` : "";
-    return `<tm-reference-input data-table="${escapeHtml(table)}" data-column="${escapeHtml(column.name)}" data-value="${escapeHtml(strVal)}"${labelAttr}>`
-      + `<input id="f-${escapeHtml(column.name)}" name="${escapeHtml(column.name)}" type="hidden" value="${escapeHtml(strVal)}" />`
-      + `</tm-reference-input>`;
-  },
-  editorComponent: "tm-reference-input",
+  defaultEditor: "reference",
 };
 
 const uuidDisplay: DisplayType = {

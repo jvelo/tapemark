@@ -5,6 +5,7 @@ import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, decodePk, encodePk } from "../repository";
 import { ConfigStore } from "../config";
+import { resolveSuggestions } from "../suggestions";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
@@ -23,6 +24,7 @@ export async function rowDetailRoute(
   const pkValues = decodePk(tableInfo.primaryKey, pkParam);
   const row = await repo.getRow(table, pkValues);
   const tableConfig = await configStore.getTableConfig(table);
+  const suggestions = await resolveSuggestions(ctx.db, table, tableInfo.columns, tableConfig);
 
   const isView = tableInfo.kind === "view";
   const isReadonly = isView || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
@@ -59,7 +61,9 @@ export async function rowDetailRoute(
         tableConfig={tableConfig}
         constraints={ctx.constraints}
         displayTypes={ctx.displayTypes}
+        editorTypes={ctx.editorTypes}
         prefix={ctx.prefix}
+        suggestions={suggestions}
       />
       {!isReadonly && (
         <div class="tm-row-actions">

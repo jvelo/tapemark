@@ -6,6 +6,7 @@ import { SchemaIntrospector } from "../schema";
 import { ConfigStore } from "../config";
 import { NotFoundError } from "../errors";
 import { castValue } from "../repository";
+import { resolveSuggestions } from "../suggestions";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
 import type { CellValue, TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
@@ -47,6 +48,7 @@ export async function rowViewRoute(
   const configStore = new ConfigStore(ctx.db);
   const tableConfig = await configStore.getTableConfig(table);
   const row = await getRowByIndex(ctx, table, index, tableInfo.hasRowid);
+  const suggestions = await resolveSuggestions(ctx.db, table, tableInfo.columns, tableConfig);
 
   const isView = tableInfo.kind === "view";
   const isReadonly = isView || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
@@ -84,7 +86,9 @@ export async function rowViewRoute(
         tableConfig={tableConfig}
         constraints={ctx.constraints}
         displayTypes={ctx.displayTypes}
+        editorTypes={ctx.editorTypes}
         prefix={ctx.prefix}
+        suggestions={suggestions}
       />
       {!isReadonly && (
         <div class="tm-row-actions">

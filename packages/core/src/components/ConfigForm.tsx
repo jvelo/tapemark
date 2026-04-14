@@ -1,28 +1,59 @@
-import type { Column, ColumnConfig, DisplayType, TableConfig } from "../types";
+import { resolveEditor } from "../editor";
+import type {
+  Column,
+  ColumnConfig,
+  DisplayType,
+  EditorType,
+  ForeignKey,
+  TableConfig,
+} from "../types";
 
 interface ConfigFormProps {
   table: string;
   prefix: string;
   columns: Column[];
+  foreignKeys?: ForeignKey[];
+  /**
+   * Pre-computed inferred options per column, keyed by column name.
+   * Produced by the route (sync inference + editor.inferOptions). Shown as
+   * "inferred" hints in the UI when they fill in un-stored keys.
+   */
+  inferredOptionsByColumn?: Record<string, Record<string, unknown>>;
   config: TableConfig;
   displayTypes: Map<string, DisplayType>;
+  editorTypes: Map<string, EditorType>;
 }
 
 export function ConfigForm({
   table,
   prefix,
   columns,
+  foreignKeys,
+  inferredOptionsByColumn,
   config,
   displayTypes,
+  editorTypes,
 }: ConfigFormProps) {
-  const displayOptions = Array.from(displayTypes.keys());
+  const displayOptionsList = Array.from(displayTypes.keys());
+  const editorOptionsList = Array.from(editorTypes.keys());
 
-  // Serialize display type schemas for the web component
-  const schemas: Record<string, unknown> = {};
-  for (const [name, dt] of displayTypes) {
-    schemas[name] = dt.schema;
+  // Single-column FK lookup, for editor inference
+  const fkByColumn = new Map<string, ForeignKey>();
+  for (const fk of foreignKeys ?? []) {
+    if (fk.columns.length === 1) {
+      fkByColumn.set(fk.columns[0], fk);
+    }
   }
-  const schemasJson = JSON.stringify(schemas);
+
+  // Serialize schemas for the web components
+  const displaySchemas: Record<string, unknown> = {};
+  for (const [name, dt] of displayTypes) {
+    displaySchemas[name] = dt.schema;
+  }
+  const editorSchemas: Record<string, unknown> = {};
+  for (const [name, et] of editorTypes) {
+    editorSchemas[name] = et.schema;
+  }
 
   return (
     <form
@@ -33,7 +64,12 @@ export function ConfigForm({
       <script
         type="application/json"
         id="tm-display-schemas"
-        dangerouslySetInnerHTML={{ __html: schemasJson }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(displaySchemas) }}
+      />
+      <script
+        type="application/json"
+        id="tm-editor-schemas"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(editorSchemas) }}
       />
       <table>
         <thead>
@@ -41,7 +77,9 @@ export function ConfigForm({
             <th>column</th>
             <th>type</th>
             <th>display</th>
-            <th>options</th>
+            <th>display options</th>
+            <th>editor</th>
+            <th>editor options</th>
             <th>label</th>
             <th>hidden</th>
           </tr>
@@ -49,14 +87,37 @@ export function ConfigForm({
         <tbody>
           {columns.map((col) => {
             const cc: ColumnConfig = config.columns?.[col.name] ?? {};
-            const optionsJson = JSON.stringify(cc.options ?? {});
+            const displayOptsJson = JSON.stringify(cc.displayOptions ?? {});
+
+            // Infer the editor (and its defaults) as if cc.editor were unset
+            const inferred = resolveEditor(
+              col,
+              { ...cc, editor: undefined },
+              displayTypes,
+              fkByColumn.get(col.name),
+            );
+            const selectedEditor = cc.editor ?? inferred.editor;
+
+            // Inferred options only apply when the selected editor matches
+            // the inferred one. Otherwise the key set is different.
+            const inferredOptions: Record<string, unknown> =
+              selectedEditor === inferred.editor
+                ? inferredOptionsByColumn?.[col.name] ?? inferred.options
+                : {};
+            const storedOptions = cc.editorOptions ?? {};
+            const effectiveOptions = { ...inferredOptions, ...storedOptions };
+            const inferredKeys = Object.keys(inferredOptions).filter(
+              (k) => !(k in storedOptions),
+            );
+            const editorOptsJson = JSON.stringify(effectiveOptions);
+            const inferredKeysJson = JSON.stringify(inferredKeys);
             return (
               <tr>
                 <td>{col.name}</td>
                 <td class="tm-muted">{col.rawType || "TEXT"}</td>
                 <td>
                   <select name={`${col.name}__display`}>
-                    {displayOptions.map((opt) => (
+                    {displayOptionsList.map((opt) => (
                       <option value={opt} selected={cc.display === opt}>
                         {opt}
                       </option>
@@ -64,9 +125,27 @@ export function ConfigForm({
                   </select>
                 </td>
                 <td>
-                  <tm-display-options
+                  <tm-schema-options
                     data-column={col.name}
-                    data-options={optionsJson}
+                    data-kind="display"
+                    data-options={displayOptsJson}
+                  />
+                </td>
+                <td>
+                  <select name={`${col.name}__editor`}>
+                    {editorOptionsList.map((opt) => (
+                      <option value={opt} selected={selectedEditor === opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                </td>
+                <td>
+                  <tm-schema-options
+                    data-column={col.name}
+                    data-kind="editor"
+                    data-options={editorOptsJson}
+                    data-inferred-keys={inferredKeysJson}
                   />
                 </td>
                 <td>

@@ -30,7 +30,7 @@ function renderCellContent(
   const displayName = config.display || "text";
   const displayType = displayTypes.get(displayName);
   if (displayType) {
-    return displayType.render(value, config.options ?? {});
+    return displayType.render(value, config.displayOptions ?? {});
   }
 
   // Fallback: plain text truncation

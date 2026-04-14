@@ -4,6 +4,7 @@ import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, encodePk } from "../repository";
 import { ConfigStore } from "../config";
+import { resolveSuggestions } from "../suggestions";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
@@ -18,6 +19,7 @@ export async function rowCreateRoute(
   const tableInfo = await introspector.getTable(table);
   const configStore = new ConfigStore(ctx.db);
   const tableConfig = await configStore.getTableConfig(table);
+  const suggestions = await resolveSuggestions(ctx.db, table, tableInfo.columns, tableConfig);
 
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },
@@ -45,7 +47,9 @@ export async function rowCreateRoute(
         tableConfig={tableConfig}
         constraints={ctx.constraints}
         displayTypes={ctx.displayTypes}
+        editorTypes={ctx.editorTypes}
         prefix={ctx.prefix}
+        suggestions={suggestions}
       />
     </TapemarkLayout>,
   );

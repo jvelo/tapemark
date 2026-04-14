@@ -2,6 +2,7 @@ import { TapemarkError } from "./errors";
 import { renderErrorPage } from "./error-page.jsx";
 import { TapemarkMigrator } from "./migrator";
 import { createDisplayTypeRegistry } from "./display";
+import { createEditorTypeRegistry } from "./editor";
 import { redirect } from "./routes/response";
 import { tablesRoute } from "./routes/tables";
 import { rowsRoute } from "./routes/rows";
@@ -111,6 +112,7 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
   const routes: Route[] = [];
   const prefix = options.prefix ?? "";
   const displayTypes = createDisplayTypeRegistry(options.displayTypes);
+  const editorTypes = createEditorTypeRegistry(options.editorTypes);
   const tableOptionsMap = new Map(
     Object.entries(options.tables ?? {}),
   );
@@ -143,6 +145,7 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
       db,
       prefix,
       displayTypes,
+      editorTypes,
       tableOptions: tableOptionsMap,
       scripts,
       siteUrl: options.siteUrl,

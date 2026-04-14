@@ -12,10 +12,10 @@ describe("builtinDisplayTypes", () => {
     );
   });
 
-  it("text truncates long strings", () => {
+  it("text truncates long strings at 80 chars", () => {
     const long = "a".repeat(100);
-    const html = builtinDisplayTypes.text.render(long, { maxLength: 10 });
-    expect(html).toBe("aaaaaaaaaa…");
+    const html = builtinDisplayTypes.text.render(long, {});
+    expect(html).toBe("a".repeat(80) + "…");
   });
 
   it("text escapes HTML", () => {

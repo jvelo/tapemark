@@ -47,7 +47,7 @@ export async function resolveReferenceLabels(
       continue;
     }
 
-    const labelColumnOverride = cc?.options?.labelColumn as string | undefined;
+    const labelColumnOverride = cc?.displayOptions?.labelColumn as string | undefined;
     const labelColumn = labelColumnOverride ?? pickLabelColumn(refTable);
     const valueColumn = fk.referencedColumns[0];
 
@@ -73,8 +73,8 @@ export async function resolveReferenceLabels(
     merged.columns[colName] = {
       ...cc,
       display: cc?.display ?? "reference",
-      options: {
-        ...cc?.options,
+      displayOptions: {
+        ...cc?.displayOptions,
         table: `${prefix}/${fk.referencedTable}`,
         _refTable: fk.referencedTable,
         _labels: labels,

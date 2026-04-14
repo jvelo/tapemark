@@ -1,4 +1,13 @@
-import type { CellValue, Column, ColumnConfig, ConstraintMode, DisplayType, ForeignKey, TableConfig } from "../types";
+import { resolveEditor } from "../editor";
+import type {
+  CellValue,
+  Column,
+  ConstraintMode,
+  DisplayType,
+  EditorType,
+  ForeignKey,
+  TableConfig,
+} from "../types";
 
 interface RowFormProps {
   columns: Column[];
@@ -9,50 +18,20 @@ interface RowFormProps {
   submitLabel: string;
   /** Form id for external submit buttons. When set, hides the built-in submit. */
   formId?: string;
-  /** Table config for display-type-aware editor inference. */
+  /** Table config — drives per-column display/editor selection. */
   tableConfig?: TableConfig;
-  /** Display type registry for custom renderInput. */
+  /** Display type registry — used for the display.defaultEditor hint. */
   displayTypes?: Map<string, DisplayType>;
+  /** Editor type registry — used to render inputs. */
+  editorTypes?: Map<string, EditorType>;
   /** URL prefix for resolving lookup endpoints. */
   prefix?: string;
   /** Constraint enforcement mode. When "relaxed", required attributes are skipped. */
   constraints?: ConstraintMode;
   /** When true, hides the submit button (view-only mode). */
   formReadonly?: boolean;
-}
-
-/** Infer the best HTML input type from display config and column affinity. */
-function resolveInputType(
-  col: Column,
-  cc: ColumnConfig | undefined,
-): { type: string; useTextarea: boolean } {
-  const display = cc?.display;
-
-  // Display-type-aware defaults
-  switch (display) {
-    case "color":
-      return { type: "color", useTextarea: false };
-    case "datetime":
-      return { type: "datetime-local", useTextarea: false };
-    case "link":
-    case "image":
-      return { type: "url", useTextarea: false };
-  }
-
-  // Affinity-based fallback
-  if (
-    col.affinity === "integer" ||
-    col.affinity === "real" ||
-    col.affinity === "numeric"
-  ) {
-    return { type: "number", useTextarea: false };
-  }
-
-  return { type: "text", useTextarea: col.affinity === "text" };
-}
-
-function isLongText(value: unknown): boolean {
-  return typeof value === "string" && value.length > 100;
+  /** Per-column autocomplete suggestions, rendered as a `<datalist>`. */
+  suggestions?: Record<string, string[]>;
 }
 
 export function RowForm({
@@ -65,9 +44,11 @@ export function RowForm({
   formId,
   tableConfig,
   displayTypes,
+  editorTypes,
   prefix,
   constraints = "enforce",
   formReadonly = false,
+  suggestions,
 }: RowFormProps) {
   const isEdit = !!values;
   const pkSet = new Set(primaryKey);
@@ -92,54 +73,48 @@ export function RowForm({
         const isPk = pkSet.has(col.name);
         const readOnly = isPk && isEdit;
         const cc = tableConfig?.columns?.[col.name];
-
-        // Check if this column has a display type with custom renderInput
-        const displayName = cc?.display;
-        const displayType = displayName ? displayTypes?.get(displayName) : undefined;
-
-        // Auto-detect: FK column without explicit display type
         const fk = fkByColumn.get(col.name);
-        const autoRef = !displayName && fk;
-        const refDisplayType = autoRef ? displayTypes?.get("reference") : undefined;
 
-        if (!readOnly && displayType?.renderInput) {
-          const html = displayType.renderInput(col, val, cc?.options ?? {});
+        // Resolve editor for non-PK-on-edit case
+        const { editor: editorName, options: editorOptions } = resolveEditor(
+          col,
+          cc,
+          displayTypes,
+          fk,
+        );
+        const editor = editorTypes?.get(editorName);
+
+        const colSuggestions = suggestions?.[col.name];
+        const fkHint = fk ? ` \u00B7 \u2192 ${fk.referencedTable}` : "";
+
+        // Read-only PK on edit → plain disabled input
+        if (readOnly) {
           return (
             <div class="tm-field">
               <label for={`f-${col.name}`}>
                 {col.name}
                 {enforcing && !col.nullable ? " *" : ""}
               </label>
-              <div dangerouslySetInnerHTML={{ __html: html }} />
+              <input
+                id={`f-${col.name}`}
+                type="text"
+                value={strVal}
+                disabled
+              />
               <span class="tm-field-hint">
                 {col.rawType || "TEXT"}
-                {col.defaultValue ? ` \u00B7 default: ${col.defaultValue}` : ""}
+                {" \u00B7 primary key"}
+                {fkHint}
               </span>
             </div>
           );
         }
 
-        if (!readOnly && autoRef && refDisplayType?.renderInput) {
-          const refOptions = { table: fk.referencedTable };
-          const html = refDisplayType.renderInput(col, val, refOptions);
-          return (
-            <div class="tm-field">
-              <label for={`f-${col.name}`}>
-                {col.name}
-                {enforcing && !col.nullable ? " *" : ""}
-              </label>
-              <div dangerouslySetInnerHTML={{ __html: html }} />
-              <span class="tm-field-hint">
-                {col.rawType || "TEXT"}
-                {` \u00B7 \u2192 ${fk.referencedTable}`}
-                {col.defaultValue ? ` \u00B7 default: ${col.defaultValue}` : ""}
-              </span>
-            </div>
-          );
-        }
-
-        const { type, useTextarea } = resolveInputType(col, cc);
-        const shouldTextarea = useTextarea || isLongText(val);
+        // Render the editor
+        const required = enforcing && !col.nullable && !isPk && !isEdit;
+        const inputHtml = editor
+          ? editor.render(col, val, editorOptions, { required })
+          : `<input id="f-${col.name}" name="${col.name}" type="text" value="${strVal}" />`;
 
         return (
           <div class="tm-field">
@@ -147,34 +122,15 @@ export function RowForm({
               {col.name}
               {enforcing && !col.nullable ? " *" : ""}
             </label>
-            {shouldTextarea && !readOnly ? (
-              <textarea
-                id={`f-${col.name}`}
-                name={col.name}
-                required={enforcing && !col.nullable && !isPk}
-              >
-                {strVal}
-              </textarea>
-            ) : (
-              <input
-                id={`f-${col.name}`}
-                name={readOnly ? undefined : col.name}
-                type={type}
-                value={strVal}
-                disabled={readOnly}
-                required={enforcing && !col.nullable && !isPk && !isEdit}
-                placeholder={
-                  col.defaultValue
-                    ? `default: ${col.defaultValue}`
-                    : undefined
-                }
-                step={type === "number" ? "any" : undefined}
-              />
+            <div dangerouslySetInnerHTML={{ __html: inputHtml }} />
+            {colSuggestions && (
+              <datalist id={`tm-suggest-${col.name}`}>
+                {colSuggestions.map((v) => <option value={v} />)}
+              </datalist>
             )}
             <span class="tm-field-hint">
               {col.rawType || "TEXT"}
-              {isPk ? " \u00B7 primary key" : ""}
-              {fk && !autoRef ? ` \u00B7 \u2192 ${fk.referencedTable}` : ""}
+              {fkHint}
               {col.defaultValue
                 ? ` \u00B7 default: ${col.defaultValue}`
                 : ""}

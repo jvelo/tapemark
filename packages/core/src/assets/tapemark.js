@@ -22,19 +22,20 @@ if (!customElements.get("tm-confirm-button")) {
   customElements.define("tm-confirm-button", TmConfirmButton);
 }
 
-// <tm-display-options> web component
-// Renders option inputs based on the selected display type's JSON Schema.
-// Reads schemas from a global data attribute and swaps inputs when the
-// associated select changes.
-class TmDisplayOptions extends HTMLElement {
+// <tm-schema-options> web component
+// Renders option inputs based on a selected type's JSON Schema.
+// data-kind is "display" or "editor" — picks the schema map and sibling <select>.
+// Field names are `{col}__{kind}_opt__{key}` so the server can distinguish them.
+class TmSchemaOptions extends HTMLElement {
   connectedCallback() {
     const colName = this.getAttribute("data-column");
-    const selectName = colName + "__display";
+    const kind = this.getAttribute("data-kind") || "display";
+    const selectName = colName + "__" + kind;
     const select = this.closest("tr")?.querySelector(`select[name="${selectName}"]`);
     if (!select) return;
 
-    // Parse schemas from the hidden script tag
-    const schemasEl = document.getElementById("tm-display-schemas");
+    // Parse schemas from the hidden script tag for this kind
+    const schemasEl = document.getElementById("tm-" + kind + "-schemas");
     if (!schemasEl) return;
     let schemas;
     try {
@@ -47,17 +48,21 @@ class TmDisplayOptions extends HTMLElement {
       currentOptions = JSON.parse(this.getAttribute("data-options") || "{}");
     } catch {}
 
+    // Keys whose value came from inference rather than stored config.
+    let inferredKeys = [];
+    try {
+      inferredKeys = JSON.parse(this.getAttribute("data-inferred-keys") || "[]");
+    } catch {}
+
     const render = () => {
       const type = select.value;
       const schema = schemas[type];
       this.innerHTML = "";
-      // Skip options for text (default type, rarely configured)
-      if (type === "text") return;
       if (!schema || !schema.properties) return;
 
       const props = schema.properties;
       for (const [key, prop] of Object.entries(props)) {
-        const fieldName = colName + "__opt__" + key;
+        const fieldName = colName + "__" + kind + "_opt__" + key;
         const currentVal = currentOptions[key];
         const wrapper = document.createElement("div");
         wrapper.className = "tm-opt-field";
@@ -101,6 +106,12 @@ class TmDisplayOptions extends HTMLElement {
         }
 
         input.id = fieldName;
+        if (inferredKeys.includes(key)) {
+          input.classList.add("is-inferred");
+          const clear = () => input.classList.remove("is-inferred");
+          input.addEventListener("input", clear, { once: true });
+          input.addEventListener("change", clear, { once: true });
+        }
         wrapper.appendChild(input);
         this.appendChild(wrapper);
       }
@@ -109,13 +120,15 @@ class TmDisplayOptions extends HTMLElement {
     render();
     select.addEventListener("change", () => {
       currentOptions = {};
+      // When the type changes, inferred keys no longer apply
+      inferredKeys = [];
       render();
     });
   }
 }
 
-if (!customElements.get("tm-display-options")) {
-  customElements.define("tm-display-options", TmDisplayOptions);
+if (!customElements.get("tm-schema-options")) {
+  customElements.define("tm-schema-options", TmSchemaOptions);
 }
 
 // <tm-image-cell> web component
