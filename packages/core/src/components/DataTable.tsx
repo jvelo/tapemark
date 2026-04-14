@@ -27,10 +27,10 @@ function renderCellContent(
     return '<span class="tm-cell-empty">(empty)</span>';
   }
 
-  const displayName = config.display || "text";
+  const displayName = config.display?.type || "text";
   const displayType = displayTypes.get(displayName);
   if (displayType) {
-    return displayType.render(value, config.options ?? {});
+    return displayType.render(value, config.display?.options ?? {});
   }
 
   // Fallback: plain text truncation

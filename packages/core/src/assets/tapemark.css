@@ -320,6 +320,12 @@ html {
   background: var(--tm-bg);
   color: var(--tm-input-color);
 }
+.tm-field input:not([type="checkbox"]):not([type="color"]),
+.tm-field textarea,
+.tm-field select {
+  width: 100%;
+  box-sizing: border-box;
+}
 .tm-field input:focus,
 .tm-field textarea:focus,
 .tm-field select:focus {
@@ -378,7 +384,7 @@ html {
 .tm-form-wide th {
   white-space: nowrap;
   overflow: visible;
-  vertical-align: middle;
+  vertical-align: top;
 }
 
 /* Reference input (web component) */
@@ -651,6 +657,11 @@ tm-display-options {
   color: var(--tm-text);
   border-color: var(--tm-text);
   outline: none;
+}
+/* Inferred values — muted until the user edits them. */
+.tm-opt-field input.is-inferred,
+.tm-opt-field select.is-inferred {
+  color: var(--tm-text-faint);
 }
 
 /* Buttons */

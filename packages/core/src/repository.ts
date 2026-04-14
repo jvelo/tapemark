@@ -195,6 +195,25 @@ export class TableRepository {
       .run();
   }
 
+  /** Distinct non-null values for a column, ordered alphabetically, capped by `limit`. */
+  async getDistinctValues(
+    tableName: string,
+    column: string,
+    limit: number = 1000,
+  ): Promise<string[]> {
+    const table = await this.schema.getTable(tableName);
+    if (!table.columns.some((c) => c.name === column)) {
+      throw new ValidationError(`Column "${column}" not found in "${tableName}"`);
+    }
+    const rows = await this.db
+      .prepare(
+        `SELECT DISTINCT "${column}" AS v FROM "${tableName}" WHERE "${column}" IS NOT NULL AND "${column}" != '' ORDER BY "${column}" LIMIT ?`,
+      )
+      .bind(limit)
+      .all<{ v: CellValue }>();
+    return rows.map((r) => String(r.v));
+  }
+
   /** Delete multiple rows by encoded PK strings. */
   async bulkDelete(
     tableName: string,

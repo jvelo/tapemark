@@ -27,7 +27,7 @@ export async function resolveReferenceLabels(
     const cc = merged.columns?.[colName];
 
     // Only resolve for columns that use reference display (explicit or auto)
-    const isExplicitRef = cc?.display === "reference";
+    const isExplicitRef = cc?.display?.type === "reference";
     const isAutoRef = !cc?.display;
     if (!isExplicitRef && !isAutoRef) continue;
 
@@ -47,7 +47,7 @@ export async function resolveReferenceLabels(
       continue;
     }
 
-    const labelColumnOverride = cc?.options?.labelColumn as string | undefined;
+    const labelColumnOverride = cc?.display?.options?.labelColumn as string | undefined;
     const labelColumn = labelColumnOverride ?? pickLabelColumn(refTable);
     const valueColumn = fk.referencedColumns[0];
 
@@ -72,12 +72,14 @@ export async function resolveReferenceLabels(
     merged.columns = merged.columns ?? {};
     merged.columns[colName] = {
       ...cc,
-      display: cc?.display ?? "reference",
-      options: {
-        ...cc?.options,
-        table: `${prefix}/${fk.referencedTable}`,
-        _refTable: fk.referencedTable,
-        _labels: labels,
+      display: {
+        type: cc?.display?.type ?? "reference",
+        options: {
+          ...cc?.display?.options,
+          table: `${prefix}/${fk.referencedTable}`,
+          _refTable: fk.referencedTable,
+          _labels: labels,
+        },
       },
     };
   }

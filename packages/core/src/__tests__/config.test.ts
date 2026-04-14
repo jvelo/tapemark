@@ -28,7 +28,7 @@ describe("ConfigStore", () => {
   it("saves and retrieves config", async () => {
     const tableConfig: TableConfig = {
       columns: {
-        name: { display: "text", label: "Full Name" },
+        name: { display: { type: "text" }, label: "Full Name" },
       },
     };
     await config.setTableConfig("users", tableConfig);
@@ -38,7 +38,7 @@ describe("ConfigStore", () => {
 
   it("caches config in memory", async () => {
     await config.setTableConfig("users", {
-      columns: { name: { display: "text" } },
+      columns: { name: { display: { type: "text" } } },
     });
 
     // First read populates cache
@@ -52,36 +52,36 @@ describe("ConfigStore", () => {
 
   it("invalidates cache on write", async () => {
     await config.setTableConfig("users", {
-      columns: { name: { display: "text" } },
+      columns: { name: { display: { type: "text" } } },
     });
     const first = await config.getTableConfig("users");
 
     await config.setTableConfig("users", {
-      columns: { name: { display: "link" } },
+      columns: { name: { display: { type: "link" } } },
     });
     const second = await config.getTableConfig("users");
 
-    expect(second.columns?.name.display).toBe("link");
+    expect(second.columns?.name.display?.type).toBe("link");
     expect(second).not.toBe(first);
   });
 
   it("invalidate() clears all cache", async () => {
     await config.setTableConfig("users", {
-      columns: { name: { display: "text" } },
+      columns: { name: { display: { type: "text" } } },
     });
     await config.getTableConfig("users"); // populate cache
     config.invalidate();
 
     // After invalidation, should re-read from DB
     const tc = await config.getTableConfig("users");
-    expect(tc.columns?.name.display).toBe("text");
+    expect(tc.columns?.name.display?.type).toBe("text");
   });
 
   it("getColumnConfig returns defaults for missing column", () => {
     const tc: TableConfig = {
-      columns: { name: { display: "text" } },
+      columns: { name: { display: { type: "text" } } },
     };
-    expect(config.getColumnConfig(tc, "name")).toEqual({ display: "text" });
+    expect(config.getColumnConfig(tc, "name")).toEqual({ display: { type: "text" } });
     expect(config.getColumnConfig(tc, "missing")).toEqual({});
   });
 });

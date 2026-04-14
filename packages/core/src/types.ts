@@ -111,26 +111,64 @@ export interface DisplayType {
   schema: OptionSchema;
   /** Server-side: render a cell value to an HTML string. */
   render: (value: unknown, options: Record<string, unknown>) => string;
-  /** Server-side: render the form input for editing. */
-  renderInput?: (
+  /**
+   * Name of the editor to use by default when this display is set and no
+   * explicit editor is configured. Falls back to affinity-based inference.
+   */
+  defaultEditor?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Editor types
+// ---------------------------------------------------------------------------
+
+export interface EditorRenderFlags {
+  /** Emit the HTML `required` attribute. */
+  required?: boolean;
+}
+
+export interface EditorType {
+  name: string;
+  description: string;
+  /** JSON Schema describing the configurable options. */
+  schema: OptionSchema;
+  /**
+   * Server-side: render the HTML form input for editing a value.
+   * Called with the column, current value (or undefined for new rows),
+   * editor options merged with defaults, and flags set by the RowForm.
+   */
+  render: (
     column: Column,
     value: unknown,
     options: Record<string, unknown>,
+    flags?: EditorRenderFlags,
   ) => string;
   /**
-   * Tag name of a web component that progressively enhances the input.
-   * The component receives the rendered input as its child.
+   * Optional: compute option values inferred from the column's context.
+   * Called at config-form-render time; may query the database to discover
+   * defaults (e.g. the reference editor looks up the referenced table's
+   * label column). Returned values are shown as "inferred" in the UI.
    */
-  editorComponent?: string;
+  inferOptions?: (ctx: {
+    column: Column;
+    fk?: ForeignKey;
+    db: Database;
+  }) => Promise<Record<string, unknown>>;
 }
 
 // ---------------------------------------------------------------------------
 // Table configuration (stored in _tapemark_table_config)
 // ---------------------------------------------------------------------------
 
+/** Paired `type` + `options` for a configured concern (display or editor). */
+export interface Configured<Opts = Record<string, unknown>> {
+  type: string;
+  options?: Opts;
+}
+
 export interface ColumnConfig {
-  display?: string;
-  options?: Record<string, unknown>;
+  display?: Configured;
+  editor?: Configured;
   label?: string;
   hidden?: boolean;
 }
@@ -194,6 +232,8 @@ export interface TapemarkBaseOptions {
   prefix?: string;
   /** Custom display type definitions. */
   displayTypes?: Record<string, DisplayType>;
+  /** Custom editor type definitions. */
+  editorTypes?: Record<string, EditorType>;
   /** Per-table overrides. */
   tables?: Record<string, TableOptions>;
   /** Additional client-side scripts to load. */
@@ -248,6 +288,7 @@ export interface TapemarkContext {
   theme: ThemeName;
   bundleFonts: boolean;
   displayTypes: Map<string, DisplayType>;
+  editorTypes: Map<string, EditorType>;
   tableOptions: Map<string, TableOptions>;
   scripts: string[];
 }

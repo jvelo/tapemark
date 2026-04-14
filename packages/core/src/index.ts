@@ -4,9 +4,12 @@ export type {
   Column,
   ColumnAffinity,
   ColumnConfig,
+  Configured,
   ConstraintMode,
   Database,
   DisplayType,
+  EditorRenderFlags,
+  EditorType,
   ForeignKey,
   OptionSchema,
   PreparedStatement,
@@ -60,6 +63,12 @@ export {
   builtinDisplayTypes,
   createDisplayTypeRegistry,
 } from "./display";
+
+// Editor types
+export {
+  builtinEditorTypes,
+  createEditorTypeRegistry,
+} from "./editor";
 
 // Lookup
 export { pickLabelColumn } from "./routes/lookup";
