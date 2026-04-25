@@ -113,11 +113,16 @@ export class TableRepository {
     return row as Record<string, CellValue>;
   }
 
-  /** Insert a new row. Empty-string values for columns not in data are skipped. */
+  /**
+   * Insert a new row. Empty-string values for columns not in data are skipped.
+   * Returns the inserted row (re-queried after insert so hooks see
+   * auto-generated columns like `INTEGER PRIMARY KEY` or `DEFAULT` values).
+   * For tables without a primary key, returns the submitted data.
+   */
   async insertRow(
     tableName: string,
     data: Record<string, string>,
-  ): Promise<void> {
+  ): Promise<Record<string, CellValue>> {
     const table = await this.schema.getTable(tableName);
     const columnMap = new Map(table.columns.map((c) => [c.name, c]));
 
@@ -139,6 +144,34 @@ export class TableRepository {
       )
       .bind(...values)
       .run();
+
+    // Look up the inserted row so callers (and hooks) see auto-generated
+    // values like integer PKs or DEFAULT-populated columns.
+    if (table.primaryKey.length === 0) {
+      return data as Record<string, CellValue>;
+    }
+
+    const pkFullyProvided = table.primaryKey.every(
+      (col) => col in data && data[col] !== "",
+    );
+    if (pkFullyProvided) {
+      const pkValues = Object.fromEntries(
+        table.primaryKey.map((col) => [col, data[col]]),
+      );
+      return this.getRow(tableName, pkValues);
+    }
+
+    if (table.primaryKey.length === 1) {
+      const pkCol = table.primaryKey[0];
+      const row = await this.db
+        .prepare("SELECT last_insert_rowid() as rowid")
+        .first<{ rowid: number | bigint }>();
+      const rowid = row?.rowid ?? 0;
+      return this.getRow(tableName, { [pkCol]: String(rowid) });
+    }
+
+    // Composite PK without all values supplied — can't determine the row.
+    return data as Record<string, CellValue>;
   }
 
   /** Update a row. PK columns in data are ignored. */

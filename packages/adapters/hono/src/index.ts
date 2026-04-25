@@ -56,7 +56,11 @@ export function tapemark(opts: HonoAdminOptions): Hono {
     }
 
     const tapemarkReq = await honoToTapemarkRequest(c, prefix);
-    const res = await core.handle(tapemarkReq, { db: resolvedDb });
+    const res = await core.handle(tapemarkReq, {
+      db: resolvedDb,
+      env: c.env,
+      executionCtx: safeExecutionCtx(c),
+    });
 
     if (res.redirect) {
       return c.redirect(res.redirect, res.status as 301 | 302 | 303 | 307 | 308);
@@ -69,6 +73,19 @@ export function tapemark(opts: HonoAdminOptions): Hono {
   });
 
   return app;
+}
+
+/**
+ * Return Hono's `c.executionCtx` when present. Cloudflare Workers provide
+ * it; `@hono/node-server` and tests do not — accessing the getter throws
+ * in those environments.
+ */
+function safeExecutionCtx(c: Context): unknown {
+  try {
+    return c.executionCtx;
+  } catch {
+    return undefined;
+  }
 }
 
 /**

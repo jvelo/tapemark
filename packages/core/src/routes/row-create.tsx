@@ -4,6 +4,7 @@ import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, encodePk } from "../repository";
 import { ConfigStore } from "../config";
+import { fireAfterInsert, flashForHookResult } from "../hooks";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
@@ -77,8 +78,13 @@ export async function rowInsertRoute(
     }
   }
 
-  await repo.insertRow(table, data);
+  const insertedRow = await repo.insertRow(table, data);
 
-  const pk = encodePk(tableInfo.primaryKey, data);
-  return redirect(`${ctx.prefix}/${table}/${pk}?flash=success&msg=${encodeURIComponent("row created")}`);
+  const hookError = await fireAfterInsert(table, insertedRow, ctx, req);
+  const { flash, message } = flashForHookResult("row created", hookError);
+
+  const pk = encodePk(tableInfo.primaryKey, insertedRow);
+  return redirect(
+    `${ctx.prefix}/${table}/${pk}?flash=${flash}&msg=${encodeURIComponent(message)}`,
+  );
 }

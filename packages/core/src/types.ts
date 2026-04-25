@@ -133,6 +133,12 @@ export interface ColumnConfig {
   options?: Record<string, unknown>;
   label?: string;
   hidden?: boolean;
+  /**
+   * Show the column on the create form even when Tapemark would normally
+   * hide it (e.g. SQLite-auto-generated INTEGER primary keys). Default
+   * `false` — auto-generated PKs are hidden so SQLite fills them in.
+   */
+  showOnCreate?: boolean;
 }
 
 export interface TableConfig {
@@ -164,6 +170,13 @@ export interface TapemarkResponse {
 export interface RequestOverrides {
   /** Pre-resolved database for this request (bypasses options.db). */
   db?: Database;
+  /** Framework env forwarded to hook/action handlers (e.g. Hono's `c.env`). */
+  env?: unknown;
+  /**
+   * Framework execution context forwarded to hook/action handlers
+   * (e.g. Cloudflare Workers' `c.executionCtx`).
+   */
+  executionCtx?: unknown;
 }
 
 /** A route handler is a pure async function. */
@@ -179,6 +192,81 @@ export type RouteHandler = (
 export interface TableOptions {
   readonly?: boolean;
   hidden?: boolean;
+  hooks?: TableHooks;
+  actions?: Record<string, RowAction>;
+}
+
+// ---------------------------------------------------------------------------
+// Hooks & actions
+// ---------------------------------------------------------------------------
+
+/**
+ * Context passed to user-defined hooks and action handlers. Built from
+ * `TapemarkContext` plus framework extras (env, executionCtx) that the
+ * adapter forwards per request.
+ */
+export interface HookContext {
+  /** The database for this request. */
+  db: Database;
+  /** Framework env (e.g. Hono's `c.env`). Adapter-dependent; may be undefined. */
+  env?: unknown;
+  /**
+   * Framework execution context (e.g. Cloudflare Workers' `c.executionCtx`).
+   * Useful for `waitUntil`. Undefined when unavailable.
+   */
+  executionCtx?: unknown;
+  /** The raw Tapemark request that triggered the hook. */
+  request: TapemarkRequest;
+}
+
+/** Result returned by an action handler. Surfaced as a flash message. */
+export interface ActionResult {
+  ok: boolean;
+  message?: string;
+}
+
+/** A user-triggered named operation on a row, rendered as a button. */
+export interface RowAction {
+  /** Label shown on the button. */
+  label: string;
+  /** Handler invoked when the button is clicked. */
+  handler: (
+    pkValues: Record<string, string>,
+    ctx: HookContext,
+  ) => Promise<ActionResult> | ActionResult;
+  /**
+   * When true, the action is also exposed per-row in the table list view,
+   * not just on the row detail page. After running, the user is redirected
+   * back to the list. Default: false.
+   */
+  inTable?: boolean;
+  /**
+   * Predicate that decides whether the action button is rendered for a
+   * given row. UI-only — the action route does not enforce it server-side,
+   * so handlers should validate their own invariants if they care. Errors
+   * thrown by the predicate are caught and treated as "not visible".
+   */
+  visible?: (row: Record<string, CellValue>) => boolean;
+}
+
+/** Row-level lifecycle hooks. Only fire on writes that go through Tapemark. */
+export interface TableHooks {
+  /** After a row has been inserted. Receives the full inserted row. */
+  afterInsert?: (
+    row: Record<string, CellValue>,
+    ctx: HookContext,
+  ) => Promise<void> | void;
+  /** After a row has been updated. Receives the PK and the submitted patch. */
+  afterUpdate?: (
+    pkValues: Record<string, string>,
+    patch: Record<string, string>,
+    ctx: HookContext,
+  ) => Promise<void> | void;
+  /** After a row has been deleted. Receives the PK of the deleted row. */
+  afterDelete?: (
+    pkValues: Record<string, string>,
+    ctx: HookContext,
+  ) => Promise<void> | void;
 }
 
 /**
@@ -250,4 +338,8 @@ export interface TapemarkContext {
   displayTypes: Map<string, DisplayType>;
   tableOptions: Map<string, TableOptions>;
   scripts: string[];
+  /** Framework env forwarded from the adapter; passed through to hook/action handlers. */
+  env?: unknown;
+  /** Framework execution context forwarded from the adapter. */
+  executionCtx?: unknown;
 }

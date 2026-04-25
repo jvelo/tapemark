@@ -22,6 +22,7 @@
 
   /* Theme-invariant */
   --tm-danger: #cc4444;
+  --tm-warning: #d89e2a;
   --tm-muted: 0.4;
 }
 
@@ -158,6 +159,20 @@ html {
 .tm-select-col {
   width: 1.8rem;
   text-align: center;
+}
+.tm .tm-row-action-col {
+  white-space: nowrap;
+  text-align: right;
+}
+.tm .tm-row-action-col button + button {
+  margin-left: 0.36rem;
+}
+.tm-btn-sm {
+  font-size: var(--tm-font-size-sm);
+  padding: 0.18rem 0.45rem;
+}
+.tm-table-action-form {
+  display: none;
 }
 
 /* Cell display types */
@@ -718,6 +733,10 @@ tm-display-options {
   border-color: var(--tm-danger);
   color: var(--tm-danger);
 }
+.tm-flash-warning {
+  border-color: var(--tm-warning);
+  color: var(--tm-warning);
+}
 
 /* Toolbar */
 .tm-toolbar {
@@ -736,15 +755,30 @@ tm-display-options {
   margin-top: 0.72rem;
 }
 
-/* Row detail: save + delete on same line */
+/* Row detail action bar.
+   Left group = form action (save). Right group = row operations
+   (custom actions + delete). Splitting them visually clarifies that
+   save commits the form while the others operate on the row regardless.
+   max-width matches `.tm-form` so the right edge lines up with the form. */
 .tm-row-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  max-width: 36rem;
+  gap: 1rem;
   margin-top: 0.72rem;
+  flex-wrap: wrap;
+  max-width: 36rem;
+}
+.tm-row-actions-form,
+.tm-row-actions-row {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
 }
 .tm-delete-inline {
+  margin: 0;
+}
+.tm-action-inline {
   margin: 0;
 }
 

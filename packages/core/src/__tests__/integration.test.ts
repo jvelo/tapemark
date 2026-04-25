@@ -233,6 +233,116 @@ describe("Integration: full request lifecycle", () => {
     });
   });
 
+  describe("create form: auto-generated PK", () => {
+    it("hides INTEGER PRIMARY KEY field on create form", async () => {
+      const res = await core.handle(req({ path: "/users/new" }));
+      expect(res.status).toBe(200);
+      // The PK column should not appear as an editable input
+      expect(res.html).not.toContain('name="id"');
+    });
+
+    it("shows the PK field on edit form (read-only)", async () => {
+      const res = await core.handle(req({ path: "/users/1" }));
+      expect(res.status).toBe(200);
+      // PK is rendered with a value but disabled — name attribute is omitted
+      expect(res.html).toContain("disabled");
+    });
+
+    it("admins can opt back in via showOnCreate column config", async () => {
+      // Save config that flips showOnCreate for the id column
+      await core.handle(
+        req({
+          method: "POST",
+          path: "/users/_config",
+          body: {
+            id__display: "text",
+            id__label: "",
+            id__hidden: "",
+            id__showOnCreate: "1",
+            name__display: "text",
+            name__label: "",
+            name__hidden: "",
+            email__display: "text",
+            email__label: "",
+            email__hidden: "",
+          },
+        }),
+      );
+
+      const res = await core.handle(req({ path: "/users/new" }));
+      expect(res.html).toContain('name="id"');
+    });
+
+    it("never hides composite PKs (only single-column INTEGER auto-PK)", async () => {
+      // posts has a single INTEGER PK — covered above. Build a fresh DB
+      // with a composite PK to verify it's still rendered on create.
+      const compositeSchema = `
+        CREATE TABLE memberships (
+          user_id INTEGER NOT NULL,
+          group_id INTEGER NOT NULL,
+          role TEXT,
+          PRIMARY KEY (user_id, group_id)
+        );
+      `;
+      const { db: cdb } = createTestDb(compositeSchema);
+      const ccore = createTapemark({ db: cdb });
+      const res = await ccore.handle(
+        req({ path: "/memberships/new", params: { table: "memberships" } }),
+      );
+      expect(res.html).toContain('name="user_id"');
+      expect(res.html).toContain('name="group_id"');
+    });
+  });
+
+  describe("create form: required attribute", () => {
+    it("does not mark NOT NULL columns as required when they have a DEFAULT", async () => {
+      const schema = `
+        CREATE TABLE tasks (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'todo'
+        );
+      `;
+      const { db: tdb } = createTestDb(schema);
+      const tcore = createTapemark({ db: tdb });
+      const res = await tcore.handle(
+        req({ path: "/tasks/new", params: { table: "tasks" } }),
+      );
+
+      // title is required (NOT NULL, no default)
+      expect(res.html).toMatch(/name="title"[^>]*required/);
+      // status has a default → not required
+      expect(res.html).not.toMatch(/name="status"[^>]*required/);
+    });
+
+    it("submitting without a defaulted column lets SQLite fill in the default", async () => {
+      const schema = `
+        CREATE TABLE tasks (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          title TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'todo'
+        );
+      `;
+      const { db: tdb } = createTestDb(schema);
+      const tcore = createTapemark({ db: tdb });
+
+      const res = await tcore.handle(
+        req({
+          method: "POST",
+          path: "/tasks/new",
+          params: { table: "tasks" },
+          body: { title: "no status given" },
+        }),
+      );
+      expect(res.status).toBe(302);
+
+      const detail = await tcore.handle(
+        req({ path: "/tasks/1", params: { table: "tasks", pk: "1" } }),
+      );
+      expect(detail.html).toContain("todo");
+    });
+  });
+
   describe("readonly tables", () => {
     it("hides new row and delete buttons for readonly tables", async () => {
       core = createTapemark({

@@ -92,8 +92,65 @@ tapemark({
   readonly: false,            // global read-only mode
   constraints: "enforce",     // "enforce" (default) or "relaxed"
   authorize: async (c) => {}, // auth callback
+  tables: {                   // per-table options
+    sites: { readonly: true }, // or { hidden: true }, or hooks/actions (below)
+  },
 });
 ```
+
+### Hooks and custom actions
+
+Per-table **hooks** run automatically after a row is inserted, updated, or deleted through the admin UI. Handlers receive a `HookContext` with the request's DB, framework env, and (where available) Cloudflare's `executionCtx` for `waitUntil`.
+
+```typescript
+tapemark({
+  db: (c) => createD1Adapter(c.env.DB),
+  tables: {
+    sites: {
+      hooks: {
+        afterInsert: async (row, ctx) => {
+          const meta = await fetchMetadata(row.url as string);
+          await ctx.db.prepare("INSERT INTO url_metadata …").bind(…).run();
+        },
+        afterUpdate: async (pk, patch, ctx) => { /* … */ },
+        afterDelete: async (pk, ctx) => { /* … */ },
+      },
+    },
+  },
+});
+```
+
+Hook failures don't roll back the write — the row operation has already committed by the time the hook runs. A thrown hook is surfaced as a warning flash on the admin page, so you can see what went wrong without losing the write.
+
+**Custom row actions** render as extra buttons on the row detail page, separated visually from the form's `save` button. The handler receives the primary key and a `HookContext`, and returns an `ActionResult` that becomes the flash message.
+
+```typescript
+tables: {
+  sites: {
+    actions: {
+      refetch: {
+        label: "re-fetch metadata",
+        handler: async (pk, ctx) => {
+          await refetchSiteMetadata(pk, ctx);
+          return { ok: true, message: "metadata refreshed" };
+        },
+      },
+      mark_done: {
+        label: "mark done",
+        inTable: true,                              // also expose per-row in the list
+        visible: (row) => row.status !== "done",    // hide once it's already done
+        handler: async (pk, ctx) => { /* … */ },
+      },
+    },
+  },
+}
+```
+
+Actions opt in to the table-list view via `inTable: true`. When invoked from the list, the user is redirected back to the list (rather than the row detail page); when invoked from the detail page, they stay there. Actions are gated by the same `readonly` rules as updates and deletes.
+
+The optional `visible(row) => boolean` predicate hides the button when the action wouldn't make sense for the current row (e.g. "mark done" on a task that's already done). It's a UI hint only — handlers are still reachable by direct POST and should validate their own invariants if they need to. A predicate that throws is treated as "not visible" so a buggy condition can't break the page render.
+
+See [`examples/hooks-and-actions`](./examples/hooks-and-actions) for a runnable walk-through — a task list whose writes feed an audit log via hooks, plus `mark done` and `duplicate` row actions.
 
 ## Packages
 
