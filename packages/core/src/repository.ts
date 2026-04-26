@@ -115,9 +115,9 @@ export class TableRepository {
 
   /**
    * Insert a new row. Empty-string values for columns not in data are skipped.
-   * Returns the inserted row (re-queried after insert so hooks see
-   * auto-generated columns like `INTEGER PRIMARY KEY` or `DEFAULT` values).
-   * For tables without a primary key, returns the submitted data.
+   * Returns the inserted row via `INSERT … RETURNING *`, so callers and
+   * `afterInsert` hooks see auto-generated values (any-affinity PKs filled
+   * by DEFAULT, INTEGER rowid aliases, DEFAULT-populated columns).
    */
   async insertRow(
     tableName: string,
@@ -138,50 +138,17 @@ export class TableRepository {
     const placeholders = entries.map(() => "?").join(", ");
     const values = entries.map(([k, v]) => castValue(v, columnMap.get(k)!));
 
-    await this.db
+    const inserted = await this.db
       .prepare(
-        `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders})`,
+        `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) RETURNING *`,
       )
       .bind(...values)
-      .run();
+      .first<Record<string, CellValue>>();
 
-    // Look up the inserted row so callers (and hooks) see auto-generated
-    // values like integer PKs or DEFAULT-populated columns.
-    if (table.primaryKey.length === 0) {
-      return data as Record<string, CellValue>;
-    }
-
-    const pkFullyProvided = table.primaryKey.every(
-      (col) => col in data && data[col] !== "",
-    );
-    if (pkFullyProvided) {
-      const pkValues = Object.fromEntries(
-        table.primaryKey.map((col) => [col, data[col]]),
-      );
-      return this.getRow(tableName, pkValues);
-    }
-
-    // Single-column PK not supplied: only safe to recover via
-    // `last_insert_rowid()` for INTEGER PRIMARY KEY (rowid-aliased) tables.
-    // For text/blob/uuid PKs filled in by DEFAULT, the rowid is not the PK
-    // value, so we'd look up the wrong row. Fall back to returning the
-    // submitted data — hooks will see an incomplete row but the insert
-    // itself succeeds, which is the safer of the two failure modes.
-    if (table.primaryKey.length === 1) {
-      const pkCol = table.primaryKey[0];
-      const pkColumn = columnMap.get(pkCol);
-      if (pkColumn?.affinity === "integer") {
-        const row = await this.db
-          .prepare("SELECT last_insert_rowid() as rowid")
-          .first<{ rowid: number | bigint }>();
-        const rowid = row?.rowid ?? 0;
-        return this.getRow(tableName, { [pkCol]: String(rowid) });
-      }
-    }
-
-    // Non-integer single PK without a supplied value, or composite PK with
-    // some columns missing — can't determine the row.
-    return data as Record<string, CellValue>;
+    // RETURNING * always yields the inserted row when it succeeds. Fall
+    // back to the submitted data only as a defensive guard against an
+    // adapter that drops the returning rowset.
+    return inserted ?? (data as Record<string, CellValue>);
   }
 
   /** Update a row. PK columns in data are ignored. */

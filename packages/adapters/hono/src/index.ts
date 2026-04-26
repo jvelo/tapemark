@@ -2,27 +2,32 @@ import { Hono } from "hono";
 import {
   createTapemark,
   type Database,
+  type ExecutionContextLike,
   type TapemarkBaseOptions,
   type TapemarkRequest,
 } from "@jvelo/tapemark";
 import type { Context } from "hono";
 
+/** Default env shape — opaque record. Override via the type parameter. */
+type DefaultEnv = Record<string, unknown>;
+
 /**
- * Options for the Hono adapter. Extends TapemarkOptions but replaces
- * the `db` field with a Hono-aware accessor.
+ * Options for the Hono adapter. Extends `TapemarkBaseOptions` but replaces
+ * `db` and `authorize` with Hono-aware accessors. Generic over the Hono
+ * `Bindings` shape so consumers get a typed `c.env` in their callbacks.
  */
-export interface HonoAdminOptions
+export interface HonoAdminOptions<Env = DefaultEnv>
   extends Omit<TapemarkBaseOptions, "authorize"> {
   /**
    * Database accessor. Receives the Hono context so you can extract
    * the DB from env bindings (e.g. `c.env.DB` for D1).
    */
-  db: Database | ((c: Context) => Database);
+  db: Database | ((c: Context<{ Bindings: Env }>) => Database);
   /**
    * Authorization callback. Receives the Hono context for access to
    * framework-specific auth mechanisms.
    */
-  authorize?: (c: Context) => Promise<boolean>;
+  authorize?: (c: Context<{ Bindings: Env }>) => Promise<boolean>;
 }
 
 /**
@@ -32,14 +37,18 @@ export interface HonoAdminOptions
  * ```ts
  * import { tapemark } from "@jvelo/tapemark-hono";
  *
- * app.route("/admin", tapemark({
- *   db: (c) => c.env.DB,
+ * type Env = { DB: D1Database };
+ *
+ * app.route("/admin", tapemark<Env>({
+ *   db: (c) => c.env.DB,             // c.env is typed as Env
  *   authorize: async (c) => checkAdmin(c),
  * }));
  * ```
  */
-export function tapemark(opts: HonoAdminOptions): Hono {
-  const app = new Hono();
+export function tapemark<Env = DefaultEnv>(
+  opts: HonoAdminOptions<Env>,
+): Hono<{ Bindings: Env }> {
+  const app = new Hono<{ Bindings: Env }>();
   const prefix = opts.prefix ?? "";
 
   const { db, authorize, ...coreOpts } = opts;
@@ -77,12 +86,18 @@ export function tapemark(opts: HonoAdminOptions): Hono {
 
 /**
  * Return Hono's `c.executionCtx` when present. Cloudflare Workers provide
- * it; `@hono/node-server` and tests do not — accessing the getter throws
- * in those environments.
+ * it; `@hono/node-server` and tests do not — Hono implements it as a
+ * getter that throws when no Workers runtime is attached.
+ *
+ * The catch is intentionally narrow in scope (the property access only) and
+ * intentionally broad in what it swallows: the goal is to recover from
+ * "this runtime doesn't expose an execution context" without failing the
+ * request, not to mask unrelated bugs in the adapter pipeline. If Hono ever
+ * stops throwing here, this function becomes a one-line passthrough.
  */
-function safeExecutionCtx(c: Context): unknown {
+function safeExecutionCtx(c: Context): ExecutionContextLike | undefined {
   try {
-    return c.executionCtx;
+    return c.executionCtx as ExecutionContextLike;
   } catch {
     return undefined;
   }

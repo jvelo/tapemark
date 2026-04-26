@@ -8,6 +8,7 @@ export type {
   ConstraintMode,
   Database,
   DisplayType,
+  ExecutionContextLike,
   ForeignKey,
   HookContext,
   OptionSchema,

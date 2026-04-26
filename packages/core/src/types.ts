@@ -176,7 +176,7 @@ export interface RequestOverrides {
    * Framework execution context forwarded to hook/action handlers
    * (e.g. Cloudflare Workers' `c.executionCtx`).
    */
-  executionCtx?: unknown;
+  executionCtx?: ExecutionContextLike;
 }
 
 /** A route handler is a pure async function. */
@@ -201,9 +201,24 @@ export interface TableOptions {
 // ---------------------------------------------------------------------------
 
 /**
+ * Minimal structural shape of a Cloudflare-Workers-style execution context.
+ * Captures only the capability hooks typically reach for — `waitUntil` —
+ * without coupling core to Cloudflare's `@cloudflare/workers-types`.
+ * Adapters in environments that don't have an analogue should leave it
+ * undefined.
+ */
+export interface ExecutionContextLike {
+  waitUntil?: (promise: Promise<unknown>) => void;
+}
+
+/**
  * Context passed to user-defined hooks and action handlers. Built from
  * `TapemarkContext` plus framework extras (env, executionCtx) that the
  * adapter forwards per request.
+ *
+ * `env` is intentionally `unknown` — Tapemark itself can't know the
+ * adapter's binding shape. Consumers wanting a typed env should cast at
+ * the call site (`ctx.env as MyEnv`) or use a narrowing helper.
  */
 export interface HookContext {
   /** The database for this request. */
@@ -214,7 +229,7 @@ export interface HookContext {
    * Framework execution context (e.g. Cloudflare Workers' `c.executionCtx`).
    * Useful for `waitUntil`. Undefined when unavailable.
    */
-  executionCtx?: unknown;
+  executionCtx?: ExecutionContextLike;
   /** The raw Tapemark request that triggered the hook. */
   request: TapemarkRequest;
 }
@@ -341,5 +356,5 @@ export interface TapemarkContext {
   /** Framework env forwarded from the adapter; passed through to hook/action handlers. */
   env?: unknown;
   /** Framework execution context forwarded from the adapter. */
-  executionCtx?: unknown;
+  executionCtx?: ExecutionContextLike;
 }
