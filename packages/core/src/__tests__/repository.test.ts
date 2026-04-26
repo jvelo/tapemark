@@ -282,4 +282,55 @@ describe("TableRepository", () => {
       ).rejects.toThrow(ValidationError);
     });
   });
+
+  describe("insertRow return value", () => {
+    it("returns the full row including auto-generated INTEGER PK", async () => {
+      ({ db } = createTestDb(`
+        CREATE TABLE notes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          body TEXT NOT NULL,
+          status TEXT DEFAULT 'draft'
+        );
+      `));
+      repo = new TableRepository(db);
+
+      const row = await repo.insertRow("notes", { body: "hello" });
+      expect(row.id).toBe(1);
+      expect(row.body).toBe("hello");
+      expect(row.status).toBe("draft");
+    });
+
+    it("returns submitted data when single TEXT PK has a DEFAULT and was not provided", async () => {
+      // Regression: previously fell into the rowid path and 404'd because
+      // rowid != the text PK value.
+      ({ db } = createTestDb(`
+        CREATE TABLE items (
+          slug TEXT PRIMARY KEY DEFAULT 'auto-slug',
+          name TEXT NOT NULL
+        );
+      `));
+      repo = new TableRepository(db);
+
+      // Should not throw — insert succeeds, return value falls back to data
+      const row = await repo.insertRow("items", { name: "thing" });
+      expect(row.name).toBe("thing");
+      // Row was actually inserted with the default slug
+      const persisted = await repo.getRow("items", { slug: "auto-slug" });
+      expect(persisted.name).toBe("thing");
+    });
+
+    it("returns the full row when a single TEXT PK is supplied", async () => {
+      ({ db } = createTestDb(`
+        CREATE TABLE items (
+          slug TEXT PRIMARY KEY,
+          name TEXT NOT NULL
+        );
+      `));
+      repo = new TableRepository(db);
+
+      const row = await repo.insertRow("items", { slug: "manual", name: "x" });
+      expect(row.slug).toBe("manual");
+      expect(row.name).toBe("x");
+    });
+  });
 });

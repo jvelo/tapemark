@@ -563,6 +563,26 @@ describe("Custom row actions", () => {
       expect(res.redirect).toBe("/notes?flash=success&msg=pong");
     });
 
+    it("does not render in-table action buttons when the table is readonly", async () => {
+      // Regression: list view used to keep showing buttons that the route
+      // would then 403, exposing actions that couldn't succeed.
+      core = createTapemark({
+        db,
+        tables: {
+          notes: {
+            readonly: true,
+            actions: {
+              ping: { label: "ping", inTable: true, handler: () => ({ ok: true }) },
+            },
+          },
+        },
+      });
+
+      const res = await core.handle(req({ path: "/notes" }));
+      expect(res.html).not.toContain('class="tm-row-action-col"');
+      expect(res.html).not.toContain(">ping<");
+    });
+
     it("still redirects to the row detail when no _back hint is given", async () => {
       core = createTapemark({
         db,

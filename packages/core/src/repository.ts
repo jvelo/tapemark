@@ -161,16 +161,26 @@ export class TableRepository {
       return this.getRow(tableName, pkValues);
     }
 
+    // Single-column PK not supplied: only safe to recover via
+    // `last_insert_rowid()` for INTEGER PRIMARY KEY (rowid-aliased) tables.
+    // For text/blob/uuid PKs filled in by DEFAULT, the rowid is not the PK
+    // value, so we'd look up the wrong row. Fall back to returning the
+    // submitted data — hooks will see an incomplete row but the insert
+    // itself succeeds, which is the safer of the two failure modes.
     if (table.primaryKey.length === 1) {
       const pkCol = table.primaryKey[0];
-      const row = await this.db
-        .prepare("SELECT last_insert_rowid() as rowid")
-        .first<{ rowid: number | bigint }>();
-      const rowid = row?.rowid ?? 0;
-      return this.getRow(tableName, { [pkCol]: String(rowid) });
+      const pkColumn = columnMap.get(pkCol);
+      if (pkColumn?.affinity === "integer") {
+        const row = await this.db
+          .prepare("SELECT last_insert_rowid() as rowid")
+          .first<{ rowid: number | bigint }>();
+        const rowid = row?.rowid ?? 0;
+        return this.getRow(tableName, { [pkCol]: String(rowid) });
+      }
     }
 
-    // Composite PK without all values supplied — can't determine the row.
+    // Non-integer single PK without a supplied value, or composite PK with
+    // some columns missing — can't determine the row.
     return data as Record<string, CellValue>;
   }
 

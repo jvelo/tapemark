@@ -78,7 +78,7 @@ export async function rowsRoute(
         page={page}
         pageSize={pageSize}
         kind={tableInfo.kind}
-        actions={ctx.tableOptions.get(table)?.actions}
+        actions={isReadonly ? undefined : ctx.tableOptions.get(table)?.actions}
       />
       <div class="tm-table-footer">
         <Pagination

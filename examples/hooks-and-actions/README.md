@@ -1,9 +1,6 @@
 # Hooks & custom actions example
 
-Demonstrates the two extension points introduced alongside the core CRUD routes:
-
-- **Lifecycle hooks** (`afterInsert` / `afterUpdate` / `afterDelete`) — automatic side effects whenever a row changes through Tapemark.
-- **Custom row actions** — named operations rendered as buttons on the row detail page, dispatched to server-side handlers.
+A small task-list backed by SQLite, configured to exercise Tapemark's lifecycle hooks and custom row actions.
 
 ## Run it
 
@@ -30,20 +27,20 @@ On the `tasks` table:
 - `afterUpdate` → logs an `updated` event noting which fields changed.
 - `afterDelete` → logs a `deleted` event.
 
-Try creating, editing, or deleting rows in `/tasks`, then browse `/task_events` to see entries appear.
+Create, edit, or delete rows in `/tasks`, then browse `/task_events` to see entries appear.
 
 ### Actions
 
-On the `tasks` table detail page you'll see two buttons beyond save/delete:
+On the `tasks` table detail page, beyond save and delete:
 
-- **mark done** — sets `status = 'done'` and writes an event.
-- **duplicate** — inserts a cloned row with `(copy)` in the title.
+- **mark done** — sets `status = 'done'` and writes an event. Also exposed per-row in the table list (`inTable: true`), and hidden on tasks already in `done` (`visible` predicate).
+- **duplicate** — inserts a cloned row with `(copy)` appended to the title.
 
 Both return a flash message describing what happened.
 
 ## Reading the code
 
-Everything lives in [`serve.ts`](./serve.ts). The interesting block is the `tables.tasks` entry passed to `createTapemark`:
+Everything lives in [`serve.ts`](./serve.ts). The relevant block is the `tables.tasks` entry passed to `createTapemark`:
 
 ```ts
 tables: {
@@ -54,7 +51,12 @@ tables: {
       afterDelete: async (pk, ctx) => { /* … */ },
     },
     actions: {
-      mark_done: { label: "mark done", handler: async (pk, ctx) => { /* … */ } },
+      mark_done: {
+        label: "mark done",
+        inTable: true,
+        visible: (row) => row.status !== "done",
+        handler: async (pk, ctx) => { /* … */ },
+      },
       duplicate: { label: "duplicate", handler: async (pk, ctx) => { /* … */ } },
     },
   },
