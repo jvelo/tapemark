@@ -12,7 +12,7 @@
 import { createServer, type IncomingMessage } from "node:http";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "../../packages/db-adapters/better-sqlite3/src/index.js";
-import { createTapemark } from "../../packages/core/src/index.js";
+import { createTapemark, type HookContext } from "../../packages/core/src/index.js";
 
 const PORT = 3334;
 
@@ -47,7 +47,7 @@ const db = createSqliteAdapter(raw);
 // ---------------------------------------------------------------------------
 
 async function logEvent(
-  ctx: { db: { prepare: (q: string) => { bind: (...v: unknown[]) => { run: () => Promise<void> } } } },
+  ctx: HookContext,
   taskId: string | number | null,
   event: string,
   detail: string | null,
