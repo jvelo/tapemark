@@ -212,10 +212,12 @@ export interface HookContext {
   db: Database;
   /** Framework env (e.g. Hono's `c.env`); undefined when not adapter-bound. */
   env?: unknown;
-  /** Background-task host — call `waitUntil` to keep a promise alive past the
-   *  response. Sourced from CF Workers' `executionCtx`, Vercel's
-   *  `waitUntil`, etc. Undefined on runtimes without the concept. */
-  executionContext?: ExecutionContextLike;
+  /** Run `work` in the background when the runtime supports it
+   *  (Workers/Vercel/etc.); otherwise await it inline. Always `await` the
+   *  return value — it resolves immediately in background mode and after
+   *  `work` settles in sync mode. Errors are surfaced as flash warnings in
+   *  sync mode but only logged by the runtime in background mode. */
+  background: (work: Promise<unknown>) => Promise<void>;
   request: TapemarkRequest;
 }
 

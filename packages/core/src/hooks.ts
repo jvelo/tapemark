@@ -12,11 +12,18 @@ function buildHookContext(
   ctx: TapemarkContext,
   req: TapemarkRequest,
 ): HookContext {
+  const executionContext = ctx.executionContext;
   return {
     db: ctx.db,
     env: ctx.env,
-    executionContext: ctx.executionContext,
     request: req,
+    background: async (work) => {
+      if (executionContext?.waitUntil) {
+        executionContext.waitUntil(work);
+        return;
+      }
+      await work;
+    },
   };
 }
 

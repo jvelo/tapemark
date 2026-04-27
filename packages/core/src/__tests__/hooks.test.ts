@@ -98,17 +98,16 @@ describe("Lifecycle hooks", () => {
       expect(rows?.body).toBe("fourth");
     });
 
-    it("passes env and executionContext through the hook context", async () => {
+    it("forwards env from the adapter into the hook context", async () => {
       const sentinel = Symbol("env");
-      const ec = { waitUntil: () => {} };
-      let captured: HookContext | null = null;
+      let capturedEnv: unknown;
       const core = createTapemark({
         db,
         tables: {
           notes: {
             hooks: {
               afterInsert: (_row, ctx) => {
-                captured = ctx;
+                capturedEnv = ctx.env;
               },
             },
           },
@@ -122,12 +121,95 @@ describe("Lifecycle hooks", () => {
           params: { table: "notes" },
           body: { body: "fifth" },
         }),
-        { db, env: sentinel, executionContext: ec },
+        { db, env: sentinel },
       );
 
-      expect(captured).not.toBeNull();
-      expect((captured as HookContext | null)!.env).toBe(sentinel);
-      expect((captured as HookContext | null)!.executionContext).toBe(ec);
+      expect(capturedEnv).toBe(sentinel);
+    });
+
+    it("ctx.background dispatches via executionContext.waitUntil when available", async () => {
+      const enqueued: Promise<unknown>[] = [];
+      const ec = {
+        waitUntil: (p: Promise<unknown>) => {
+          enqueued.push(p);
+        },
+      };
+      let workResolved = false;
+      const core = createTapemark({
+        db,
+        tables: {
+          notes: {
+            hooks: {
+              afterInsert: async (_row, ctx) => {
+                await ctx.background(
+                  new Promise<void>((resolve) =>
+                    setTimeout(() => {
+                      workResolved = true;
+                      resolve();
+                    }, 50),
+                  ),
+                );
+              },
+            },
+          },
+        },
+      });
+
+      const res = await core.handle(
+        req({
+          method: "POST",
+          path: "/notes/new",
+          params: { table: "notes" },
+          body: { body: "bg" },
+        }),
+        { db, executionContext: ec },
+      );
+
+      // Hook returned promptly — work was enqueued, not awaited.
+      expect(res.status).toBe(302);
+      expect(enqueued).toHaveLength(1);
+      expect(workResolved).toBe(false);
+
+      // Work eventually resolves on its own (Workers would keep it alive via waitUntil).
+      await enqueued[0];
+      expect(workResolved).toBe(true);
+    });
+
+    it("ctx.background awaits the work inline when executionContext is absent", async () => {
+      let workResolved = false;
+      const core = createTapemark({
+        db,
+        tables: {
+          notes: {
+            hooks: {
+              afterInsert: async (_row, ctx) => {
+                await ctx.background(
+                  new Promise<void>((resolve) =>
+                    setTimeout(() => {
+                      workResolved = true;
+                      resolve();
+                    }, 20),
+                  ),
+                );
+              },
+            },
+          },
+        },
+      });
+
+      const res = await core.handle(
+        req({
+          method: "POST",
+          path: "/notes/new",
+          params: { table: "notes" },
+          body: { body: "sync" },
+        }),
+        { db },
+      );
+
+      // Hook awaited the work inline — by the time we return, it has resolved.
+      expect(res.status).toBe(302);
+      expect(workResolved).toBe(true);
     });
 
     it("does not fire on tables that have no hooks configured", async () => {

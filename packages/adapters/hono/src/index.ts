@@ -59,7 +59,7 @@ export function tapemark<Env extends object = DefaultEnv>(
     const res = await core.handle(tapemarkReq, {
       db: resolvedDb,
       env: c.env,
-      executionContext: safeExecutionCtx(c),
+      executionContext: safeExecutionContext(c),
     });
 
     if (res.redirect) {
@@ -75,10 +75,12 @@ export function tapemark<Env extends object = DefaultEnv>(
   return app;
 }
 
-/** Returns `c.executionCtx` when present. The getter throws under Node /
- *  tests because no Workers runtime is attached; the catch is scoped to
- *  the access only — intent is "unsupported runtime", not silencing bugs. */
-function safeExecutionCtx(c: Context): ExecutionContextLike | undefined {
+/** Returns Hono's request execution context when the host runtime exposes
+ *  one (Cloudflare Workers, Vercel, etc.). On runtimes without it (Node,
+ *  Bun, vitest) Hono's getter throws — caught here so hooks can still run.
+ *  The catch is scoped narrowly to the access; the intent is "unsupported
+ *  runtime", not silencing unrelated bugs. */
+function safeExecutionContext(c: Context): ExecutionContextLike | undefined {
   try {
     return c.executionCtx as ExecutionContextLike;
   } catch {

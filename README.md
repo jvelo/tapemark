@@ -100,7 +100,7 @@ tapemark({
 
 ### Hooks and custom actions
 
-Per-table **hooks** run automatically after a row is inserted, updated, or deleted through the admin UI. Handlers receive a `HookContext` with the request's DB, framework env, and (where available) Cloudflare's `executionCtx` for `waitUntil`.
+Per-table **hooks** run automatically after a row is inserted, updated, or deleted through the admin UI. Handlers receive a `HookContext` with the request's DB, framework env, and a `background()` helper for fire-and-forget work.
 
 ```typescript
 tapemark({
@@ -109,8 +109,9 @@ tapemark({
     sites: {
       hooks: {
         afterInsert: async (row, ctx) => {
-          const meta = await fetchMetadata(row.url as string);
-          await ctx.db.prepare("INSERT INTO url_metadata …").bind(…).run();
+          // Slow work — defer past the response on runtimes that support it
+          // (Workers, Vercel); awaited inline elsewhere.
+          await ctx.background(fetchAndStoreMetadata(row, ctx));
         },
         afterUpdate: async (pk, patch, ctx) => { /* … */ },
         afterDelete: async (pk, ctx) => { /* … */ },
@@ -120,7 +121,7 @@ tapemark({
 });
 ```
 
-Hook failures don't roll back the write — the row operation has already committed by the time the hook runs. A thrown hook is surfaced as a warning flash on the admin page, so you can see what went wrong without losing the write.
+Hook failures don't roll back the write — the row operation has already committed by the time the hook runs. Synchronous hook errors surface as a warning flash on the admin page; errors inside `ctx.background()` work are visible only when running inline (logged by the runtime when running via `waitUntil`).
 
 **Custom row actions** render as extra buttons on the row detail page, separated visually from the form's `save` button. The handler receives the primary key and a `HookContext`, and returns an `ActionResult` that becomes the flash message.
 
