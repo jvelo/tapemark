@@ -14,7 +14,7 @@ interface DataTableProps {
   pageSize?: number;
   /** "table" enables edit links and bulk select; "view" enables read-only row links. */
   kind?: "table" | "view";
-  /** Actions registered on this table; only those with `inTable: true` render here. */
+  /** Actions registered on this table; only those with `display.list: true` render here. */
   actions?: Record<string, RowAction>;
 }
 
@@ -64,8 +64,8 @@ export function DataTable({
     return !cc?.hidden;
   });
 
-  // Per-row actions exposed in the table list (opt-in via `inTable: true`).
-  const tableActions = Object.entries(actions ?? {}).filter(([, a]) => a.inTable);
+  // Per-row actions exposed in the list view (opt-in via `display.list`).
+  const tableActions = Object.entries(actions ?? {}).filter(([, a]) => a.display?.list === true);
   const hasTableActions = hasPk && !isView && tableActions.length > 0;
 
   if (rows.length === 0) {

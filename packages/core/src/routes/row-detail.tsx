@@ -29,7 +29,8 @@ export async function rowDetailRoute(
   const tableOpts = ctx.tableOptions.get(table);
   const isReadonly = isView || ctx.readonly || tableOpts?.readonly;
   const visibleActions = Object.entries(tableOpts?.actions ?? {}).filter(
-    ([, action]) => isActionVisibleFor(action, row),
+    ([, action]) =>
+      action.display?.detail !== false && isActionVisibleFor(action, row),
   );
 
   const crumbs = [

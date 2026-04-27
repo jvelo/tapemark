@@ -227,9 +227,9 @@ export interface RowAction {
     pkValues: Record<string, string>,
     ctx: HookContext,
   ) => Promise<ActionResult> | ActionResult;
-  /** Also render per-row in the table list view, not just on row detail.
-   *  Invocations from the list redirect back to the list. Default `false`. */
-  inTable?: boolean;
+  /** Where to render this action button. Defaults: `detail: true`, `list: false`.
+   *  Invocations from the list view redirect back to the list. */
+  display?: { detail?: boolean; list?: boolean };
   /** UI-only predicate hiding the button when it doesn't apply to this row.
    *  Not enforced server-side; thrown errors are treated as "not visible". */
   visible?: (row: Record<string, CellValue>) => boolean;

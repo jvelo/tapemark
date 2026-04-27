@@ -421,7 +421,7 @@ describe("Custom row actions", () => {
             actions: {
               clear_tag: {
                 label: "clear tag",
-                inTable: true,
+                display: { list: true },
                 handler: () => ({ ok: true }),
                 visible: (row) => row.tag !== null,
               },
@@ -496,14 +496,14 @@ describe("Custom row actions", () => {
     });
   });
 
-  describe("inTable", () => {
-    it("renders an actions column on the list when at least one action is inTable", async () => {
+  describe("display placement", () => {
+    it("renders an actions column on the list when at least one action opts in via display.list", async () => {
       core = createTapemark({
         db,
         tables: {
           notes: {
             actions: {
-              quick: { label: "quick", handler: () => ({ ok: true }), inTable: true },
+              quick: { label: "quick", handler: () => ({ ok: true }), display: { list: true } },
               detail_only: { label: "detail only", handler: () => ({ ok: true }) },
             },
           },
@@ -514,11 +514,11 @@ describe("Custom row actions", () => {
       expect(res.status).toBe(200);
       expect(res.html).toContain('class="tm-row-action-col"');
       expect(res.html).toContain(">quick<");
-      // detail_only must NOT render in the list (no inTable flag)
+      // detail_only must NOT render in the list (default for `list` is false)
       expect(res.html).not.toContain(">detail only<");
     });
 
-    it("does not render an actions column when no actions are inTable", async () => {
+    it("does not render an actions column when no actions opt in via display.list", async () => {
       core = createTapemark({
         db,
         tables: {
@@ -534,6 +534,33 @@ describe("Custom row actions", () => {
       expect(res.html).not.toContain('class="tm-row-action-col"');
     });
 
+    it("hides the action on row detail when display.detail is false", async () => {
+      // List-only action — useful for ops you only want to expose as a quick
+      // gesture without cluttering the row form.
+      core = createTapemark({
+        db,
+        tables: {
+          notes: {
+            actions: {
+              quick: {
+                label: "quick",
+                handler: () => ({ ok: true }),
+                display: { detail: false, list: true },
+              },
+            },
+          },
+        },
+      });
+
+      const detail = await core.handle(
+        req({ path: "/notes/1", params: { table: "notes", pk: "1" } }),
+      );
+      expect(detail.html).not.toContain(">quick<");
+
+      const list = await core.handle(req({ path: "/notes", params: { table: "notes" } }));
+      expect(list.html).toContain(">quick<");
+    });
+
     it("redirects back to the table list when invoked with _back=table", async () => {
       core = createTapemark({
         db,
@@ -543,7 +570,7 @@ describe("Custom row actions", () => {
               ping: {
                 label: "ping",
                 handler: () => ({ ok: true, message: "pong" }),
-                inTable: true,
+                display: { list: true },
               },
             },
           },
@@ -572,7 +599,7 @@ describe("Custom row actions", () => {
           notes: {
             readonly: true,
             actions: {
-              ping: { label: "ping", inTable: true, handler: () => ({ ok: true }) },
+              ping: { label: "ping", display: { list: true }, handler: () => ({ ok: true }) },
             },
           },
         },

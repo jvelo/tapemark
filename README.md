@@ -137,7 +137,7 @@ tables: {
       },
       mark_done: {
         label: "mark done",
-        inTable: true,                              // also expose per-row in the list
+        display: { list: true },                    // also expose per-row in the list
         visible: (row) => row.status !== "done",    // hide once it's already done
         handler: async (pk, ctx) => { /* … */ },
       },
@@ -146,7 +146,7 @@ tables: {
 }
 ```
 
-Actions opt in to the table-list view via `inTable: true`. When invoked from the list, the user is redirected back to the list (rather than the row detail page); when invoked from the detail page, they stay there. Actions are gated by the same `readonly` rules as updates and deletes.
+Where each action renders is controlled by `display`: defaults are `{ detail: true, list: false }`. Set `display.list: true` to expose the button per-row in the list view (invocations from there redirect back to the list); set `display.detail: false` to hide it from the row form. Actions are gated by the same `readonly` rules as updates and deletes.
 
 The optional `visible(row) => boolean` predicate hides the button when the action wouldn't make sense for the current row (e.g. "mark done" on a task that's already done). It's a UI hint only — handlers are still reachable by direct POST and should validate their own invariants if they need to. A predicate that throws is treated as "not visible" so a buggy condition can't break the page render.
 

@@ -20,7 +20,7 @@ tables: {
     actions: {
       mark_done: {
         label: "mark done",
-        inTable: true,
+        display: { list: true },
         visible: (row) => row.status !== "done",
         handler: async (pk, ctx) => { /* … */ },
       },
