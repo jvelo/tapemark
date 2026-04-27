@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import {
   createTapemark,
   type Database,
-  type BackgroundTasks,
+  type ExecutionContextLike,
   type TapemarkBaseOptions,
   type TapemarkRequest,
 } from "@jvelo/tapemark";
@@ -59,7 +59,7 @@ export function tapemark<Env extends object = DefaultEnv>(
     const res = await core.handle(tapemarkReq, {
       db: resolvedDb,
       env: c.env,
-      executionCtx: safeExecutionCtx(c),
+      executionContext: safeExecutionCtx(c),
     });
 
     if (res.redirect) {
@@ -78,9 +78,9 @@ export function tapemark<Env extends object = DefaultEnv>(
 /** Returns `c.executionCtx` when present. The getter throws under Node /
  *  tests because no Workers runtime is attached; the catch is scoped to
  *  the access only — intent is "unsupported runtime", not silencing bugs. */
-function safeExecutionCtx(c: Context): BackgroundTasks | undefined {
+function safeExecutionCtx(c: Context): ExecutionContextLike | undefined {
   try {
-    return c.executionCtx as BackgroundTasks;
+    return c.executionCtx as ExecutionContextLike;
   } catch {
     return undefined;
   }

@@ -155,7 +155,7 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
       theme: options.theme ?? defaultTheme,
       bundleFonts: options.bundleFonts !== false,
       env: overrides?.env,
-      executionCtx: overrides?.executionCtx,
+      executionContext: overrides?.executionContext,
     };
   }
 

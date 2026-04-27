@@ -171,7 +171,7 @@ export interface RequestOverrides {
   env?: unknown;
   /** Background-task host forwarded from the adapter (Workers' `executionCtx`,
    *  Vercel's `waitUntil`, etc.). Undefined on runtimes without the concept. */
-  executionCtx?: BackgroundTasks;
+  executionContext?: ExecutionContextLike;
 }
 
 /** A route handler is a pure async function. */
@@ -201,7 +201,7 @@ export interface TableOptions {
  *  (`@vercel/functions`'s `waitUntil`), and others. Undefined on runtimes
  *  without the concept (Node, Bun standalone), where hooks just fall back
  *  to plain async invocations. */
-export interface BackgroundTasks {
+export interface ExecutionContextLike {
   waitUntil?: (promise: Promise<unknown>) => void;
 }
 
@@ -215,7 +215,7 @@ export interface HookContext {
   /** Background-task host — call `waitUntil` to keep a promise alive past the
    *  response. Sourced from CF Workers' `executionCtx`, Vercel's
    *  `waitUntil`, etc. Undefined on runtimes without the concept. */
-  executionCtx?: BackgroundTasks;
+  executionContext?: ExecutionContextLike;
   request: TapemarkRequest;
 }
 
@@ -334,5 +334,5 @@ export interface TapemarkContext {
   /** Framework env forwarded from the adapter; passed through to hook/action handlers. */
   env?: unknown;
   /** Framework execution context forwarded from the adapter. */
-  executionCtx?: BackgroundTasks;
+  executionContext?: ExecutionContextLike;
 }

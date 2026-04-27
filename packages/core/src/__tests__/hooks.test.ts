@@ -98,7 +98,7 @@ describe("Lifecycle hooks", () => {
       expect(rows?.body).toBe("fourth");
     });
 
-    it("passes env and executionCtx through the hook context", async () => {
+    it("passes env and executionContext through the hook context", async () => {
       const sentinel = Symbol("env");
       const ec = { waitUntil: () => {} };
       let captured: HookContext | null = null;
@@ -122,12 +122,12 @@ describe("Lifecycle hooks", () => {
           params: { table: "notes" },
           body: { body: "fifth" },
         }),
-        { db, env: sentinel, executionCtx: ec },
+        { db, env: sentinel, executionContext: ec },
       );
 
       expect(captured).not.toBeNull();
       expect((captured as HookContext | null)!.env).toBe(sentinel);
-      expect((captured as HookContext | null)!.executionCtx).toBe(ec);
+      expect((captured as HookContext | null)!.executionContext).toBe(ec);
     });
 
     it("does not fire on tables that have no hooks configured", async () => {

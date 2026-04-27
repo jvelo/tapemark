@@ -15,7 +15,7 @@ function buildHookContext(
   return {
     db: ctx.db,
     env: ctx.env,
-    executionCtx: ctx.executionCtx,
+    executionContext: ctx.executionContext,
     request: req,
   };
 }
