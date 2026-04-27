@@ -1,6 +1,7 @@
 // Types
 export type {
   ActionResult,
+  BackgroundTasks,
   CellValue,
   Column,
   ColumnAffinity,
@@ -8,7 +9,6 @@ export type {
   ConstraintMode,
   Database,
   DisplayType,
-  ExecutionContextLike,
   ForeignKey,
   HookContext,
   OptionSchema,

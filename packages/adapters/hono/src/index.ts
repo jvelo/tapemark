@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import {
   createTapemark,
   type Database,
-  type ExecutionContextLike,
+  type BackgroundTasks,
   type TapemarkBaseOptions,
   type TapemarkRequest,
 } from "@jvelo/tapemark";
@@ -13,7 +13,7 @@ type DefaultEnv = Record<string, unknown>;
 
 /** Options for the Hono adapter. Generic over `Env` so `c.env` is typed
  *  in the `db` and `authorize` callbacks. */
-export interface HonoAdminOptions<Env = DefaultEnv>
+export interface HonoAdminOptions<Env extends object = DefaultEnv>
   extends Omit<TapemarkBaseOptions, "authorize"> {
   /** DB accessor — gets the Hono context so you can pull from env bindings (e.g. `c.env.DB`). */
   db: Database | ((c: Context<{ Bindings: Env }>) => Database);
@@ -36,7 +36,7 @@ export interface HonoAdminOptions<Env = DefaultEnv>
  * }));
  * ```
  */
-export function tapemark<Env = DefaultEnv>(
+export function tapemark<Env extends object = DefaultEnv>(
   opts: HonoAdminOptions<Env>,
 ): Hono<{ Bindings: Env }> {
   const app = new Hono<{ Bindings: Env }>();
@@ -78,9 +78,9 @@ export function tapemark<Env = DefaultEnv>(
 /** Returns `c.executionCtx` when present. The getter throws under Node /
  *  tests because no Workers runtime is attached; the catch is scoped to
  *  the access only — intent is "unsupported runtime", not silencing bugs. */
-function safeExecutionCtx(c: Context): ExecutionContextLike | undefined {
+function safeExecutionCtx(c: Context): BackgroundTasks | undefined {
   try {
-    return c.executionCtx as ExecutionContextLike;
+    return c.executionCtx as BackgroundTasks;
   } catch {
     return undefined;
   }

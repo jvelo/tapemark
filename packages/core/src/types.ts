@@ -169,8 +169,9 @@ export interface RequestOverrides {
   db?: Database;
   /** Framework env forwarded to hook/action handlers (e.g. Hono's `c.env`). */
   env?: unknown;
-  /** Framework execution context (e.g. CF Workers' `c.executionCtx`). */
-  executionCtx?: ExecutionContextLike;
+  /** Background-task host forwarded from the adapter (Workers' `executionCtx`,
+   *  Vercel's `waitUntil`, etc.). Undefined on runtimes without the concept. */
+  executionCtx?: BackgroundTasks;
 }
 
 /** A route handler is a pure async function. */
@@ -194,9 +195,13 @@ export interface TableOptions {
 // Hooks & actions
 // ---------------------------------------------------------------------------
 
-/** Structural shape of a Cloudflare-Workers-style execution context —
- *  captures `waitUntil` without coupling core to `@cloudflare/workers-types`. */
-export interface ExecutionContextLike {
+/** Capability host for fire-and-forget work: `waitUntil(promise)` keeps a
+ *  Promise alive past the response. Available on edge runtimes that share
+ *  this idiom — Cloudflare Workers (`c.executionCtx`), Vercel
+ *  (`@vercel/functions`'s `waitUntil`), and others. Undefined on runtimes
+ *  without the concept (Node, Bun standalone), where hooks just fall back
+ *  to plain async invocations. */
+export interface BackgroundTasks {
   waitUntil?: (promise: Promise<unknown>) => void;
 }
 
@@ -207,8 +212,10 @@ export interface HookContext {
   db: Database;
   /** Framework env (e.g. Hono's `c.env`); undefined when not adapter-bound. */
   env?: unknown;
-  /** Framework execution context (e.g. CF Workers' `c.executionCtx`). */
-  executionCtx?: ExecutionContextLike;
+  /** Background-task host — call `waitUntil` to keep a promise alive past the
+   *  response. Sourced from CF Workers' `executionCtx`, Vercel's
+   *  `waitUntil`, etc. Undefined on runtimes without the concept. */
+  executionCtx?: BackgroundTasks;
   request: TapemarkRequest;
 }
 
@@ -327,5 +334,5 @@ export interface TapemarkContext {
   /** Framework env forwarded from the adapter; passed through to hook/action handlers. */
   env?: unknown;
   /** Framework execution context forwarded from the adapter. */
-  executionCtx?: ExecutionContextLike;
+  executionCtx?: BackgroundTasks;
 }
