@@ -11,22 +11,13 @@ import type { Context } from "hono";
 /** Default env shape — opaque record. Override via the type parameter. */
 type DefaultEnv = Record<string, unknown>;
 
-/**
- * Options for the Hono adapter. Extends `TapemarkBaseOptions` but replaces
- * `db` and `authorize` with Hono-aware accessors. Generic over the Hono
- * `Bindings` shape so consumers get a typed `c.env` in their callbacks.
- */
+/** Options for the Hono adapter. Generic over `Env` so `c.env` is typed
+ *  in the `db` and `authorize` callbacks. */
 export interface HonoAdminOptions<Env = DefaultEnv>
   extends Omit<TapemarkBaseOptions, "authorize"> {
-  /**
-   * Database accessor. Receives the Hono context so you can extract
-   * the DB from env bindings (e.g. `c.env.DB` for D1).
-   */
+  /** DB accessor — gets the Hono context so you can pull from env bindings (e.g. `c.env.DB`). */
   db: Database | ((c: Context<{ Bindings: Env }>) => Database);
-  /**
-   * Authorization callback. Receives the Hono context for access to
-   * framework-specific auth mechanisms.
-   */
+  /** Auth callback receiving the Hono context. */
   authorize?: (c: Context<{ Bindings: Env }>) => Promise<boolean>;
 }
 
@@ -84,17 +75,9 @@ export function tapemark<Env = DefaultEnv>(
   return app;
 }
 
-/**
- * Return Hono's `c.executionCtx` when present. Cloudflare Workers provide
- * it; `@hono/node-server` and tests do not — Hono implements it as a
- * getter that throws when no Workers runtime is attached.
- *
- * The catch is intentionally narrow in scope (the property access only) and
- * intentionally broad in what it swallows: the goal is to recover from
- * "this runtime doesn't expose an execution context" without failing the
- * request, not to mask unrelated bugs in the adapter pipeline. If Hono ever
- * stops throwing here, this function becomes a one-line passthrough.
- */
+/** Returns `c.executionCtx` when present. The getter throws under Node /
+ *  tests because no Workers runtime is attached; the catch is scoped to
+ *  the access only — intent is "unsupported runtime", not silencing bugs. */
 function safeExecutionCtx(c: Context): ExecutionContextLike | undefined {
   try {
     return c.executionCtx as ExecutionContextLike;

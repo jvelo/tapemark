@@ -30,8 +30,7 @@ export async function rowActionRoute(
   const flash = result.ok ? "success" : "error";
   const msg = result.message ?? (result.ok ? "action completed" : "action failed");
 
-  // When the form posted from the table list view, return the user there
-  // rather than to the row detail page they never opened.
+  // List-view forms send `_back=table` so we return them to the list, not detail.
   const backToTable = req.body?._back === "table";
   const target = backToTable
     ? `${ctx.prefix}/${table}`

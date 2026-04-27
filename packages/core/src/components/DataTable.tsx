@@ -148,11 +148,8 @@ export function DataTable({
         </tbody>
       </table>
     </form>
-    {/*
-      Per-row action forms live outside the bulk-delete form so they aren't
-      nested (HTML disallows form-in-form). Buttons inside the table reach
-      them via the `form="..."` attribute.
-    */}
+    {/* Action forms live outside the bulk-delete form (HTML disallows
+        nested forms); table buttons reach them via the `form="..."` attribute. */}
     {hasTableActions && rows.map((row) => {
       const pk = encodePk(row);
       return tableActions

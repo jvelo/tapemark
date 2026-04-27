@@ -113,12 +113,9 @@ export class TableRepository {
     return row as Record<string, CellValue>;
   }
 
-  /**
-   * Insert a new row. Empty-string values for columns not in data are skipped.
-   * Returns the inserted row via `INSERT … RETURNING *`, so callers and
-   * `afterInsert` hooks see auto-generated values (any-affinity PKs filled
-   * by DEFAULT, INTEGER rowid aliases, DEFAULT-populated columns).
-   */
+  /** Insert a row. Returns it via `RETURNING *` so callers and `afterInsert`
+   *  hooks see auto-generated values regardless of PK affinity. Empty-string
+   *  values are skipped (lets columns fall through to their DEFAULT). */
   async insertRow(
     tableName: string,
     data: Record<string, string>,
@@ -145,9 +142,7 @@ export class TableRepository {
       .bind(...values)
       .first<Record<string, CellValue>>();
 
-    // RETURNING * always yields the inserted row when it succeeds. Fall
-    // back to the submitted data only as a defensive guard against an
-    // adapter that drops the returning rowset.
+    // Fallback only guards against adapters that drop the RETURNING rowset.
     return inserted ?? (data as Record<string, CellValue>);
   }
 

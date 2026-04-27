@@ -755,11 +755,8 @@ tm-display-options {
   margin-top: 0.72rem;
 }
 
-/* Row detail action bar.
-   Left group = form action (save). Right group = row operations
-   (custom actions + delete). Splitting them visually clarifies that
-   save commits the form while the others operate on the row regardless.
-   max-width matches `.tm-form` so the right edge lines up with the form. */
+/* Row detail action bar — save (form) on the left, row ops (actions + delete)
+   on the right. max-width mirrors `.tm-form` so the right edge lines up. */
 .tm-row-actions {
   display: flex;
   justify-content: space-between;

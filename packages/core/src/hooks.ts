@@ -7,10 +7,7 @@ import type {
   TapemarkRequest,
 } from "./types";
 
-/**
- * Build a hook context from the current Tapemark context + request.
- * Shared by both lifecycle hooks and custom row actions.
- */
+/** Build a HookContext from the current request — shared by hooks and actions. */
 function buildHookContext(
   ctx: TapemarkContext,
   req: TapemarkRequest,
@@ -27,12 +24,8 @@ function getHooks(table: string, ctx: TapemarkContext): TableHooks | undefined {
   return ctx.tableOptions.get(table)?.hooks;
 }
 
-/**
- * Run a hook and return an error message if it threw, or `null` on success
- * (including when no hook is registered). Hook failures never throw — they
- * surface as a warning flash since the row operation itself has already
- * committed.
- */
+/** Run a hook; return null on success or an error message on failure.
+ *  Never throws — the row write has already committed by the time we're here. */
 async function runHook(fn: () => Promise<void> | void): Promise<string | null> {
   try {
     await fn();
@@ -76,11 +69,8 @@ export async function fireAfterDelete(
   return runHook(() => hook(pkValues, buildHookContext(ctx, req)));
 }
 
-/**
- * Evaluate an action's `visible` predicate against a row. A predicate that
- * throws is treated as "not visible" so a buggy condition can't take down
- * the whole list. Actions without a predicate are always visible.
- */
+/** Evaluate `action.visible` against `row`. Missing predicate → visible.
+ *  Thrown predicate → not visible (so a buggy condition can't crash the page). */
 export function isActionVisibleFor(
   action: RowAction,
   row: Record<string, CellValue>,
@@ -93,10 +83,8 @@ export function isActionVisibleFor(
   }
 }
 
-/**
- * Run a named action. Returns the ActionResult, or `{ ok: false, message }`
- * if the action threw or doesn't exist. The caller turns this into a flash.
- */
+/** Run a named action. Returns `{ ok, message }`; thrown handlers and
+ *  unknown action names both surface as `{ ok: false }`. */
 export async function runAction(
   table: string,
   actionName: string,
@@ -115,10 +103,7 @@ export async function runAction(
   }
 }
 
-/**
- * Build a flash message fragment that appends a hook-warning suffix when a
- * hook failed. Returns "success" or "warning" flash kind.
- */
+/** Map a hook outcome to a flash kind + message — appends a warning suffix on failure. */
 export function flashForHookResult(
   baseMessage: string,
   hookError: string | null,

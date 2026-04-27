@@ -133,11 +133,8 @@ export interface ColumnConfig {
   options?: Record<string, unknown>;
   label?: string;
   hidden?: boolean;
-  /**
-   * Show the column on the create form even when Tapemark would normally
-   * hide it (e.g. SQLite-auto-generated INTEGER primary keys). Default
-   * `false` — auto-generated PKs are hidden so SQLite fills them in.
-   */
+  /** Force-render on the create form even when Tapemark would hide it
+   *  (e.g. auto-generated INTEGER primary keys). Default `false`. */
   showOnCreate?: boolean;
 }
 
@@ -172,10 +169,7 @@ export interface RequestOverrides {
   db?: Database;
   /** Framework env forwarded to hook/action handlers (e.g. Hono's `c.env`). */
   env?: unknown;
-  /**
-   * Framework execution context forwarded to hook/action handlers
-   * (e.g. Cloudflare Workers' `c.executionCtx`).
-   */
+  /** Framework execution context (e.g. CF Workers' `c.executionCtx`). */
   executionCtx?: ExecutionContextLike;
 }
 
@@ -200,37 +194,21 @@ export interface TableOptions {
 // Hooks & actions
 // ---------------------------------------------------------------------------
 
-/**
- * Minimal structural shape of a Cloudflare-Workers-style execution context.
- * Captures only the capability hooks typically reach for — `waitUntil` —
- * without coupling core to Cloudflare's `@cloudflare/workers-types`.
- * Adapters in environments that don't have an analogue should leave it
- * undefined.
- */
+/** Structural shape of a Cloudflare-Workers-style execution context —
+ *  captures `waitUntil` without coupling core to `@cloudflare/workers-types`. */
 export interface ExecutionContextLike {
   waitUntil?: (promise: Promise<unknown>) => void;
 }
 
-/**
- * Context passed to user-defined hooks and action handlers. Built from
- * `TapemarkContext` plus framework extras (env, executionCtx) that the
- * adapter forwards per request.
- *
- * `env` is intentionally `unknown` — Tapemark itself can't know the
- * adapter's binding shape. Consumers wanting a typed env should cast at
- * the call site (`ctx.env as MyEnv`) or use a narrowing helper.
- */
+/** Context passed to user-defined hooks and action handlers. `env` is
+ *  `unknown` because the adapter's binding shape isn't known to core —
+ *  cast at the call site (`ctx.env as MyEnv`) for typed access. */
 export interface HookContext {
-  /** The database for this request. */
   db: Database;
-  /** Framework env (e.g. Hono's `c.env`). Adapter-dependent; may be undefined. */
+  /** Framework env (e.g. Hono's `c.env`); undefined when not adapter-bound. */
   env?: unknown;
-  /**
-   * Framework execution context (e.g. Cloudflare Workers' `c.executionCtx`).
-   * Useful for `waitUntil`. Undefined when unavailable.
-   */
+  /** Framework execution context (e.g. CF Workers' `c.executionCtx`). */
   executionCtx?: ExecutionContextLike;
-  /** The raw Tapemark request that triggered the hook. */
   request: TapemarkRequest;
 }
 
@@ -249,18 +227,11 @@ export interface RowAction {
     pkValues: Record<string, string>,
     ctx: HookContext,
   ) => Promise<ActionResult> | ActionResult;
-  /**
-   * When true, the action is also exposed per-row in the table list view,
-   * not just on the row detail page. After running, the user is redirected
-   * back to the list. Default: false.
-   */
+  /** Also render per-row in the table list view, not just on row detail.
+   *  Invocations from the list redirect back to the list. Default `false`. */
   inTable?: boolean;
-  /**
-   * Predicate that decides whether the action button is rendered for a
-   * given row. UI-only — the action route does not enforce it server-side,
-   * so handlers should validate their own invariants if they care. Errors
-   * thrown by the predicate are caught and treated as "not visible".
-   */
+  /** UI-only predicate hiding the button when it doesn't apply to this row.
+   *  Not enforced server-side; thrown errors are treated as "not visible". */
   visible?: (row: Record<string, CellValue>) => boolean;
 }
 
