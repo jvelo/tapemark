@@ -6,9 +6,24 @@ import { SchemaIntrospector } from "../schema";
 import { ConfigStore } from "../config";
 import { NotFoundError } from "../errors";
 import { castValue } from "../repository";
+import { fireAfterDelete, fireAfterUpdate, flashForHookResult } from "../hooks";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
 import type { CellValue, TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
+
+function pkValuesFromRow(
+  primaryKey: string[],
+  row: Record<string, CellValue>,
+): Record<string, string> | null {
+  if (primaryKey.length === 0) return null;
+  const result: Record<string, string> = {};
+  for (const col of primaryKey) {
+    const v = row[col];
+    if (v === null || v === undefined) return null;
+    result[col] = String(v);
+  }
+  return result;
+}
 
 async function getRowByIndex(
   ctx: TapemarkContext,
@@ -75,6 +90,7 @@ export async function rowViewRoute(
       <RowForm
         columns={tableInfo.columns}
         primaryKey={tableInfo.primaryKey}
+        hasRowid={tableInfo.hasRowid}
         foreignKeys={tableInfo.foreignKeys}
         values={row}
         action={`${ctx.prefix}/${table}/_row/${index}`}
@@ -155,7 +171,17 @@ export async function rowViewUpdateRoute(
       .run();
   }
 
-  return redirect(`${ctx.prefix}/${table}/_row/${index}?flash=success&msg=${encodeURIComponent("row updated")}`);
+  const pkValues = pkValuesFromRow(tableInfo.primaryKey, originalRow);
+  const patch: Record<string, string> = {};
+  for (const [k, v] of entries) patch[k] = String(v ?? "");
+  const hookError = pkValues
+    ? await fireAfterUpdate(table, pkValues, patch, ctx, req)
+    : null;
+  const { flash, message } = flashForHookResult("row updated", hookError);
+
+  return redirect(
+    `${ctx.prefix}/${table}/_row/${index}?flash=${flash}&msg=${encodeURIComponent(message)}`,
+  );
 }
 
 export async function rowViewDeleteRoute(
@@ -187,5 +213,13 @@ export async function rowViewDeleteRoute(
       .run();
   }
 
-  return redirect(`${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}`);
+  const pkValues = pkValuesFromRow(tableInfo.primaryKey, originalRow);
+  const hookError = pkValues
+    ? await fireAfterDelete(table, pkValues, ctx, req)
+    : null;
+  const { flash, message } = flashForHookResult("row deleted", hookError);
+
+  return redirect(
+    `${ctx.prefix}/${table}?flash=${flash}&msg=${encodeURIComponent(message)}`,
+  );
 }

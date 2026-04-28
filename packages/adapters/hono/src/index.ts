@@ -2,27 +2,23 @@ import { Hono } from "hono";
 import {
   createTapemark,
   type Database,
+  type ExecutionContextLike,
   type TapemarkBaseOptions,
   type TapemarkRequest,
 } from "@jvelo/tapemark";
 import type { Context } from "hono";
 
-/**
- * Options for the Hono adapter. Extends TapemarkOptions but replaces
- * the `db` field with a Hono-aware accessor.
- */
-export interface HonoAdminOptions
+/** Default env shape — opaque record. Override via the type parameter. */
+type DefaultEnv = Record<string, unknown>;
+
+/** Options for the Hono adapter. Generic over `Env` so `c.env` is typed
+ *  in the `db` and `authorize` callbacks. */
+export interface HonoAdminOptions<Env extends object = DefaultEnv>
   extends Omit<TapemarkBaseOptions, "authorize"> {
-  /**
-   * Database accessor. Receives the Hono context so you can extract
-   * the DB from env bindings (e.g. `c.env.DB` for D1).
-   */
-  db: Database | ((c: Context) => Database);
-  /**
-   * Authorization callback. Receives the Hono context for access to
-   * framework-specific auth mechanisms.
-   */
-  authorize?: (c: Context) => Promise<boolean>;
+  /** DB accessor — gets the Hono context so you can pull from env bindings (e.g. `c.env.DB`). */
+  db: Database | ((c: Context<{ Bindings: Env }>) => Database);
+  /** Auth callback receiving the Hono context. */
+  authorize?: (c: Context<{ Bindings: Env }>) => Promise<boolean>;
 }
 
 /**
@@ -32,14 +28,18 @@ export interface HonoAdminOptions
  * ```ts
  * import { tapemark } from "@jvelo/tapemark-hono";
  *
- * app.route("/admin", tapemark({
- *   db: (c) => c.env.DB,
+ * type Env = { DB: D1Database };
+ *
+ * app.route("/admin", tapemark<Env>({
+ *   db: (c) => c.env.DB,             // c.env is typed as Env
  *   authorize: async (c) => checkAdmin(c),
  * }));
  * ```
  */
-export function tapemark(opts: HonoAdminOptions): Hono {
-  const app = new Hono();
+export function tapemark<Env extends object = DefaultEnv>(
+  opts: HonoAdminOptions<Env>,
+): Hono<{ Bindings: Env }> {
+  const app = new Hono<{ Bindings: Env }>();
   const prefix = opts.prefix ?? "";
 
   const { db, authorize, ...coreOpts } = opts;
@@ -56,7 +56,11 @@ export function tapemark(opts: HonoAdminOptions): Hono {
     }
 
     const tapemarkReq = await honoToTapemarkRequest(c, prefix);
-    const res = await core.handle(tapemarkReq, { db: resolvedDb });
+    const res = await core.handle(tapemarkReq, {
+      db: resolvedDb,
+      env: c.env,
+      executionContext: safeExecutionContext(c),
+    });
 
     if (res.redirect) {
       return c.redirect(res.redirect, res.status as 301 | 302 | 303 | 307 | 308);
@@ -69,6 +73,16 @@ export function tapemark(opts: HonoAdminOptions): Hono {
   });
 
   return app;
+}
+
+/** Returns `c.executionCtx`; `undefined` when the host runtime lacks one
+ *  (Node, Bun, vitest — Hono's getter throws). Catch intent: "unsupported runtime". */
+function safeExecutionContext(c: Context): ExecutionContextLike | undefined {
+  try {
+    return c.executionCtx as ExecutionContextLike;
+  } catch {
+    return undefined;
+  }
 }
 
 /**

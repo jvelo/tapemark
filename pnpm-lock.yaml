@@ -21,6 +21,28 @@ importers:
         specifier: ^8.57.1
         version: 8.57.1(eslint@10.1.0)(typescript@5.9.3)
 
+  examples/hooks-and-actions:
+    dependencies:
+      '@jvelo/tapemark':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@jvelo/tapemark-better-sqlite3':
+        specifier: workspace:*
+        version: link:../../packages/db-adapters/better-sqlite3
+      better-sqlite3:
+        specifier: ^11.0.0
+        version: 11.10.0
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.0
+        version: 7.6.13
+      node-gyp:
+        specifier: ^12.2.0
+        version: 12.2.0
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+
   examples/standalone:
     dependencies:
       '@jvelo/tapemark':

@@ -113,11 +113,13 @@ export class TableRepository {
     return row as Record<string, CellValue>;
   }
 
-  /** Insert a new row. Empty-string values for columns not in data are skipped. */
+  /** Insert a row. Returns it via `RETURNING *` so callers and `afterInsert`
+   *  hooks see auto-generated values regardless of PK affinity. Empty-string
+   *  values are skipped (lets columns fall through to their DEFAULT). */
   async insertRow(
     tableName: string,
     data: Record<string, string>,
-  ): Promise<void> {
+  ): Promise<Record<string, CellValue>> {
     const table = await this.schema.getTable(tableName);
     const columnMap = new Map(table.columns.map((c) => [c.name, c]));
 
@@ -133,12 +135,15 @@ export class TableRepository {
     const placeholders = entries.map(() => "?").join(", ");
     const values = entries.map(([k, v]) => castValue(v, columnMap.get(k)!));
 
-    await this.db
+    const inserted = await this.db
       .prepare(
-        `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders})`,
+        `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders}) RETURNING *`,
       )
       .bind(...values)
-      .run();
+      .first<Record<string, CellValue>>();
+
+    // Fallback only guards against adapters that drop the RETURNING rowset.
+    return inserted ?? (data as Record<string, CellValue>);
   }
 
   /** Update a row. PK columns in data are ignored. */

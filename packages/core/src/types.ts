@@ -12,8 +12,14 @@ export interface Database {
 
 export interface PreparedStatement {
   bind(...values: unknown[]): PreparedStatement;
+  /** Return all rows from any row-returning statement — including
+   *  `SELECT`, `INSERT … RETURNING`, `UPDATE … RETURNING`, `DELETE … RETURNING`. */
   all<T = Record<string, unknown>>(): Promise<T[]>;
+  /** Return the first row from any row-returning statement (see `all`).
+   *  Core uses this on `INSERT … RETURNING *` to recover auto-generated
+   *  values, so adapters must support it on writes, not only on SELECTs. */
   first<T = Record<string, unknown>>(): Promise<T | null>;
+  /** Execute a statement that returns no rows. */
   run(): Promise<void>;
 }
 
@@ -133,6 +139,9 @@ export interface ColumnConfig {
   options?: Record<string, unknown>;
   label?: string;
   hidden?: boolean;
+  /** Force-render on the create form even when Tapemark would hide it
+   *  (e.g. auto-generated INTEGER primary keys). Default `false`. */
+  showOnCreate?: boolean;
 }
 
 export interface TableConfig {
@@ -164,6 +173,11 @@ export interface TapemarkResponse {
 export interface RequestOverrides {
   /** Pre-resolved database for this request (bypasses options.db). */
   db?: Database;
+  /** Framework env forwarded to hook/action handlers (e.g. Hono's `c.env`). */
+  env?: unknown;
+  /** Background-task host forwarded from the adapter (Workers' `executionCtx`,
+   *  Vercel's `waitUntil`, etc.). Undefined on runtimes without the concept. */
+  executionContext?: ExecutionContextLike;
 }
 
 /** A route handler is a pure async function. */
@@ -179,6 +193,81 @@ export type RouteHandler = (
 export interface TableOptions {
   readonly?: boolean;
   hidden?: boolean;
+  hooks?: TableHooks;
+  actions?: Record<string, RowAction>;
+}
+
+// ---------------------------------------------------------------------------
+// Hooks & actions
+// ---------------------------------------------------------------------------
+
+/** Capability host for fire-and-forget work: `waitUntil(promise)` keeps a
+ *  Promise alive past the response. Available on edge runtimes that share
+ *  this idiom — Cloudflare Workers (`c.executionCtx`), Vercel
+ *  (`@vercel/functions`'s `waitUntil`), and others. Undefined on runtimes
+ *  without the concept (Node, Bun standalone), where hooks just fall back
+ *  to plain async invocations. */
+export interface ExecutionContextLike {
+  waitUntil?: (promise: Promise<unknown>) => void;
+}
+
+/** Context passed to user-defined hooks and action handlers. `env` is
+ *  `unknown` because the adapter's binding shape isn't known to core —
+ *  cast at the call site (`ctx.env as MyEnv`) for typed access. */
+export interface HookContext {
+  db: Database;
+  /** Framework env (e.g. Hono's `c.env`); undefined when not adapter-bound. */
+  env?: unknown;
+  /** Run `work` in the background when the runtime supports it
+   *  (Workers/Vercel/etc.); otherwise await it inline. Always `await` the
+   *  return value — it resolves immediately in background mode and after
+   *  `work` settles in sync mode. Errors are surfaced as flash warnings in
+   *  sync mode but only logged by the runtime in background mode. */
+  background: (work: Promise<unknown>) => Promise<void>;
+  request: TapemarkRequest;
+}
+
+/** Result returned by an action handler. Surfaced as a flash message. */
+export interface ActionResult {
+  success: boolean;
+  message?: string;
+}
+
+/** A user-triggered named operation on a row, rendered as a button. */
+export interface RowAction {
+  /** Label shown on the button. */
+  label: string;
+  /** Handler invoked when the button is clicked. */
+  handler: (
+    pkValues: Record<string, string>,
+    ctx: HookContext,
+  ) => Promise<ActionResult> | ActionResult;
+  /** Where to render this action button. Defaults: `detail: true`, `list: false`.
+   *  Invocations from the list view redirect back to the list. */
+  display?: { detail?: boolean; list?: boolean };
+  /** UI-only predicate hiding the button when it doesn't apply to this row.
+   *  Not enforced server-side; thrown errors are treated as "not visible". */
+  visible?: (row: Record<string, CellValue>) => boolean;
+}
+
+/** Row-level lifecycle hooks. Only fire on writes that go through Tapemark. */
+export interface TableHooks {
+  /** After a row has been inserted. Receives the full inserted row. */
+  afterInsert?: (
+    row: Record<string, CellValue>,
+    ctx: HookContext,
+  ) => Promise<void> | void;
+  /** After a row has been updated. Receives the PK and the submitted patch. */
+  afterUpdate?: (
+    pkValues: Record<string, string>,
+    patch: Record<string, string>,
+    ctx: HookContext,
+  ) => Promise<void> | void;
+  /** After a row has been deleted. Receives the PK of the deleted row. */
+  afterDelete?: (
+    pkValues: Record<string, string>,
+    ctx: HookContext,
+  ) => Promise<void> | void;
 }
 
 /**
@@ -250,4 +339,8 @@ export interface TapemarkContext {
   displayTypes: Map<string, DisplayType>;
   tableOptions: Map<string, TableOptions>;
   scripts: string[];
+  /** Framework env forwarded from the adapter; passed through to hook/action handlers. */
+  env?: unknown;
+  /** Framework execution context forwarded from the adapter. */
+  executionContext?: ExecutionContextLike;
 }

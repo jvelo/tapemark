@@ -5,6 +5,7 @@ import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, decodePk, encodePk } from "../repository";
 import { ConfigStore } from "../config";
+import { fireAfterDelete, fireAfterUpdate, flashForHookResult, isActionVisibleFor } from "../hooks";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
@@ -25,7 +26,12 @@ export async function rowDetailRoute(
   const tableConfig = await configStore.getTableConfig(table);
 
   const isView = tableInfo.kind === "view";
-  const isReadonly = isView || ctx.readonly || ctx.tableOptions.get(table)?.readonly;
+  const tableOpts = ctx.tableOptions.get(table);
+  const isReadonly = isView || ctx.readonly || tableOpts?.readonly;
+  const visibleActions = Object.entries(tableOpts?.actions ?? {}).filter(
+    ([, action]) =>
+      action.display?.detail !== false && isActionVisibleFor(action, row),
+  );
 
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },
@@ -50,6 +56,7 @@ export async function rowDetailRoute(
       <RowForm
         columns={tableInfo.columns}
         primaryKey={tableInfo.primaryKey}
+        hasRowid={tableInfo.hasRowid}
         foreignKeys={tableInfo.foreignKeys}
         values={row}
         action={`${ctx.prefix}/${table}/${pkParam}`}
@@ -63,20 +70,35 @@ export async function rowDetailRoute(
       />
       {!isReadonly && (
         <div class="tm-row-actions">
-          <button type="submit" form="tm-edit-form" class="tm-btn tm-btn-primary">
-            save
-          </button>
-          <form
-            method="post"
-            action={`${ctx.prefix}/${table}/${pkParam}/delete`}
-            class="tm-delete-inline"
-          >
-            <tm-confirm-button data-message={`delete row ${pkParam}?`}>
-              <button type="submit" class="tm-btn tm-btn-danger">
-                delete row
-              </button>
-            </tm-confirm-button>
-          </form>
+          <div class="tm-row-actions-form">
+            <button type="submit" form="tm-edit-form" class="tm-btn tm-btn-primary">
+              save
+            </button>
+          </div>
+          <div class="tm-row-actions-row">
+            {visibleActions.map(([name, action]) => (
+              <form
+                method="post"
+                action={`${ctx.prefix}/${table}/${pkParam}/_action/${name}`}
+                class="tm-action-inline"
+              >
+                <button type="submit" class="tm-btn">
+                  {action.label}
+                </button>
+              </form>
+            ))}
+            <form
+              method="post"
+              action={`${ctx.prefix}/${table}/${pkParam}/delete`}
+              class="tm-delete-inline"
+            >
+              <tm-confirm-button data-message={`delete row ${pkParam}?`}>
+                <button type="submit" class="tm-btn tm-btn-danger">
+                  delete row
+                </button>
+              </tm-confirm-button>
+            </form>
+          </div>
         </div>
       )}
     </TapemarkLayout>,
@@ -113,8 +135,13 @@ export async function rowUpdateRoute(
 
   await repo.updateRow(table, pkValues, data);
 
+  const hookError = await fireAfterUpdate(table, pkValues, data, ctx, req);
+  const { flash, message } = flashForHookResult("row updated", hookError);
+
   const newPk = encodePk(tableInfo.primaryKey, { ...pkValues, ...data });
-  return redirect(`${ctx.prefix}/${table}/${newPk}?flash=success&msg=${encodeURIComponent("row updated")}`);
+  return redirect(
+    `${ctx.prefix}/${table}/${newPk}?flash=${flash}&msg=${encodeURIComponent(message)}`,
+  );
 }
 
 export async function rowDeleteRoute(
@@ -132,5 +159,10 @@ export async function rowDeleteRoute(
 
   await repo.deleteRow(table, pkValues);
 
-  return redirect(`${ctx.prefix}/${table}?flash=success&msg=${encodeURIComponent("row deleted")}`);
+  const hookError = await fireAfterDelete(table, pkValues, ctx, req);
+  const { flash, message } = flashForHookResult("row deleted", hookError);
+
+  return redirect(
+    `${ctx.prefix}/${table}?flash=${flash}&msg=${encodeURIComponent(message)}`,
+  );
 }

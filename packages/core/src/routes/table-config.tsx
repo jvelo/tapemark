@@ -49,6 +49,8 @@ export async function tableConfigRoute(
         table={table}
         prefix={ctx.prefix}
         columns={tableInfo.columns}
+        primaryKey={tableInfo.primaryKey}
+        hasRowid={tableInfo.hasRowid}
         config={config}
         displayTypes={ctx.displayTypes}
       />
@@ -82,6 +84,7 @@ export async function tableConfigUpdateRoute(
       const label: string =
         (req.body[`${col.name}__label`] as string) || "";
       const hidden = !!req.body[`${col.name}__hidden`];
+      const showOnCreate = !!req.body[`${col.name}__showOnCreate`];
 
       // Parse display type options (fields named colName__opt__key)
       const dtSchema = ctx.displayTypes.get(display)?.schema;
@@ -115,6 +118,7 @@ export async function tableConfigUpdateRoute(
       if (display !== "text") cc.display = display;
       if (label) cc.label = label;
       if (hidden) cc.hidden = true;
+      if (showOnCreate) cc.showOnCreate = true;
       // Only store options that differ from defaults
       const cleanedOptions: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(options)) {

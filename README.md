@@ -92,8 +92,66 @@ tapemark({
   readonly: false,            // global read-only mode
   constraints: "enforce",     // "enforce" (default) or "relaxed"
   authorize: async (c) => {}, // auth callback
+  tables: {                   // per-table options
+    sites: { readonly: true }, // or { hidden: true }, or hooks/actions (below)
+  },
 });
 ```
+
+### Hooks and custom actions
+
+Per-table **hooks** run automatically after a row is inserted, updated, or deleted through the admin UI. Handlers receive a `HookContext` with the request's DB, framework env, and a `background()` helper for fire-and-forget work.
+
+```typescript
+tapemark({
+  db: (c) => createD1Adapter(c.env.DB),
+  tables: {
+    sites: {
+      hooks: {
+        afterInsert: async (row, ctx) => {
+          // Slow work — defer past the response on runtimes that support it
+          // (Workers, Vercel); awaited inline elsewhere.
+          await ctx.background(fetchAndStoreMetadata(row, ctx));
+        },
+        afterUpdate: async (pk, patch, ctx) => { /* … */ },
+        afterDelete: async (pk, ctx) => { /* … */ },
+      },
+    },
+  },
+});
+```
+
+Hook failures don't roll back the write — the row operation has already committed by the time the hook runs. Synchronous hook errors surface as a warning flash on the admin page; errors inside `ctx.background()` work are visible only when running inline (logged by the runtime when running via `waitUntil`).
+
+**Custom row actions** render as extra buttons on the row detail page, separated visually from the form's `save` button. The handler receives the primary key and a `HookContext`, and returns an `ActionResult` that becomes the flash message.
+
+```typescript
+tables: {
+  sites: {
+    actions: {
+      refetch: {
+        label: "re-fetch metadata",
+        handler: async (pk, ctx) => {
+          await refetchSiteMetadata(pk, ctx);
+          return { success: true, message: "metadata refreshed" };
+        },
+      },
+      mark_done: {
+        label: "mark done",
+        display: { list: true },                    // also expose per-row in the list
+        visible: (row) => row.status !== "done",    // hide once it's already done
+        handler: async (pk, ctx) => { /* … */ },
+      },
+    },
+  },
+}
+```
+
+Where each action renders is controlled by `display`: defaults are `{ detail: true, list: false }`. Set `display.list: true` to expose the button per-row in the list view (invocations from there redirect back to the list); set `display.detail: false` to hide it from the row form. Actions are gated by the same `readonly` rules as updates and deletes.
+
+The optional `visible(row) => boolean` predicate hides the button when the action wouldn't make sense for the current row (e.g. "mark done" on a task that's already done). It's a UI hint only — handlers are still reachable by direct POST and should validate their own invariants if they need to. A predicate that throws is treated as "not visible" so a buggy condition can't break the page render.
+
+See [`examples/hooks-and-actions`](./examples/hooks-and-actions) for a runnable walk-through — a task list whose writes feed an audit log via hooks, plus `mark done` and `duplicate` row actions.
 
 ## Packages
 

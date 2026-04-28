@@ -10,6 +10,7 @@ import { rowCreateRoute, rowInsertRoute } from "./routes/row-create";
 import { tableConfigRoute, tableConfigUpdateRoute } from "./routes/table-config";
 import { bulkDeleteRoute } from "./routes/bulk-delete";
 import { rowViewRoute, rowViewUpdateRoute, rowViewDeleteRoute } from "./routes/row-view";
+import { rowActionRoute } from "./routes/row-action";
 import { lookupRoute } from "./routes/lookup";
 import { loadAsset } from "./assets/load";
 import { themes, defaultTheme } from "./themes";
@@ -138,7 +139,7 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
     return migrator;
   }
 
-  function buildContext(db: Database): TapemarkContext {
+  function buildContext(db: Database, overrides?: RequestOverrides): TapemarkContext {
     return {
       db,
       prefix,
@@ -153,6 +154,8 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
       constraints: options.constraints ?? "enforce",
       theme: options.theme ?? defaultTheme,
       bundleFonts: options.bundleFonts !== false,
+      env: overrides?.env,
+      executionContext: overrides?.executionContext,
     };
   }
 
@@ -189,7 +192,7 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
       params: { ...req.params, ...match.params },
     };
 
-    const ctx = buildContext(db);
+    const ctx = buildContext(db, overrides);
 
     try {
       return await match.handler(enrichedReq, ctx);
@@ -265,6 +268,7 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
   addRoute("GET", "/:table/:pk", rowDetailRoute);
   addRoute("POST", "/:table/:pk", rowUpdateRoute);
   addRoute("POST", "/:table/:pk/delete", rowDeleteRoute);
+  addRoute("POST", "/:table/:pk/_action/:actionName", rowActionRoute);
   addRoute("GET", "/:table", rowsRoute);
 
   return { handle, addRoute };
