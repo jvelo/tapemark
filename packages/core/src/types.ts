@@ -12,8 +12,14 @@ export interface Database {
 
 export interface PreparedStatement {
   bind(...values: unknown[]): PreparedStatement;
+  /** Return all rows from any row-returning statement — including
+   *  `SELECT`, `INSERT … RETURNING`, `UPDATE … RETURNING`, `DELETE … RETURNING`. */
   all<T = Record<string, unknown>>(): Promise<T[]>;
+  /** Return the first row from any row-returning statement (see `all`).
+   *  Core uses this on `INSERT … RETURNING *` to recover auto-generated
+   *  values, so adapters must support it on writes, not only on SELECTs. */
   first<T = Record<string, unknown>>(): Promise<T | null>;
+  /** Execute a statement that returns no rows. */
   run(): Promise<void>;
 }
 
