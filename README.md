@@ -56,6 +56,17 @@ app.route("/admin", tapemark({
 }));
 ```
 
+`authorize` may also return a `Response` to override the default 403 — for
+example, redirecting unauthenticated users to a login page:
+
+```typescript
+authorize: async (c) => {
+  const user = await getSession(c);
+  if (!user) return c.redirect(`/login?redirect=${encodeURIComponent(c.req.path)}`);
+  return user.role === "admin";
+}
+```
+
 ### Any framework
 
 The core returns plain HTML strings — pipe them into any response:

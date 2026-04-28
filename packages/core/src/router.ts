@@ -170,10 +170,9 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
     };
 
     if (options.authorize) {
-      const allowed = await options.authorize(req);
-      if (!allowed) {
-        return renderErrorPage(403, "Forbidden", errorCtx);
-      }
+      const result = await options.authorize(req);
+      if (typeof result !== "boolean") return result;
+      if (!result) return renderErrorPage(403, "Forbidden", errorCtx);
     }
 
     // Ensure tapemark tables exist (lazy-init migrator on first request)

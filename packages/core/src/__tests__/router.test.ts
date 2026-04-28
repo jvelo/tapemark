@@ -71,6 +71,20 @@ describe("createTapemark", () => {
     expect(res.status).toBe(200);
   });
 
+  it("uses the TapemarkResponse returned by authorize as the denial", async () => {
+    const core = createTapemark({
+      db,
+      authorize: async () => ({
+        status: 302,
+        headers: {},
+        redirect: "/login",
+      }),
+    });
+    const res = await core.handle(makeReq());
+    expect(res.status).toBe(302);
+    expect(res.redirect).toBe("/login");
+  });
+
   it("handles POST /:table/new", async () => {
     const core = createTapemark({ db });
     const res = await core.handle(

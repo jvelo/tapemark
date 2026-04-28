@@ -131,6 +131,22 @@ describe("Hono adapter", () => {
     expect(res.status).toBe(403);
   });
 
+  it("uses the Response returned by authorize as the denial", async () => {
+    const redirectApp = new Hono();
+    redirectApp.route(
+      "/admin",
+      tapemark({
+        db,
+        prefix: "/admin",
+        authorize: async (c) => c.redirect("/login?redirect=%2Fadmin%2F"),
+      }),
+    );
+
+    const res = await redirectApp.request("/admin/");
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBe("/login?redirect=%2Fadmin%2F");
+  });
+
   it("allows access when authorize passes", async () => {
     const authApp = new Hono();
     authApp.route(
