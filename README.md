@@ -133,7 +133,7 @@ tables: {
         label: "re-fetch metadata",
         handler: async (pk, ctx) => {
           await refetchSiteMetadata(pk, ctx);
-          return { ok: true, message: "metadata refreshed" };
+          return { success: true, message: "metadata refreshed" };
         },
       },
       mark_done: {

@@ -90,23 +90,23 @@ export function isActionVisibleFor(
   }
 }
 
-/** Run a named action. Returns `{ ok, message }`; thrown handlers and
- *  unknown action names both surface as `{ ok: false }`. */
+/** Run a named action. Returns `{ success, message }`; thrown handlers and
+ *  unknown action names both surface as `{ success: false }`. */
 export async function runAction(
   table: string,
   actionName: string,
   pkValues: Record<string, string>,
   ctx: TapemarkContext,
   req: TapemarkRequest,
-): Promise<{ ok: boolean; message?: string }> {
+): Promise<{ success: boolean; message?: string }> {
   const action = ctx.tableOptions.get(table)?.actions?.[actionName];
   if (!action) {
-    return { ok: false, message: `Action "${actionName}" not found on "${table}"` };
+    return { success: false, message: `Action "${actionName}" not found on "${table}"` };
   }
   try {
     return await action.handler(pkValues, buildHookContext(ctx, req));
   } catch (err) {
-    return { ok: false, message: err instanceof Error ? err.message : String(err) };
+    return { success: false, message: err instanceof Error ? err.message : String(err) };
   }
 }
 

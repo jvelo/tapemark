@@ -99,7 +99,7 @@ const core = createTapemark({
               .bind(pk.id)
               .run();
             await logEvent(ctx, Number(pk.id), "marked_done", null);
-            return { ok: true, message: `task ${pk.id} marked done` };
+            return { success: true, message: `task ${pk.id} marked done` };
           },
         },
         // User-triggered: clone a task into a new row.
@@ -117,7 +117,7 @@ const core = createTapemark({
               .prepare("SELECT last_insert_rowid() as id")
               .first<{ id: number }>();
             await logEvent(ctx, Number(pk.id), "duplicated", `new id=${row?.id}`);
-            return { ok: true, message: `duplicated as task ${row?.id}` };
+            return { success: true, message: `duplicated as task ${row?.id}` };
           },
         },
       },

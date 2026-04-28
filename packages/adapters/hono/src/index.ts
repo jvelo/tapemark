@@ -75,11 +75,8 @@ export function tapemark<Env extends object = DefaultEnv>(
   return app;
 }
 
-/** Returns Hono's request execution context when the host runtime exposes
- *  one (Cloudflare Workers, Vercel, etc.). On runtimes without it (Node,
- *  Bun, vitest) Hono's getter throws — caught here so hooks can still run.
- *  The catch is scoped narrowly to the access; the intent is "unsupported
- *  runtime", not silencing unrelated bugs. */
+/** Returns `c.executionCtx`; `undefined` when the host runtime lacks one
+ *  (Node, Bun, vitest — Hono's getter throws). Catch intent: "unsupported runtime". */
 function safeExecutionContext(c: Context): ExecutionContextLike | undefined {
   try {
     return c.executionCtx as ExecutionContextLike;

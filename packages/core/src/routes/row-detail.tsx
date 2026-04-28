@@ -56,6 +56,7 @@ export async function rowDetailRoute(
       <RowForm
         columns={tableInfo.columns}
         primaryKey={tableInfo.primaryKey}
+        hasRowid={tableInfo.hasRowid}
         foreignKeys={tableInfo.foreignKeys}
         values={row}
         action={`${ctx.prefix}/${table}/${pkParam}`}

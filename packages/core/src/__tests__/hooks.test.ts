@@ -303,7 +303,7 @@ describe("Custom row actions", () => {
       tables: {
         notes: {
           actions: {
-            publish: { label: "publish note", handler: () => ({ ok: true }) },
+            publish: { label: "publish note", handler: () => ({ success: true }) },
           },
         },
       },
@@ -329,7 +329,7 @@ describe("Custom row actions", () => {
               label: "publish",
               handler: (pk, ctx) => {
                 calls.push({ pk, db: ctx.db });
-                return { ok: true, message: "published" };
+                return { success: true, message: "published" };
               },
             },
           },
@@ -358,7 +358,7 @@ describe("Custom row actions", () => {
           actions: {
             fail: {
               label: "fail",
-              handler: () => ({ ok: false, message: "nope" }),
+              handler: () => ({ success: false, message: "nope" }),
             },
           },
         },
@@ -427,7 +427,7 @@ describe("Custom row actions", () => {
         notes: {
           readonly: true,
           actions: {
-            publish: { label: "publish", handler: () => ({ ok: true }) },
+            publish: { label: "publish", handler: () => ({ success: true }) },
           },
         },
       },
@@ -451,7 +451,7 @@ describe("Custom row actions", () => {
         notes: {
           readonly: true,
           actions: {
-            publish: { label: "publish note", handler: () => ({ ok: true }) },
+            publish: { label: "publish note", handler: () => ({ success: true }) },
           },
         },
       },
@@ -474,7 +474,7 @@ describe("Custom row actions", () => {
             actions: {
               publish: {
                 label: "publish",
-                handler: () => ({ ok: true }),
+                handler: () => ({ success: true }),
                 visible: (row) => row.tag !== "draft",
               },
             },
@@ -504,7 +504,7 @@ describe("Custom row actions", () => {
               clear_tag: {
                 label: "clear tag",
                 display: { list: true },
-                handler: () => ({ ok: true }),
+                handler: () => ({ success: true }),
                 visible: (row) => row.tag !== null,
               },
             },
@@ -527,7 +527,7 @@ describe("Custom row actions", () => {
             actions: {
               flaky: {
                 label: "flaky",
-                handler: () => ({ ok: true }),
+                handler: () => ({ success: true }),
                 visible: () => {
                   throw new Error("predicate exploded");
                 },
@@ -557,7 +557,7 @@ describe("Custom row actions", () => {
                 label: "shouldn't show",
                 handler: () => {
                   calls.push(1);
-                  return { ok: true };
+                  return { success: true };
                 },
                 visible: () => false,
               },
@@ -585,8 +585,8 @@ describe("Custom row actions", () => {
         tables: {
           notes: {
             actions: {
-              quick: { label: "quick", handler: () => ({ ok: true }), display: { list: true } },
-              detail_only: { label: "detail only", handler: () => ({ ok: true }) },
+              quick: { label: "quick", handler: () => ({ success: true }), display: { list: true } },
+              detail_only: { label: "detail only", handler: () => ({ success: true }) },
             },
           },
         },
@@ -606,7 +606,7 @@ describe("Custom row actions", () => {
         tables: {
           notes: {
             actions: {
-              detail_only: { label: "detail only", handler: () => ({ ok: true }) },
+              detail_only: { label: "detail only", handler: () => ({ success: true }) },
             },
           },
         },
@@ -626,7 +626,7 @@ describe("Custom row actions", () => {
             actions: {
               quick: {
                 label: "quick",
-                handler: () => ({ ok: true }),
+                handler: () => ({ success: true }),
                 display: { detail: false, list: true },
               },
             },
@@ -651,7 +651,7 @@ describe("Custom row actions", () => {
             actions: {
               ping: {
                 label: "ping",
-                handler: () => ({ ok: true, message: "pong" }),
+                handler: () => ({ success: true, message: "pong" }),
                 display: { list: true },
               },
             },
@@ -681,7 +681,7 @@ describe("Custom row actions", () => {
           notes: {
             readonly: true,
             actions: {
-              ping: { label: "ping", display: { list: true }, handler: () => ({ ok: true }) },
+              ping: { label: "ping", display: { list: true }, handler: () => ({ success: true }) },
             },
           },
         },
@@ -698,7 +698,7 @@ describe("Custom row actions", () => {
         tables: {
           notes: {
             actions: {
-              ping: { label: "ping", handler: () => ({ ok: true }) },
+              ping: { label: "ping", handler: () => ({ success: true }) },
             },
           },
         },

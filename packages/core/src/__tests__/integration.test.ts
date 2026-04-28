@@ -273,6 +273,23 @@ describe("Integration: full request lifecycle", () => {
       expect(res.html).toContain('name="id"');
     });
 
+    it("does not hide INTEGER PRIMARY KEY on WITHOUT ROWID tables", async () => {
+      // The rowid alias is disabled on WITHOUT ROWID, so the integer PK is
+      // a regular column the user must supply. Hiding it would block inserts.
+      const schema = `
+        CREATE TABLE catalog (
+          id INTEGER PRIMARY KEY,
+          name TEXT NOT NULL
+        ) WITHOUT ROWID;
+      `;
+      const { db: cdb } = createTestDb(schema);
+      const ccore = createTapemark({ db: cdb });
+      const res = await ccore.handle(
+        req({ path: "/catalog/new", params: { table: "catalog" } }),
+      );
+      expect(res.html).toContain('name="id"');
+    });
+
     it("never hides composite PKs (only single-column INTEGER auto-PK)", async () => {
       // posts has a single INTEGER PK — covered above. Build a fresh DB
       // with a composite PK to verify it's still rendered on create.

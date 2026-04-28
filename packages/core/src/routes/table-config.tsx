@@ -50,6 +50,7 @@ export async function tableConfigRoute(
         prefix={ctx.prefix}
         columns={tableInfo.columns}
         primaryKey={tableInfo.primaryKey}
+        hasRowid={tableInfo.hasRowid}
         config={config}
         displayTypes={ctx.displayTypes}
       />

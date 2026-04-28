@@ -223,7 +223,7 @@ export interface HookContext {
 
 /** Result returned by an action handler. Surfaced as a flash message. */
 export interface ActionResult {
-  ok: boolean;
+  success: boolean;
   message?: string;
 }
 

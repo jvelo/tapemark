@@ -40,6 +40,7 @@ export async function rowCreateRoute(
       <RowForm
         columns={tableInfo.columns}
         primaryKey={tableInfo.primaryKey}
+        hasRowid={tableInfo.hasRowid}
         foreignKeys={tableInfo.foreignKeys}
         action={`${ctx.prefix}/${table}/new`}
         submitLabel="create"

@@ -27,8 +27,8 @@ export async function rowActionRoute(
   const pkValues = decodePk(tableInfo.primaryKey, pkParam);
 
   const result = await runAction(table, actionName, pkValues, ctx, req);
-  const flash = result.ok ? "success" : "error";
-  const msg = result.message ?? (result.ok ? "action completed" : "action failed");
+  const flash = result.success ? "success" : "error";
+  const msg = result.message ?? (result.success ? "action completed" : "action failed");
 
   // List-view forms send `_back=table` so we return them to the list, not detail.
   const backToTable = req.body?._back === "table";
