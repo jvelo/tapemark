@@ -17,8 +17,11 @@ export interface HonoAdminOptions<Env extends object = DefaultEnv>
   extends Omit<TapemarkBaseOptions, "authorize"> {
   /** DB accessor — gets the Hono context so you can pull from env bindings (e.g. `c.env.DB`). */
   db: Database | ((c: Context<{ Bindings: Env }>) => Database);
-  /** Auth callback receiving the Hono context. */
-  authorize?: (c: Context<{ Bindings: Env }>) => Promise<boolean>;
+  /**
+   * Authorization callback. Return `true` to allow, `false` for the default
+   * 403, or a `Response` to override the denial (e.g. `c.redirect(...)`).
+   */
+  authorize?: (c: Context<{ Bindings: Env }>) => Promise<boolean | Response>;
 }
 
 /**
@@ -49,10 +52,9 @@ export function tapemark<Env extends object = DefaultEnv>(
     const resolvedDb = typeof db === "function" ? db(c) : db;
 
     if (authorize) {
-      const allowed = await authorize(c);
-      if (!allowed) {
-        return c.text("Forbidden", 403);
-      }
+      const result = await authorize(c);
+      if (result instanceof Response) return result;
+      if (!result) return c.text("Forbidden", 403);
     }
 
     const tapemarkReq = await honoToTapemarkRequest(c, prefix);

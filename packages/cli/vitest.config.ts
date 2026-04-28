@@ -7,6 +7,9 @@ export default defineConfig({
     css: {
       include: [/.*/],
     },
+    // Each `it` spawns `npx tsx` via execSync; cold-start on CI can exceed
+    // vitest's 5s default for the first call. Match the inner execSync timeout.
+    testTimeout: 10_000,
   },
   resolve: {
     alias: {

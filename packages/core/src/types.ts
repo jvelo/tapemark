@@ -277,8 +277,12 @@ export interface TableHooks {
  * directly when the database is provided per-request via overrides.
  */
 export interface TapemarkBaseOptions {
-  /** Authorization callback. If omitted, the panel is unprotected. */
-  authorize?: (req: TapemarkRequest) => Promise<boolean>;
+  /**
+   * Authorization callback. Return `true` to allow, `false` for the default
+   * 403, or a `TapemarkResponse` to override the denial (e.g. a redirect).
+   * If omitted, the panel is unprotected.
+   */
+  authorize?: (req: TapemarkRequest) => Promise<boolean | TapemarkResponse>;
   /** URL prefix for generating internal links (e.g. "/admin"). */
   prefix?: string;
   /** Custom display type definitions. */
