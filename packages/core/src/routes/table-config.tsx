@@ -3,7 +3,7 @@ import { ConfigForm } from "../components/ConfigForm";
 import { Flash } from "../components/Flash";
 import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
-import { ConfigStore } from "../config";
+import { ConfigStore, orderColumns } from "../config";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
 import type {
@@ -48,7 +48,7 @@ export async function tableConfigRoute(
       <ConfigForm
         table={table}
         prefix={ctx.prefix}
-        columns={tableInfo.columns}
+        columns={orderColumns(tableInfo.columns, config)}
         primaryKey={tableInfo.primaryKey}
         hasRowid={tableInfo.hasRowid}
         config={config}
@@ -74,8 +74,11 @@ export async function tableConfigUpdateRoute(
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);
   const configStore = new ConfigStore(ctx.db);
+  const existing = await configStore.getTableConfig(table);
 
+  // Preserve fields not represented in the form (e.g. `order`).
   const config: TableConfig = { columns: {} };
+  if (existing.order) config.order = existing.order;
 
   if (req.body) {
     for (const col of tableInfo.columns) {

@@ -146,6 +146,10 @@ export interface ColumnConfig {
 
 export interface TableConfig {
   columns?: Record<string, ColumnConfig>;
+  /** Render order for columns. Listed names render first in the given order;
+   *  unlisted columns trail in schema order. Names that no longer match a
+   *  column are silently ignored — Tapemark does not track schema renames. */
+  order?: string[];
 }
 
 // ---------------------------------------------------------------------------
