@@ -19,6 +19,7 @@ export async function resolveReferenceLabels(
 
   const introspector = new SchemaIntrospector(db);
   const merged: TableConfig = {
+    ...tableConfig,
     columns: { ...tableConfig.columns },
   };
 
