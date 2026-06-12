@@ -32,7 +32,7 @@ describe("lookup route", () => {
       makeReq({ path: "/users/_lookup", query: { q: "Al" } }),
     );
     expect(res.status).toBe(200);
-    const body = JSON.parse(res.html);
+    const body = JSON.parse(res.html!);
     expect(body.results.some((r: { label?: string }) => r.label === "Alice")).toBe(true);
   });
 
@@ -42,7 +42,7 @@ describe("lookup route", () => {
       makeReq({ path: "/users/_lookup", query: { label: "name", q: "Al" } }),
     );
     expect(res.status).toBe(200);
-    const body = JSON.parse(res.html);
+    const body = JSON.parse(res.html!);
     expect(body.results.some((r: { label?: string }) => r.label === "Alice")).toBe(true);
   });
 
