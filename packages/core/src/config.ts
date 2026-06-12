@@ -1,4 +1,32 @@
-import type { ColumnConfig, Database, TableConfig } from "./types";
+import type { Column, ColumnConfig, Database, TableConfig } from "./types";
+
+/**
+ * Apply `config.order` to a column list for rendering. Columns listed in
+ * `order` come first in the given sequence; unlisted columns trail in
+ * their original (schema) order. Names in `order` that don't match a real
+ * column are skipped. Duplicates in `order` only place the column once.
+ *
+ * Pure render concern — never use this for SQL projection or write paths.
+ */
+export function orderColumns(columns: Column[], config: TableConfig): Column[] {
+  const order = config.order;
+  if (!order || order.length === 0) return columns;
+
+  const byName = new Map(columns.map((c) => [c.name, c]));
+  const placed = new Set<string>();
+  const ordered: Column[] = [];
+
+  for (const name of order) {
+    const col = byName.get(name);
+    if (!col || placed.has(name)) continue;
+    ordered.push(col);
+    placed.add(name);
+  }
+  for (const col of columns) {
+    if (!placed.has(col.name)) ordered.push(col);
+  }
+  return ordered;
+}
 
 /**
  * Reads and writes per-table display configuration from _tapemark_table_config.

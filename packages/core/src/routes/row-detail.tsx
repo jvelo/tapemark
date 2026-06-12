@@ -4,7 +4,7 @@ import { Flash } from "../components/Flash";
 import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, decodePk, encodePk } from "../repository";
-import { ConfigStore } from "../config";
+import { ConfigStore, orderColumns } from "../config";
 import { fireAfterDelete, fireAfterUpdate, flashForHookResult, isActionVisibleFor } from "../hooks";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
@@ -54,7 +54,7 @@ export async function rowDetailRoute(
         {isReadonly ? "view row" : "edit row"}
       </h2>
       <RowForm
-        columns={tableInfo.columns}
+        columns={orderColumns(tableInfo.columns, tableConfig)}
         primaryKey={tableInfo.primaryKey}
         hasRowid={tableInfo.hasRowid}
         foreignKeys={tableInfo.foreignKeys}

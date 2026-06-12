@@ -5,7 +5,7 @@ import { Flash } from "../components/Flash";
 import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, encodePk } from "../repository";
-import { ConfigStore } from "../config";
+import { ConfigStore, orderColumns } from "../config";
 import { resolveReferenceLabels } from "../references";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
@@ -68,7 +68,7 @@ export async function rowsRoute(
         </div>
       </div>
       <DataTable
-        columns={tableInfo.columns}
+        columns={orderColumns(tableInfo.columns, tableConfig)}
         primaryKey={tableInfo.primaryKey}
         rows={result.rows}
         linkBase={`${ctx.prefix}/${table}`}

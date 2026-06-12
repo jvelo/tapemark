@@ -1,8 +1,19 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { ConfigStore } from "../config";
+import { ConfigStore, orderColumns } from "../config";
 import { TapemarkMigrator } from "../migrator";
 import { createTestDb } from "../test-utils";
-import type { Database, TableConfig } from "../types";
+import type { Column, Database, TableConfig } from "../types";
+
+function col(name: string): Column {
+  return {
+    name,
+    rawType: "TEXT",
+    affinity: "text",
+    nullable: true,
+    defaultValue: null,
+    primaryKeyPosition: null,
+  };
+}
 
 const SCHEMA = `
   CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);
@@ -83,5 +94,35 @@ describe("ConfigStore", () => {
     };
     expect(config.getColumnConfig(tc, "name")).toEqual({ display: "text" });
     expect(config.getColumnConfig(tc, "missing")).toEqual({});
+  });
+});
+
+describe("orderColumns", () => {
+  const cols = [col("id"), col("name"), col("email"), col("created_at")];
+  const names = (cs: Column[]) => cs.map((c) => c.name);
+
+  it("returns input unchanged when order is missing or empty", () => {
+    expect(names(orderColumns(cols, {}))).toEqual(["id", "name", "email", "created_at"]);
+    expect(names(orderColumns(cols, { order: [] }))).toEqual(["id", "name", "email", "created_at"]);
+  });
+
+  it("applies a full order", () => {
+    expect(names(orderColumns(cols, { order: ["email", "id", "created_at", "name"] })))
+      .toEqual(["email", "id", "created_at", "name"]);
+  });
+
+  it("trails unlisted columns in schema order", () => {
+    expect(names(orderColumns(cols, { order: ["name", "email"] })))
+      .toEqual(["name", "email", "id", "created_at"]);
+  });
+
+  it("silently drops unknown column names", () => {
+    expect(names(orderColumns(cols, { order: ["name", "ghost", "id"] })))
+      .toEqual(["name", "id", "email", "created_at"]);
+  });
+
+  it("dedupes repeated names in order", () => {
+    expect(names(orderColumns(cols, { order: ["name", "id", "name"] })))
+      .toEqual(["name", "id", "email", "created_at"]);
   });
 });

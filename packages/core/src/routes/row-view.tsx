@@ -3,7 +3,7 @@ import { RowForm } from "../components/RowForm";
 import { Flash } from "../components/Flash";
 import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
-import { ConfigStore } from "../config";
+import { ConfigStore, orderColumns } from "../config";
 import { NotFoundError } from "../errors";
 import { castValue } from "../repository";
 import { fireAfterDelete, fireAfterUpdate, flashForHookResult } from "../hooks";
@@ -88,7 +88,7 @@ export async function rowViewRoute(
         {isReadonly ? "view row" : "edit row"}
       </h2>
       <RowForm
-        columns={tableInfo.columns}
+        columns={orderColumns(tableInfo.columns, tableConfig)}
         primaryKey={tableInfo.primaryKey}
         hasRowid={tableInfo.hasRowid}
         foreignKeys={tableInfo.foreignKeys}

@@ -3,7 +3,7 @@ import { RowForm } from "../components/RowForm";
 import { renderPage } from "../render";
 import { SchemaIntrospector } from "../schema";
 import { TableRepository, encodePk } from "../repository";
-import { ConfigStore } from "../config";
+import { ConfigStore, orderColumns } from "../config";
 import { fireAfterInsert, flashForHookResult } from "../hooks";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
@@ -38,7 +38,7 @@ export async function rowCreateRoute(
     >
       <h2 class="tm-section-title">new row</h2>
       <RowForm
-        columns={tableInfo.columns}
+        columns={orderColumns(tableInfo.columns, tableConfig)}
         primaryKey={tableInfo.primaryKey}
         hasRowid={tableInfo.hasRowid}
         foreignKeys={tableInfo.foreignKeys}

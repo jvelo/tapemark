@@ -11,6 +11,7 @@
     "check": "tsc -b",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "clean": "git clean -fd '*.js' '*.d.ts' '*.js.map' '*.d.ts.map'",
     "prerelease": "pnpm run lint && pnpm run test && pnpm run build",
     "version:bump": "pnpm -r exec -- npm version",
     "release:patch": "pnpm run prerelease && pnpm -r exec -- npm version patch --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push && git push --tags",
