@@ -167,4 +167,30 @@ describe("createTapemark", () => {
     expect(js.status).toBe(200);
     expect(js.headers["content-type"]).toContain("javascript");
   });
+
+  describe("hidden tables", () => {
+    it("returns 404 for GET /:table when the table is hidden", async () => {
+      const core = createTapemark({ db, tables: { users: { hidden: true } } });
+      const res = await core.handle(makeReq({ path: "/users" }));
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 404 for GET /:table/_lookup when the table is hidden", async () => {
+      const core = createTapemark({ db, tables: { users: { hidden: true } } });
+      const res = await core.handle(makeReq({ path: "/users/_lookup", query: { q: "a" } }));
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 404 for POST /:table/:pk when the table is hidden", async () => {
+      const core = createTapemark({ db, tables: { users: { hidden: true } } });
+      const res = await core.handle(makeReq({ method: "POST", path: "/users/1", body: { name: "x" } }));
+      expect(res.status).toBe(404);
+    });
+
+    it("returns 200 for GET /:table when the table is not hidden", async () => {
+      const core = createTapemark({ db });
+      const res = await core.handle(makeReq({ path: "/users" }));
+      expect(res.status).toBe(200);
+    });
+  });
 });

@@ -105,6 +105,8 @@ tapemark({
   authorize: async (c) => {}, // auth callback
   tables: {                   // per-table options
     sites: { readonly: true }, // or { hidden: true }, or hooks/actions (below)
+    // hidden: true hides the table from the listing and makes every route for it
+    // return 404 (so it can't be reached by direct URL).
   },
 });
 ```
