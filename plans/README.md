@@ -16,7 +16,7 @@ under "Backlog" below; say the word to turn any into a plan.
 |------|-------|----------|--------|------------|--------|
 | 001 | Validate lookup `label` column (SQL injection fix) | P1 | S | — | DONE (in worktree, pending user merge) |
 | 002 | Add a working typecheck gate (root + CI) | P1 | M | — | DONE (in worktree, pending user merge) |
-| 003 | Enforce `hidden` tables server-side | P2 | S | — | TODO |
+| 003 | Enforce `hidden` tables server-side | P2 | S | — | DONE (in worktree, pending user merge) |
 | 004 | HTTP-level tests for the CLI `serve` server | P2 | M | — | TODO |
 | 005 | Harden form-body parsing + de-dupe CLI copy | P3 | S-M | 004 | TODO |
 
