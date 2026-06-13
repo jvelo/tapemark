@@ -166,16 +166,26 @@ const server = createServer(async (req, res) => {
   }
 });
 
+// Canonical version: packages/cli/src/http.ts
 function parseFormBody(
   req: IncomingMessage,
 ): Promise<Record<string, string | string[]>> {
-  return new Promise((resolve) => {
-    let data = "";
-    req.on("data", (chunk: string) => (data += chunk));
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    req.on("data", (chunk: Buffer) => {
+      size += chunk.length;
+      if (size > 5 * 1024 * 1024) {
+        reject(new Error("Request body too large"));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
     req.on("end", () => {
+      const data = Buffer.concat(chunks).toString("utf-8");
       const result: Record<string, string | string[]> = {};
-      const params = new URLSearchParams(data);
-      for (const [key, value] of params) {
+      for (const [key, value] of new URLSearchParams(data)) {
         const existing = result[key];
         if (existing) {
           result[key] = Array.isArray(existing)
@@ -187,6 +197,7 @@ function parseFormBody(
       }
       resolve(result);
     });
+    req.on("error", reject);
   });
 }
 

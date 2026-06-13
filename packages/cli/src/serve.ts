@@ -1,10 +1,11 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
+import { createServer } from "node:http";
 import { resolve, basename } from "node:path";
 import { existsSync, globSync  } from "node:fs";
 import { defineCommand } from "citty";
 import BetterSqlite3 from "better-sqlite3";
 import { createSqliteAdapter } from "@jvelo/tapemark-better-sqlite3";
 import { createTapemark, renderDatabaseListPage } from "@jvelo/tapemark";
+import { parseFormBody, sendResponse } from "./http";
 import type { ConstraintMode, TapemarkCore, ThemeName } from "@jvelo/tapemark";
 
 interface DbEntry {
@@ -216,44 +217,3 @@ function resolveFilePaths(rawPaths: string[]): string[] {
   }
   return result;
 }
-
-function sendResponse(
-  res: ServerResponse,
-  tapemarkRes: { status: number; headers: Record<string, string>; html?: string; redirect?: string },
-): void {
-  if (tapemarkRes.redirect) {
-    res.writeHead(tapemarkRes.status, {
-      location: tapemarkRes.redirect,
-      ...tapemarkRes.headers,
-    });
-    res.end();
-    return;
-  }
-  res.writeHead(tapemarkRes.status, tapemarkRes.headers);
-  res.end(tapemarkRes.html ?? "");
-}
-
-function parseFormBody(
-  req: IncomingMessage,
-): Promise<Record<string, string | string[]>> {
-  return new Promise((resolve) => {
-    let data = "";
-    req.on("data", (chunk: string) => (data += chunk));
-    req.on("end", () => {
-      const result: Record<string, string | string[]> = {};
-      const params = new URLSearchParams(data);
-      for (const [key, value] of params) {
-        const existing = result[key];
-        if (existing) {
-          result[key] = Array.isArray(existing)
-            ? [...existing, value]
-            : [existing, value];
-        } else {
-          result[key] = value;
-        }
-      }
-      resolve(result);
-    });
-  });
-}
-
