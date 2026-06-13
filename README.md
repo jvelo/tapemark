@@ -7,11 +7,12 @@ Framework-agnostic core with thin adapters. Runs on Cloudflare Workers (D1) and 
 ## Quick start
 
 ```bash
-pnpm install
-pnpm exec tsx packages/cli/src/index.ts serve ~/path/to/your.db
+npx @jvelo/tapemark-cli serve ~/path/to/your.db
 ```
 
-Opens an admin UI at **http://localhost:3333**.
+Opens an admin UI at **http://localhost:3333**. Requires Node.js ≥ 20.
+
+> Hacking on tapemark from a clone? Run `pnpm install`, then `pnpm exec tsx packages/cli/src/index.ts serve …` — the same CLI, straight from source.
 
 ### CLI commands
 
@@ -19,29 +20,36 @@ Opens an admin UI at **http://localhost:3333**.
 
 ```bash
 # Single database
-pnpm exec tsx packages/cli/src/index.ts serve ./data.db
+npx @jvelo/tapemark-cli serve ./data.db
 
 # Multiple databases (each gets its own section)
-pnpm exec tsx packages/cli/src/index.ts serve ./users.db ./content.db
+npx @jvelo/tapemark-cli serve ./users.db ./content.db
 
 # Options
-pnpm exec tsx packages/cli/src/index.ts serve ./data.db --port 4000 --readonly --theme depart --constraints relaxed
+npx @jvelo/tapemark-cli serve ./data.db --port 4000 --readonly --theme depart --constraints relaxed
 ```
 
 **Inspect** — quick schema overview from the terminal:
 
 ```bash
 # List tables and row counts
-pnpm exec tsx packages/cli/src/index.ts inspect ./data.db
+npx @jvelo/tapemark-cli inspect ./data.db
 
 # Show columns for a specific table or view
-pnpm exec tsx packages/cli/src/index.ts inspect ./data.db --show users
+npx @jvelo/tapemark-cli inspect ./data.db --show users
 
 # Compare schemas between two databases
-pnpm exec tsx packages/cli/src/index.ts inspect ./local.db --diff ./production.db
+npx @jvelo/tapemark-cli inspect ./local.db --diff ./production.db
 ```
 
 ## Embed in your app
+
+Install the core plus the adapters you need:
+
+```bash
+npm i @jvelo/tapemark @jvelo/tapemark-hono @jvelo/tapemark-d1          # Cloudflare Workers + D1
+npm i @jvelo/tapemark @jvelo/tapemark-better-sqlite3 better-sqlite3    # Node.js
+```
 
 ### Hono (Cloudflare Workers / D1)
 
@@ -110,6 +118,8 @@ tapemark({
   },
 });
 ```
+
+> **D1 and `constraints`:** `"relaxed"` only takes effect on native SQLite (better-sqlite3), where foreign keys are off by default and tapemark turns them on for `"enforce"`. Cloudflare D1 enforces foreign keys unconditionally and ignores `PRAGMA foreign_keys`, so constraints stay on regardless of this setting.
 
 ### Hooks and custom actions
 
@@ -186,3 +196,7 @@ pnpm run build        # build all packages
 pnpm run prerelease   # lint + test + build
 pnpm run release:patch  # bump, tag, push (triggers publish on CI)
 ```
+
+## License
+
+[MPL-2.0](./LICENSE) © Jerome Velociter
