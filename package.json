@@ -8,11 +8,11 @@
   "scripts": {
     "build": "pnpm -r --workspace-concurrency=1 run build",
     "test": "pnpm -r run test",
-    "check": "tsc -b",
+    "check": "pnpm -r run check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "clean": "git clean -fd '*.js' '*.d.ts' '*.js.map' '*.d.ts.map'",
-    "prerelease": "pnpm run lint && pnpm run test && pnpm run build",
+    "prerelease": "pnpm run lint && pnpm run check && pnpm run test && pnpm run build",
     "version:bump": "pnpm -r exec -- npm version",
     "release:patch": "pnpm run prerelease && pnpm -r exec -- npm version patch --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push && git push --tags",
     "release:minor": "pnpm run prerelease && pnpm -r exec -- npm version minor --no-git-tag-version && git add -A && git commit -m \"v$(node -p \"require('./packages/core/package.json').version\")\" && git tag \"v$(node -p \"require('./packages/core/package.json').version\")\" && git push && git push --tags",
@@ -25,6 +25,7 @@
     "eslint": "^10.1.0",
     "eslint-plugin-import-x": "^4.16.2",
     "tsx": "^4.0.0",
+    "typescript": "^5.7.0",
     "typescript-eslint": "^8.57.1"
   }
 }

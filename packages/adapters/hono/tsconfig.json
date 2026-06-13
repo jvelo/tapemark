@@ -4,7 +4,8 @@
     "composite": true,
     "outDir": "dist",
     "rootDir": "src",
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "lib": ["ES2022", "DOM"]
   },
   "include": ["src"]
 }
