@@ -50,7 +50,7 @@ describe("serve (single DB)", () => {
   const DB = join(tmpdir(), `tapemark-serve-single-${TS}.db`);
   let port: number;
   let base: string;
-  let child: ChildProcess;
+  let child: ChildProcess | undefined;
 
   beforeAll(async () => {
     const raw = new BetterSqlite3(DB);
@@ -67,7 +67,7 @@ describe("serve (single DB)", () => {
   }, 30000);
 
   afterAll(() => {
-    child.kill();
+    child?.kill();
     try { unlinkSync(DB); } catch {}
   });
 
@@ -115,7 +115,7 @@ describe("serve (multi DB)", () => {
   const prefixB = `tapemark-serve-beta-${TS}`;
   let port: number;
   let base: string;
-  let child: ChildProcess;
+  let child: ChildProcess | undefined;
 
   beforeAll(async () => {
     const rawA = new BetterSqlite3(DBA);
@@ -139,7 +139,7 @@ describe("serve (multi DB)", () => {
   }, 30000);
 
   afterAll(() => {
-    child.kill();
+    child?.kill();
     try { unlinkSync(DBA); } catch {}
     try { unlinkSync(DBB); } catch {}
   });
