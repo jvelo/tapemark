@@ -217,5 +217,3 @@ function resolveFilePaths(rawPaths: string[]): string[] {
   }
   return result;
 }
-
-
