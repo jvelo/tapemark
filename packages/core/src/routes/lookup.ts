@@ -53,6 +53,10 @@ export async function lookupRoute(
     };
   }
 
+  if (labelColumnOverride !== undefined) {
+    await introspector.assertColumn(tableName, labelColumnOverride);
+  }
+
   const labelColumn = labelColumnOverride ?? pickLabelColumn(tableInfo);
   const valueColumn = tableInfo.primaryKey[0];
 
