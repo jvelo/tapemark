@@ -49,6 +49,14 @@ export async function resolveReferenceLabels(
     }
 
     const labelColumnOverride = cc?.options?.labelColumn as string | undefined;
+    if (labelColumnOverride !== undefined) {
+      try {
+        await introspector.assertColumn(fk.referencedTable, labelColumnOverride);
+      } catch {
+        continue;
+      }
+    }
+
     const labelColumn = labelColumnOverride ?? pickLabelColumn(refTable);
     const valueColumn = fk.referencedColumns[0];
 

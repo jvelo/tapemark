@@ -28,12 +28,14 @@
   ],
   "scripts": {
     "build": "vite build",
+    "check": "tsc --noEmit -p tsconfig.check.json",
     "test": "echo 'no tests (D1 is a runtime API)'"
   },
   "dependencies": {
     "@jvelo/tapemark": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "vite": "^6.0.0",
     "vite-plugin-dts": "^4.0.0",
     "vitest": "^3.0.0",
