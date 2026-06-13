@@ -32,16 +32,15 @@ describe("parseFormBody", () => {
 
   it("multibyte across chunks: decodes intact character", async () => {
     const req = fakeReq();
-    // "café" in URL-encoded form: café → caf%C3%A9
-    // Split the UTF-8 Buffer of the encoded string at an odd byte boundary
-    const encoded = Buffer.from("v=" + encodeURIComponent("café"));
-    const mid = Math.floor(encoded.length / 2) + 1;
-    const chunk1 = encoded.subarray(0, mid);
-    const chunk2 = encoded.subarray(mid);
+    // Raw UTF-8 body — é is bytes 0xC3 0xA9. Split BETWEEN those two bytes so
+    // each chunk alone holds an incomplete sequence. Per-chunk toString() would
+    // corrupt this (→ replacement chars); Buffer.concat-then-decode keeps it intact.
+    const raw = Buffer.from("v=café", "utf8");
+    const splitAt = raw.length - 1; // é is the last char; cut between its 2 bytes
     const promise = parseFormBody(req);
     queueMicrotask(() => {
-      req.emit("data", chunk1);
-      req.emit("data", chunk2);
+      req.emit("data", raw.subarray(0, splitAt));
+      req.emit("data", raw.subarray(splitAt));
       req.emit("end");
     });
     await expect(promise).resolves.toEqual({ v: "café" });
