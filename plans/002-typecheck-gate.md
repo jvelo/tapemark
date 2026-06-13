@@ -315,6 +315,13 @@ Stop and report back (do not improvise) if:
   the script. A reviewer adding a package should require it.
 - If `core`'s build tsconfig changes (e.g. drops `composite`), revisit whether
   `tsconfig.check.json` is still needed.
+- Compiler-option fixes needed to make `check` pass (e.g. `lib`, `jsx`) must go in
+  the package's **real** `tsconfig.json` — the config `vite build`'s DTS pass uses —
+  not the `tsconfig.check.json` sibling. Otherwise the gate checks a more permissive
+  surface than the build (it goes green while `pnpm run build` still emits the
+  diagnostic). The `.check.json` should differ from the base ONLY by
+  `composite: false` + `noEmit: true`. (Lesson from the hono adapter, where a `DOM`
+  lib fix initially landed in `tsconfig.check.json` and masked a build-time TS2769.)
 - This does not add formatting/Prettier — intentionally out of scope.
 - Reviewer should confirm CI actually fails on a type error (watch the first PR
   after this lands, or eyeball the workflow run).
