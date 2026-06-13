@@ -185,6 +185,12 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
       return renderErrorPage(404, "Not Found", errorCtx);
     }
 
+    // A hidden table is treated as absent: every route for it 404s,
+    // matching the listing, which already omits it.
+    if (match.params.table && tableOptionsMap.get(match.params.table)?.hidden) {
+      return renderErrorPage(404, "Not Found", errorCtx);
+    }
+
     // Inject matched params into the request
     const enrichedReq: TapemarkRequest = {
       ...req,
