@@ -28,6 +28,7 @@
   ],
   "scripts": {
     "build": "vite build",
+    "check": "tsc --noEmit -p tsconfig.check.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },

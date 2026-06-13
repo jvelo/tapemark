@@ -90,7 +90,7 @@ async function listTables(introspector: SchemaIntrospector): Promise<void> {
   console.log(`\n${parts.join(", ")}, schema hash: ${schema.hash.slice(0, 12)}…`);
 }
 
-function printList(label: string, items: { name: string; rowCount: number; columns: { length: number }[] }[]): void {
+function printList(label: string, items: { name: string; rowCount: number; columns: unknown[] }[]): void {
   const nameWidth = Math.max(label.length, ...items.map((t) => t.name.length));
   const rowsWidth = Math.max(4, ...items.map((t) => String(t.rowCount).length));
   const colsWidth = Math.max(4, ...items.map((t) => String(t.columns.length).length));
