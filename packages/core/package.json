@@ -1,9 +1,18 @@
 {
   "name": "@jvelo/tapemark",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "description": "Self-contained admin UI for SQLite — framework-agnostic core (router, schema introspection, CRUD, server-rendered Preact UI).",
-  "keywords": ["sqlite", "admin", "admin-panel", "database", "crud", "datasette", "preact", "server-rendered"],
+  "keywords": [
+    "sqlite",
+    "admin",
+    "admin-panel",
+    "database",
+    "crud",
+    "datasette",
+    "preact",
+    "server-rendered"
+  ],
   "license": "MPL-2.0",
   "homepage": "https://github.com/jvelo/tapemark#readme",
   "bugs": "https://github.com/jvelo/tapemark/issues",

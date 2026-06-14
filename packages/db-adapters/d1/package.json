@@ -1,9 +1,15 @@
 {
   "name": "@jvelo/tapemark-d1",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "description": "Cloudflare D1 database adapter for Tapemark.",
-  "keywords": ["sqlite", "cloudflare", "d1", "admin", "tapemark"],
+  "keywords": [
+    "sqlite",
+    "cloudflare",
+    "d1",
+    "admin",
+    "tapemark"
+  ],
   "license": "MPL-2.0",
   "homepage": "https://github.com/jvelo/tapemark#readme",
   "bugs": "https://github.com/jvelo/tapemark/issues",

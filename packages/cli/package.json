@@ -1,9 +1,17 @@
 {
   "name": "@jvelo/tapemark-cli",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "description": "Zero-config CLI to browse and edit SQLite databases in a dark, monospace admin UI.",
-  "keywords": ["sqlite", "admin", "cli", "database", "admin-panel", "datasette", "tapemark"],
+  "keywords": [
+    "sqlite",
+    "admin",
+    "cli",
+    "database",
+    "admin-panel",
+    "datasette",
+    "tapemark"
+  ],
   "license": "MPL-2.0",
   "homepage": "https://github.com/jvelo/tapemark#readme",
   "bugs": "https://github.com/jvelo/tapemark/issues",
