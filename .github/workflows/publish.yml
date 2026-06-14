@@ -26,6 +26,7 @@ jobs:
       - run: pnpm run check
       - run: pnpm run build
       - run: pnpm run test
-      - run: pnpm -r publish --no-git-checks --access public --provenance
+      - run: pnpm -r publish --no-git-checks --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
