@@ -179,10 +179,6 @@ describe("Integration: full request lifecycle", () => {
   });
 
   describe("PKs containing URL-special characters", () => {
-    // Regression: when a row's primary key contains ':' or '/' (e.g. a URL as
-    // the PK), the row-detail form actions used to interpolate the decoded
-    // pkParam straight into the action URL, producing paths like
-    // `/cache/https://example.com` that 404 on submit.
     const URL_SCHEMA = `
       CREATE TABLE cache (
         url TEXT PRIMARY KEY,

@@ -30,9 +30,6 @@ export async function rowDetailRoute(
   const repo = new TableRepository(ctx.db);
   const configStore = new ConfigStore(ctx.db);
   const pkValues = decodePk(tableInfo.primaryKey, pkParam);
-  // pkParam comes in URL-decoded; re-encode for use in form action paths so
-  // PKs containing ':' or '/' (e.g. URLs as primary keys) don't break routing
-  // when the form submits.
   const encodedPk = encodePk(tableInfo.primaryKey, pkValues);
   const row = await repo.getRow(table, pkValues);
   const tableConfig = await configStore.getTableConfig(table);
