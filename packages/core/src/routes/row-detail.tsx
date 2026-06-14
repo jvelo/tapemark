@@ -30,6 +30,10 @@ export async function rowDetailRoute(
   const repo = new TableRepository(ctx.db);
   const configStore = new ConfigStore(ctx.db);
   const pkValues = decodePk(tableInfo.primaryKey, pkParam);
+  // pkParam comes in URL-decoded; re-encode for use in form action paths so
+  // PKs containing ':' or '/' (e.g. URLs as primary keys) don't break routing
+  // when the form submits.
+  const encodedPk = encodePk(tableInfo.primaryKey, pkValues);
   const row = await repo.getRow(table, pkValues);
   const tableConfig = await configStore.getTableConfig(table);
 
@@ -67,7 +71,7 @@ export async function rowDetailRoute(
         hasRowid={tableInfo.hasRowid}
         foreignKeys={tableInfo.foreignKeys}
         values={row}
-        action={`${ctx.prefix}/${table}/${pkParam}`}
+        action={`${ctx.prefix}/${table}/${encodedPk}`}
         submitLabel="save"
         formId={isReadonly ? undefined : "tm-edit-form"}
         formReadonly={isReadonly}
@@ -87,7 +91,7 @@ export async function rowDetailRoute(
             {visibleActions.map(([name, action]) => (
               <form
                 method="post"
-                action={`${ctx.prefix}/${table}/${pkParam}/_action/${name}`}
+                action={`${ctx.prefix}/${table}/${encodedPk}/_action/${name}`}
                 class="tm-action-inline"
               >
                 <button type="submit" class="tm-btn">
@@ -97,7 +101,7 @@ export async function rowDetailRoute(
             ))}
             <form
               method="post"
-              action={`${ctx.prefix}/${table}/${pkParam}/delete`}
+              action={`${ctx.prefix}/${table}/${encodedPk}/delete`}
               class="tm-delete-inline"
             >
               <tm-confirm-button data-message={`delete row ${pkParam}?`}>

@@ -8,7 +8,7 @@
 
 import { NotFoundError } from "../errors";
 import { SchemaIntrospector } from "../schema";
-import { decodePk } from "../repository";
+import { decodePk, encodePk } from "../repository";
 import { runAction } from "../hooks";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
@@ -39,10 +39,12 @@ export async function rowActionRoute(
   const msg = result.message ?? (result.success ? "action completed" : "action failed");
 
   // List-view forms send `_back=table` so we return them to the list, not detail.
+  // Re-encode the pk for the redirect path so URLs with ':' or '/' (e.g. URLs
+  // as primary keys) don't break routing on the redirected request.
   const backToTable = req.body?._back === "table";
   const target = backToTable
     ? `${ctx.prefix}/${table}`
-    : `${ctx.prefix}/${table}/${pkParam}`;
+    : `${ctx.prefix}/${table}/${encodePk(tableInfo.primaryKey, pkValues)}`;
 
   return redirect(`${target}?flash=${flash}&msg=${encodeURIComponent(msg)}`);
 }

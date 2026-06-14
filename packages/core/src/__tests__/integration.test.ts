@@ -178,6 +178,55 @@ describe("Integration: full request lifecycle", () => {
     });
   });
 
+  describe("PKs containing URL-special characters", () => {
+    // Regression: when a row's primary key contains ':' or '/' (e.g. a URL as
+    // the PK), the row-detail form actions used to interpolate the decoded
+    // pkParam straight into the action URL, producing paths like
+    // `/cache/https://example.com` that 404 on submit.
+    const URL_SCHEMA = `
+      CREATE TABLE cache (
+        url TEXT PRIMARY KEY,
+        title TEXT
+      );
+      INSERT INTO cache VALUES ('https://example.com', 'Example');
+    `;
+    const ENCODED = encodeURIComponent("https://example.com");
+
+    beforeEach(() => {
+      ({ db } = createTestDb(URL_SCHEMA));
+      core = createTapemark({ db, prefix: "/admin" });
+    });
+
+    it("renders form actions with the pk encoded for the URL path", async () => {
+      const res = await core.handle(req({ path: `/cache/${ENCODED}` }));
+      expect(res.status).toBe(200);
+      expect(res.html).toContain(`action="/admin/cache/${ENCODED}"`);
+      expect(res.html).toContain(`action="/admin/cache/${ENCODED}/delete"`);
+      expect(res.html).not.toContain("/admin/cache/https://example.com");
+    });
+
+    it("POST updates and redirects with the pk re-encoded", async () => {
+      const res = await core.handle(
+        req({
+          method: "POST",
+          path: `/cache/${ENCODED}`,
+          body: { title: "Updated" },
+        }),
+      );
+      expect(res.status).toBe(302);
+      expect(res.redirect).toContain(`/admin/cache/${ENCODED}`);
+      expect(res.redirect).not.toContain("/admin/cache/https://example.com");
+    });
+
+    it("POST delete redirects to the table list (no pk in path)", async () => {
+      const res = await core.handle(
+        req({ method: "POST", path: `/cache/${ENCODED}/delete` }),
+      );
+      expect(res.status).toBe(302);
+      expect(res.redirect).toContain("/admin/cache?");
+    });
+  });
+
   describe("table config", () => {
     it("GET /:table/_config shows config form", async () => {
       const res = await core.handle(req({ path: "/users/_config" }));
