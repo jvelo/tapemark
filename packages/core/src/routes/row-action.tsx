@@ -8,7 +8,7 @@
 
 import { NotFoundError } from "../errors";
 import { SchemaIntrospector } from "../schema";
-import { decodePk } from "../repository";
+import { decodePk, encodePk } from "../repository";
 import { runAction } from "../hooks";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
@@ -42,7 +42,7 @@ export async function rowActionRoute(
   const backToTable = req.body?._back === "table";
   const target = backToTable
     ? `${ctx.prefix}/${table}`
-    : `${ctx.prefix}/${table}/${pkParam}`;
+    : `${ctx.prefix}/${table}/${encodePk(tableInfo.primaryKey, pkValues)}`;
 
   return redirect(`${target}?flash=${flash}&msg=${encodeURIComponent(msg)}`);
 }
