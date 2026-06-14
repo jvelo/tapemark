@@ -197,8 +197,6 @@ pnpm run prerelease   # lint + test + build
 pnpm run release:patch  # bump, tag, push (triggers publish on CI)
 ```
 
-New source files need an MPL license header — `pnpm run lint` enforces it and `pnpm run lint:fix` adds it. See [CONTRIBUTING.md](./CONTRIBUTING.md).
-
 ## License
 
 [MPL-2.0](./LICENSE) © Jerome Velociter
