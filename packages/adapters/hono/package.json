@@ -1,6 +1,6 @@
 {
   "name": "@jvelo/tapemark-hono",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "type": "module",
   "description": "Hono adapter for Tapemark — mount the SQLite admin UI as a sub-app (Cloudflare Workers, Node, Bun).",
   "keywords": [
