@@ -2,7 +2,11 @@
   "name": "@jvelo/tapemark-d1",
   "version": "0.6.0",
   "type": "module",
-  "license": "MIT",
+  "description": "Cloudflare D1 database adapter for Tapemark.",
+  "keywords": ["sqlite", "cloudflare", "d1", "admin", "tapemark"],
+  "license": "MPL-2.0",
+  "homepage": "https://github.com/jvelo/tapemark#readme",
+  "bugs": "https://github.com/jvelo/tapemark/issues",
   "repository": {
     "type": "git",
     "url": "https://github.com/jvelo/tapemark.git",
@@ -15,7 +19,8 @@
     }
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
+    "access": "public",
+    "registry": "https://registry.npmjs.org",
     "exports": {
       ".": {
         "types": "./dist/index.d.ts",
@@ -29,7 +34,8 @@
   "scripts": {
     "build": "vite build",
     "check": "tsc --noEmit -p tsconfig.check.json",
-    "test": "echo 'no tests (D1 is a runtime API)'"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@jvelo/tapemark": "workspace:*"

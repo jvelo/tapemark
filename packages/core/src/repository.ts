@@ -1,3 +1,11 @@
+/*
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
+
 import { NotFoundError, ValidationError } from "./errors";
 import { SchemaIntrospector } from "./schema";
 import type { CellValue, Column, Database, RowResult } from "./types";
@@ -200,7 +208,9 @@ export class TableRepository {
       .run();
   }
 
-  /** Delete multiple rows by encoded PK strings. */
+  /** Delete multiple rows by encoded PK strings. Each delete is a separate
+   *  statement rather than one transaction, so on D1 this is N round-trips and
+   *  a mid-way failure leaves the already-deleted rows committed. */
   async bulkDelete(
     tableName: string,
     encodedPks: string[],
