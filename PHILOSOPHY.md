@@ -35,19 +35,8 @@ interactivity is layered on top through web components — small, scoped, framew
 No client router, no hydration, no bundle. The browser does what browsers are good at;
 custom elements handle the rest.
 
-**Syncable.** Databases move. Pull a remote database locally for development. Push local
-changes to production. Sync across edges. Tapemark treats sync as a first-class operation,
-not an afterthought.
-
 ## Aesthetic
 
 Retro terminal. Blade Runner interfaces. Video game HUDs. The UI leans into the look of
 systems designed to be functional under pressure — dense, glowing, readable. Not minimal
 startup SaaS; not Material Design. A tool that looks like it belongs in a control room.
-
-## Lineage
-
-Tapemark was extracted from the admin panel prototype built for [jvelo.at](https://jvelo.at).
-That prototype proved the concept: a Preact-rendered, server-side UI with custom web
-components, wired to SQLite via Hono and Cloudflare D1. Tapemark generalizes that into a
-standalone, framework-agnostic library.

@@ -208,7 +208,9 @@ export class TableRepository {
       .run();
   }
 
-  /** Delete multiple rows by encoded PK strings. */
+  /** Delete multiple rows by encoded PK strings. Each delete is a separate
+   *  statement rather than one transaction, so on D1 this is N round-trips and
+   *  a mid-way failure leaves the already-deleted rows committed. */
   async bulkDelete(
     tableName: string,
     encodedPks: string[],
