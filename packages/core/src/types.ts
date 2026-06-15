@@ -260,6 +260,10 @@ export interface RowAction {
   /** UI-only predicate hiding the button when it doesn't apply to this row.
    *  Not enforced server-side; thrown errors are treated as "not visible". */
   visible?: (row: Record<string, CellValue>) => boolean;
+  /** Collapse this action into a dropdown shared by every action with the
+   *  same string, labeled by that string. Ungrouped actions stay standalone.
+   *  The dropdown renders at the position of the group's first member. */
+  group?: string;
 }
 
 /** Row-level lifecycle hooks. Only fire on writes that go through Tapemark. */

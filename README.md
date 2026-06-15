@@ -174,6 +174,15 @@ Where each action renders is controlled by `display`: defaults are `{ detail: tr
 
 The optional `visible(row) => boolean` predicate hides the button when the action wouldn't make sense for the current row (e.g. "mark done" on a task that's already done). It's a UI hint only — handlers are still reachable by direct POST and should validate their own invariants if they need to. A predicate that throws is treated as "not visible" so a buggy condition can't break the page render.
 
+Set `group: "<label>"` to collapse several actions into one dropdown labeled by that string; actions sharing a group render together, ungrouped ones stay standalone, and the dropdown takes the position of the group's first member. The menu uses the native popover API with CSS anchor positioning — no client JavaScript. Browsers without anchor positioning (Firefox, as of early 2026) center the menu instead of anchoring it under the trigger; it still opens, dismisses, and works.
+
+```typescript
+actions: {
+  export_csv:  { label: "CSV",  group: "export", handler: async (pk, ctx) => { /* … */ } },
+  export_json: { label: "JSON", group: "export", handler: async (pk, ctx) => { /* … */ } },
+}
+```
+
 See [`examples/hooks-and-actions`](./examples/hooks-and-actions) for a runnable walk-through — a task list whose writes feed an audit log via hooks, plus `mark done` and `duplicate` row actions.
 
 ## Packages

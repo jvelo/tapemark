@@ -8,6 +8,7 @@
 
 import { escapeHtml } from "../html";
 import { isActionVisibleFor } from "../hooks";
+import { groupActions, menuSlug } from "../actions";
 import type { CellValue, Column, ColumnConfig, DisplayType, RowAction, TableConfig } from "../types";
 
 interface DataTableProps {
@@ -127,17 +128,44 @@ export function DataTable({
                 })}
                 {hasTableActions && (
                   <td class="tm-row-action-col">
-                    {tableActions
-                      .filter(([, action]) => isActionVisibleFor(action, row))
-                      .map(([name, action]) => (
-                        <button
-                          type="submit"
-                          form={`tm-act-${pk}-${name}`}
-                          class="tm-btn tm-btn-sm"
-                        >
-                          {action.label}
-                        </button>
-                      ))}
+                    {groupActions(
+                      tableActions.filter(([, action]) => isActionVisibleFor(action, row)),
+                    ).map((item) => {
+                      if (item.kind === "single") {
+                        return (
+                          <button
+                            type="submit"
+                            form={`tm-act-${pk}-${item.name}`}
+                            class="tm-btn tm-btn-sm"
+                          >
+                            {item.action.label}
+                          </button>
+                        );
+                      }
+                      const menuId = `tm-menu-${pk}-${menuSlug(item.label)}`;
+                      return (
+                        <>
+                          <button
+                            type="button"
+                            class="tm-btn tm-btn-sm tm-menu-trigger"
+                            popovertarget={menuId}
+                          >
+                            {item.label} ▾
+                          </button>
+                          <div id={menuId} popover="auto" class="tm-menu">
+                            {item.entries.map(([name, action]) => (
+                              <button
+                                type="submit"
+                                form={`tm-act-${pk}-${name}`}
+                                class="tm-btn tm-menu-item"
+                              >
+                                {action.label}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })}
                   </td>
                 )}
                 {hasPk && !isView && (

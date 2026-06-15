@@ -779,6 +779,43 @@ tm-display-options {
   margin: 0;
 }
 
+/* Action dropdown — groups several actions behind one trigger. The panel is a
+   popover (top layer, native light-dismiss) anchored under its trigger via CSS
+   anchor positioning against the invoker (its implicit anchor). */
+.tm-menu-trigger {
+  white-space: nowrap;
+}
+.tm-menu {
+  margin: 0;
+  inset: auto;
+  position-area: bottom span-right;
+  min-width: 9rem;
+  padding: 0.18rem;
+  border: 1px solid var(--tm-border);
+  background: var(--tm-surface-bg);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--tm-text) 18%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+/* Without CSS anchor positioning (e.g. Firefox as of early 2026), center the
+   menu rather than pin it to a corner; it still opens and dismisses, and
+   self-heals once the browser ships the spec. */
+@supports not (anchor-name: --tm) {
+  .tm-menu {
+    inset: 0;
+    margin: auto;
+  }
+}
+.tm-menu .tm-menu-item {
+  border: none;
+  text-align: left;
+  white-space: nowrap;
+}
+.tm-menu .tm-menu-item:hover {
+  background: var(--tm-btn-hover-bg);
+}
+
 /* Error pages */
 .tm-error {
   display: flex;
