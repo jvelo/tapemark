@@ -789,11 +789,11 @@ tm-display-options {
   margin: 0;
   inset: auto;
   position-area: bottom span-right;
-  min-width: 9rem;
-  padding: 0;
+  min-width: 10rem;
+  padding: 0.27rem;
   border: 1px solid var(--tm-border);
-  background: var(--tm-surface-bg);
-  box-shadow: 0 0 16px color-mix(in srgb, var(--tm-text) 18%, transparent);
+  background: var(--tm-bg);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--tm-text) 20%, transparent);
 }
 /* Lay out only when open. A closed popover is hidden by the UA `display: none`;
    setting `display` unconditionally would override that and pin it open. */
@@ -809,18 +809,20 @@ tm-display-options {
     margin: auto;
   }
 }
-/* Items fill the panel as flush, transparent rows — only the hover shows a
-   background — instead of inheriting the standalone `.tm-btn` box. */
+/* Items are transparent rows that fill the panel — only the hover shows a soft
+   accent tint — instead of inheriting the standalone `.tm-btn` box. */
 .tm-menu .tm-menu-item {
   display: block;
   width: 100%;
+  padding: 0.4rem 0.6rem;
   border: none;
   background: transparent;
   text-align: left;
   white-space: nowrap;
 }
 .tm-menu .tm-menu-item:hover {
-  background: var(--tm-btn-hover-bg);
+  background: color-mix(in srgb, var(--tm-accent) 12%, var(--tm-bg));
+  color: var(--tm-text);
 }
 
 /* Error pages */
