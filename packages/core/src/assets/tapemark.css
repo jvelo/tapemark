@@ -790,7 +790,7 @@ tm-display-options {
   inset: auto;
   position-area: bottom span-right;
   min-width: 9rem;
-  padding: 0.18rem;
+  padding: 0;
   border: 1px solid var(--tm-border);
   background: var(--tm-surface-bg);
   box-shadow: 0 0 16px color-mix(in srgb, var(--tm-text) 18%, transparent);
@@ -798,9 +798,7 @@ tm-display-options {
 /* Lay out only when open. A closed popover is hidden by the UA `display: none`;
    setting `display` unconditionally would override that and pin it open. */
 .tm-menu:popover-open {
-  display: flex;
-  flex-direction: column;
-  gap: 0.18rem;
+  display: block;
 }
 /* Without CSS anchor positioning (e.g. Firefox as of early 2026), center the
    menu rather than pin it to a corner; it still opens and dismisses, and
@@ -811,8 +809,13 @@ tm-display-options {
     margin: auto;
   }
 }
+/* Items fill the panel as flush, transparent rows — only the hover shows a
+   background — instead of inheriting the standalone `.tm-btn` box. */
 .tm-menu .tm-menu-item {
+  display: block;
+  width: 100%;
   border: none;
+  background: transparent;
   text-align: left;
   white-space: nowrap;
 }
