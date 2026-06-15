@@ -95,14 +95,12 @@ const core = createTapemark({
       },
       actions: {
         // Status transitions collapse into a single "status ▾" dropdown via the
-        // shared `group`. Each is hidden by `visible` once the task is already in
-        // that state, so the menu only offers meaningful moves — grouping and
-        // per-row visibility compose. Exposed in the list view too.
+        // shared `group`, on both the list and detail views. (Add a `visible`
+        // predicate to hide a transition that doesn't apply to a given row.)
         start: {
           label: "start",
           group: "status",
           display: { list: true },
-          visible: (row) => row.status === "todo",
           handler: async (pk, ctx) => {
             await ctx.db
               .prepare("UPDATE tasks SET status = 'in_progress' WHERE id = ?")
@@ -116,7 +114,6 @@ const core = createTapemark({
           label: "mark done",
           group: "status",
           display: { list: true },
-          visible: (row) => row.status !== "done",
           handler: async (pk, ctx) => {
             await ctx.db
               .prepare("UPDATE tasks SET status = 'done' WHERE id = ?")
@@ -130,7 +127,6 @@ const core = createTapemark({
           label: "reopen",
           group: "status",
           display: { list: true },
-          visible: (row) => row.status !== "todo",
           handler: async (pk, ctx) => {
             await ctx.db
               .prepare("UPDATE tasks SET status = 'todo' WHERE id = ?")
