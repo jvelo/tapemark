@@ -15,7 +15,8 @@
  *
  * Open http://localhost:3334 and:
  *   • Create/edit/delete rows in `tasks` → watch `task_events` fill up automatically (hooks).
- *   • Open a task and click the "mark done" or "duplicate" buttons (custom actions).
+ *   • Use the "status ▾" dropdown (grouped actions) or the "duplicate" button (custom actions),
+ *     on both the list and a task's detail page.
  */
 import { createServer, type IncomingMessage } from "node:http";
 import BetterSqlite3 from "better-sqlite3";
@@ -93,12 +94,27 @@ const core = createTapemark({
         },
       },
       actions: {
-        // User-triggered: mark a task as done. Exposed in the list view too
-        // since it's a high-frequency operation. Hidden once already done —
-        // there's nothing meaningful to do on a row that's already in the
-        // target state.
+        // Status transitions collapse into a single "status ▾" dropdown via the
+        // shared `group`. Each is hidden by `visible` once the task is already in
+        // that state, so the menu only offers meaningful moves — grouping and
+        // per-row visibility compose. Exposed in the list view too.
+        start: {
+          label: "start",
+          group: "status",
+          display: { list: true },
+          visible: (row) => row.status === "todo",
+          handler: async (pk, ctx) => {
+            await ctx.db
+              .prepare("UPDATE tasks SET status = 'in_progress' WHERE id = ?")
+              .bind(pk.id)
+              .run();
+            await logEvent(ctx, Number(pk.id), "started", null);
+            return { success: true, message: `task ${pk.id} started` };
+          },
+        },
         mark_done: {
           label: "mark done",
+          group: "status",
           display: { list: true },
           visible: (row) => row.status !== "done",
           handler: async (pk, ctx) => {
@@ -110,7 +126,21 @@ const core = createTapemark({
             return { success: true, message: `task ${pk.id} marked done` };
           },
         },
-        // User-triggered: clone a task into a new row.
+        reopen: {
+          label: "reopen",
+          group: "status",
+          display: { list: true },
+          visible: (row) => row.status !== "todo",
+          handler: async (pk, ctx) => {
+            await ctx.db
+              .prepare("UPDATE tasks SET status = 'todo' WHERE id = ?")
+              .bind(pk.id)
+              .run();
+            await logEvent(ctx, Number(pk.id), "reopened", null);
+            return { success: true, message: `task ${pk.id} reopened` };
+          },
+        },
+        // No `group` — stays a standalone inline button next to the dropdown.
         duplicate: {
           label: "duplicate",
           handler: async (pk, ctx) => {
