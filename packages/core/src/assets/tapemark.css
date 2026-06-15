@@ -164,7 +164,7 @@ html {
   white-space: nowrap;
   text-align: right;
 }
-.tm .tm-row-action-col button + button {
+.tm .tm-row-action-col > button + button {
   margin-left: 0.36rem;
 }
 .tm-btn-sm {
