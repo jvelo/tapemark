@@ -39,7 +39,11 @@ export function groupActions(entries: ActionEntry[]): ActionRenderItem[] {
   return items;
 }
 
-/** Reduce a group label to an id-safe token for `popovertarget`/element ids. */
+/** Reduce a group label to a readable id-safe token. Lossy and not unique on
+ *  its own (`Export!` and `Export?` both yield `export`); callers must pair it
+ *  with the render index to form a unique id. Empty results fall back to
+ *  `group` so the token is never blank. */
 export function menuSlug(label: string): string {
-  return label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return slug || "group";
 }

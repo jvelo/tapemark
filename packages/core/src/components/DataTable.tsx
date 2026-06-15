@@ -130,7 +130,7 @@ export function DataTable({
                   <td class="tm-row-action-col">
                     {groupActions(
                       tableActions.filter(([, action]) => isActionVisibleFor(action, row)),
-                    ).map((item) => {
+                    ).map((item, index) => {
                       if (item.kind === "single") {
                         return (
                           <button
@@ -142,7 +142,9 @@ export function DataTable({
                           </button>
                         );
                       }
-                      const menuId = `tm-menu-${pk}-${menuSlug(item.label)}`;
+                      // The index keeps the id unique even when two labels slug
+                      // alike; the slug is just a readable suffix.
+                      const menuId = `tm-menu-${pk}-${index}-${menuSlug(item.label)}`;
                       return (
                         <>
                           <button

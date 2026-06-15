@@ -62,4 +62,9 @@ describe("menuSlug", () => {
     expect(menuSlug("Change status")).toBe("change-status");
     expect(menuSlug("  Danger! Zone  ")).toBe("danger-zone");
   });
+
+  it("falls back to a non-empty token for symbol-only labels", () => {
+    expect(menuSlug("!!!")).toBe("group");
+    expect(menuSlug("→")).toBe("group");
+  });
 });

@@ -86,7 +86,7 @@ export async function rowDetailRoute(
             </button>
           </div>
           <div class="tm-row-actions-row">
-            {groupActions(visibleActions).map((item) => {
+            {groupActions(visibleActions).map((item, index) => {
               if (item.kind === "single") {
                 return (
                   <form
@@ -100,7 +100,9 @@ export async function rowDetailRoute(
                   </form>
                 );
               }
-              const menuId = `tm-menu-${menuSlug(item.label)}`;
+              // The index keeps the id unique even when two labels slug alike;
+              // the slug is just a readable suffix.
+              const menuId = `tm-menu-${index}-${menuSlug(item.label)}`;
               return (
                 <>
                   <button
