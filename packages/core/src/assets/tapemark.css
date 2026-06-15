@@ -794,6 +794,10 @@ tm-display-options {
   border: 1px solid var(--tm-border);
   background: var(--tm-surface-bg);
   box-shadow: 0 0 16px color-mix(in srgb, var(--tm-text) 18%, transparent);
+}
+/* Lay out only when open. A closed popover is hidden by the UA `display: none`;
+   setting `display` unconditionally would override that and pin it open. */
+.tm-menu:popover-open {
   display: flex;
   flex-direction: column;
   gap: 0.18rem;
