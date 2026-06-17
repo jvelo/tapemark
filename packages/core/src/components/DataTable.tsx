@@ -130,7 +130,7 @@ export function DataTable({
                   <td class="tm-row-action-col">
                     {groupActions(
                       tableActions.filter(([, action]) => isActionVisibleFor(action, row)),
-                    ).map((item, index) => {
+                    ).map((item, itemIndex) => {
                       if (item.kind === "single") {
                         return (
                           <button
@@ -142,7 +142,7 @@ export function DataTable({
                           </button>
                         );
                       }
-                      const menuId = `tm-menu-${pk}-${index}-${menuSlug(item.label)}`;
+                      const menuId = `tm-menu-${pk}-${itemIndex}-${menuSlug(item.label)}`;
                       return (
                         <>
                           <button
