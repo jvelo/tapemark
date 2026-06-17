@@ -809,8 +809,8 @@ tm-display-options {
     margin: auto;
   }
 }
-/* Items are transparent rows that fill the panel — only the hover shows a soft
-   accent tint — instead of inheriting the standalone `.tm-btn` box. */
+/* Items fill the panel as transparent rows instead of inheriting the
+   standalone `.tm-btn` box. */
 .tm-menu .tm-menu-item {
   display: block;
   width: 100%;

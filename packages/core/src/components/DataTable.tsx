@@ -142,8 +142,6 @@ export function DataTable({
                           </button>
                         );
                       }
-                      // The index keeps the id unique even when two labels slug
-                      // alike; the slug is just a readable suffix.
                       const menuId = `tm-menu-${pk}-${index}-${menuSlug(item.label)}`;
                       return (
                         <>
