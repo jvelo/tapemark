@@ -245,6 +245,18 @@ export interface ActionResult {
   message?: string;
 }
 
+/** Context passed to action handlers. Extends {@link HookContext} with
+ *  `upsertOwned`, a guarded partial write scoped to the columns the action
+ *  declares in `writes`. */
+export interface ActionContext extends HookContext {
+  /** Insert-or-update this action's row, writing only the columns in `values`.
+   *  Columns absent from `values` are left untouched on an existing row
+   *  (NULL/default on insert), so an action never clobbers a column it doesn't
+   *  set. Every key must appear in the action's `writes`; passing one that
+   *  doesn't, or calling this without declaring `writes`, throws. */
+  upsertOwned: (values: Record<string, CellValue>) => Promise<void>;
+}
+
 /** A user-triggered named operation on a row, rendered as a button. */
 export interface RowAction {
   /** Label shown on the button. */
@@ -252,8 +264,13 @@ export interface RowAction {
   /** Handler invoked when the button is clicked. */
   handler: (
     pkValues: Record<string, string>,
-    ctx: HookContext,
+    ctx: ActionContext,
   ) => Promise<ActionResult> | ActionResult;
+  /** Columns this action may write through `ctx.upsertOwned`. Declaring it both
+   *  documents the action's write footprint and gates `upsertOwned` against
+   *  touching columns the action doesn't own. Optional: omit it to keep the
+   *  handler fully free-form (no `upsertOwned`). */
+  writes?: string[];
   /** Where to render this action button. Defaults: `detail: true`, `list: false`.
    *  Invocations from the list view redirect back to the list. */
   display?: { detail?: boolean; list?: boolean };

@@ -146,7 +146,7 @@ tapemark({
 
 Hook failures don't roll back the write — the row operation has already committed by the time the hook runs. Synchronous hook errors surface as a warning flash on the admin page; errors inside `ctx.background()` work are visible only when running inline (logged by the runtime when running via `waitUntil`).
 
-**Custom row actions** render as extra buttons on the row detail page, separated visually from the form's `save` button. The handler receives the primary key and a `HookContext`, and returns an `ActionResult` that becomes the flash message.
+**Custom row actions** render as extra buttons on the row detail page, separated visually from the form's `save` button. The handler receives the primary key and an `ActionContext` (a `HookContext` plus `upsertOwned`, below), and returns an `ActionResult` that becomes the flash message.
 
 ```typescript
 tables: {
@@ -173,6 +173,27 @@ tables: {
 Where each action renders is controlled by `display`: defaults are `{ detail: true, list: false }`. Set `display.list: true` to expose the button per-row in the list view (invocations from there redirect back to the list); set `display.detail: false` to hide it from the row form. Actions are gated by the same `readonly` rules as updates and deletes.
 
 The optional `visible(row) => boolean` predicate hides the button when the action wouldn't make sense for the current row (e.g. "mark done" on a task that's already done). It's a UI hint only — handlers are still reachable by direct POST and should validate their own invariants if they need to. A predicate that throws is treated as "not visible" so a buggy condition can't break the page render.
+
+By default a handler runs whatever SQL it likes against `ctx.db`. To scope its writes, declare `writes: [...]` — the columns the action owns — and write through `ctx.upsertOwned(values)`. It updates only the keys you pass (each must be in `writes`, or it throws), leaving every other column untouched on the row. So sibling actions that share a table don't clobber each other's columns, and a failure path that returns before calling `upsertOwned` writes nothing. `writes` is optional and may be declared without `upsertOwned` purely to document intent.
+
+```typescript
+actions: {
+  refetch: {
+    label: "re-fetch metadata",
+    writes: ["title", "description", "favicon_url"],
+    handler: async (pk, ctx) => {
+      const data = await fetchOpenGraph(pk.url);
+      if (!data) return { success: false, message: "fetch failed" };
+      await ctx.upsertOwned({
+        title: data.title,
+        description: data.description,
+        favicon_url: data.favicon,
+      });
+      return { success: true };
+    },
+  },
+}
+```
 
 Set `group: "<label>"` to collapse several actions into one dropdown labeled by that string; actions sharing a group render together, ungrouped ones stay standalone, and the dropdown takes the position of the group's first member. The menu uses the native popover API with CSS anchor positioning — no client JavaScript. Browsers without anchor positioning (Firefox, as of early 2026) center the menu instead of anchoring it under the trigger; it still opens, dismisses, and works.
 

@@ -6,7 +6,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import { TableRepository } from "./repository";
 import type {
+  ActionContext,
   CellValue,
   HookContext,
   RowAction,
@@ -37,6 +39,42 @@ function buildHookContext(
 
 function getHooks(table: string, ctx: TapemarkContext): TableHooks | undefined {
   return ctx.tableOptions.get(table)?.hooks;
+}
+
+/** Build the ActionContext: a HookContext plus `upsertOwned`, the guarded
+ *  partial write over the action's declared `writes`. */
+function buildActionContext(
+  ctx: TapemarkContext,
+  req: TapemarkRequest,
+  action: RowAction,
+  table: string,
+  pkValues: Record<string, string>,
+): ActionContext {
+  const repo = new TableRepository(ctx.db);
+  return {
+    ...buildHookContext(ctx, req),
+    upsertOwned: async (values) => {
+      assertOwnedColumns(action, values);
+      await repo.upsertPartial(table, pkValues, values);
+    },
+  };
+}
+
+/** Guard `upsertOwned` input against the action's declared ownership. */
+function assertOwnedColumns(
+  action: RowAction,
+  values: Record<string, CellValue>,
+): void {
+  if (!action.writes) {
+    throw new Error("upsertOwned requires the action to declare `writes`");
+  }
+  const owned = new Set(action.writes);
+  const stray = Object.keys(values).filter((key) => !owned.has(key));
+  if (stray.length > 0) {
+    throw new Error(
+      `upsertOwned: column(s) not in this action's \`writes\`: ${stray.join(", ")}`,
+    );
+  }
 }
 
 /** Run a hook; return null on success or an error message on failure.
@@ -112,7 +150,10 @@ export async function runAction(
     return { success: false, message: `Action "${actionName}" not found on "${table}"` };
   }
   try {
-    return await action.handler(pkValues, buildHookContext(ctx, req));
+    return await action.handler(
+      pkValues,
+      buildActionContext(ctx, req, action, table, pkValues),
+    );
   } catch (err) {
     return { success: false, message: err instanceof Error ? err.message : String(err) };
   }

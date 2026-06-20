@@ -8,6 +8,7 @@
 
 // Types
 export type {
+  ActionContext,
   ActionResult,
   CellValue,
   Column,

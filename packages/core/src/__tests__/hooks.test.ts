@@ -8,8 +8,9 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTapemark, type TapemarkCore } from "../router";
+import { TableRepository } from "../repository";
 import { createTestDb } from "../test-utils";
-import type { CellValue, Database, HookContext, TapemarkRequest } from "../types";
+import type { CellValue, Database, HookContext, RowAction, TapemarkRequest } from "../types";
 
 const SCHEMA = `
   CREATE TABLE notes (
@@ -801,6 +802,73 @@ describe("Custom row actions", () => {
       for (const id of ids) {
         expect(res.html).toContain(`popovertarget="${id}"`);
       }
+    });
+  });
+
+  describe("column ownership (writes / upsertOwned)", () => {
+    function withAction(action: RowAction): TapemarkCore {
+      return createTapemark({
+        db,
+        tables: { notes: { actions: { act: action } } },
+      });
+    }
+
+    function invoke(c: TapemarkCore) {
+      return c.handle(
+        req({
+          method: "POST",
+          path: "/notes/1/_action/act",
+          params: { table: "notes", pk: "1", actionName: "act" },
+        }),
+      );
+    }
+
+    it("upsertOwned writes only the declared columns", async () => {
+      core = withAction({
+        label: "act",
+        writes: ["tag"],
+        handler: async (_pk, ctx) => {
+          await ctx.upsertOwned({ tag: "published" });
+          return { success: true };
+        },
+      });
+
+      const res = await invoke(core);
+      expect(res.redirect).toContain("flash=success");
+      const row = await new TableRepository(db).getRow("notes", { id: "1" });
+      expect(row.tag).toBe("published");
+      expect(row.body).toBe("first"); // sibling column untouched
+    });
+
+    it("rejects a column outside the action's writes and writes nothing", async () => {
+      core = withAction({
+        label: "act",
+        writes: ["tag"],
+        handler: async (_pk, ctx) => {
+          await ctx.upsertOwned({ body: "clobbered" });
+          return { success: true };
+        },
+      });
+
+      const res = await invoke(core);
+      expect(res.redirect).toContain("flash=error");
+      expect(decodeURIComponent(res.redirect!)).toContain("body");
+      const row = await new TableRepository(db).getRow("notes", { id: "1" });
+      expect(row.body).toBe("first");
+    });
+
+    it("fails when upsertOwned is called without declaring writes", async () => {
+      core = withAction({
+        label: "act",
+        handler: async (_pk, ctx) => {
+          await ctx.upsertOwned({ tag: "x" });
+          return { success: true };
+        },
+      });
+
+      const res = await invoke(core);
+      expect(res.redirect).toContain("flash=error");
+      expect(decodeURIComponent(res.redirect!)).toContain("writes");
     });
   });
 });
