@@ -1,6 +1,6 @@
 {
   "name": "@jvelo/tapemark-better-sqlite3",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "type": "module",
   "description": "better-sqlite3 database adapter for Tapemark.",
   "keywords": [

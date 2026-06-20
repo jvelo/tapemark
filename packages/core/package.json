@@ -1,6 +1,6 @@
 {
   "name": "@jvelo/tapemark",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "type": "module",
   "description": "Self-contained admin UI for SQLite — framework-agnostic core (router, schema introspection, CRUD, server-rendered Preact UI).",
   "keywords": [

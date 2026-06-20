@@ -1,6 +1,6 @@
 {
   "name": "@jvelo/tapemark-cli",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "type": "module",
   "description": "Zero-config CLI to browse and edit SQLite databases in a dark, monospace admin UI.",
   "keywords": [
