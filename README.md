@@ -146,7 +146,7 @@ tapemark({
 
 Hook failures don't roll back the write — the row operation has already committed by the time the hook runs. Synchronous hook errors surface as a warning flash on the admin page; errors inside `ctx.background()` work are visible only when running inline (logged by the runtime when running via `waitUntil`).
 
-**Custom row actions** render as extra buttons on the row detail page, separated visually from the form's `save` button. The handler receives the primary key and an `ActionContext` (a `HookContext` plus `updateOwned`, below), and returns an `ActionResult` that becomes the flash message.
+**Custom row actions** render as extra buttons on the row detail page, separated visually from the form's `save` button. The handler receives the primary key and an `ActionContext` (a `HookContext` plus `update`, below), and returns an `ActionResult` that becomes the flash message.
 
 ```typescript
 tables: {
@@ -174,7 +174,21 @@ Where each action renders is controlled by `display`: defaults are `{ detail: tr
 
 The optional `visible(row) => boolean` predicate hides the button when the action wouldn't make sense for the current row (e.g. "mark done" on a task that's already done). It's a UI hint only — handlers are still reachable by direct POST and should validate their own invariants if they need to. A predicate that throws is treated as "not visible" so a buggy condition can't break the page render.
 
-By default a handler runs whatever SQL it likes against `ctx.db`. To scope its writes, declare `writes: [...]` — the columns the action owns — and write through `ctx.updateOwned(values)`. It updates the action's row in place, writing only the keys you pass and leaving every other column untouched. So sibling actions that share a table don't clobber each other's columns, and a failure path that returns before calling `updateOwned` writes nothing. The call throws on a key outside `writes`, a column the table doesn't have, or a row that doesn't exist — so a typo or a stale request fails loudly instead of silently writing the wrong thing. `writes` is optional and may be declared without `updateOwned` purely to document intent.
+A handler can run whatever SQL it likes against `ctx.db`, but for the common case of patching the current row there's `ctx.update(values)`. It updates the action's row in place, writing only the keys you pass and leaving every other column untouched — so sibling actions that share a table don't clobber each other's columns, and a failure path that returns before calling `update` writes nothing. It throws if the row doesn't exist, a key isn't a real column on the table, or no settable column is given, so a typo or a stale request fails loudly instead of writing the wrong thing.
+
+```typescript
+actions: {
+  touch: {
+    label: "mark reviewed",
+    handler: async (pk, ctx) => {
+      await ctx.update({ reviewed_at: new Date().toISOString() });
+      return { success: true };
+    },
+  },
+}
+```
+
+Add `writes: [...]` to fence the action to a set of columns: `ctx.update` then additionally rejects any column outside the list, both documenting the action's footprint and guarding against an accidental write to a column it doesn't own.
 
 ```typescript
 actions: {
@@ -184,7 +198,7 @@ actions: {
     handler: async (pk, ctx) => {
       const data = await fetchOpenGraph(pk.url);
       if (!data) return { success: false, message: "fetch failed" };
-      await ctx.updateOwned({
+      await ctx.update({
         title: data.title,
         description: data.description,
         favicon_url: data.favicon,

@@ -41,8 +41,8 @@ function getHooks(table: string, ctx: TapemarkContext): TableHooks | undefined {
   return ctx.tableOptions.get(table)?.hooks;
 }
 
-/** Build the ActionContext: a HookContext plus `updateOwned`, the guarded
- *  partial write over the action's declared `writes`. */
+/** Build the ActionContext: a HookContext plus `update`, the guarded partial
+ *  write to the action's row. */
 function buildActionContext(
   ctx: TapemarkContext,
   req: TapemarkRequest,
@@ -53,26 +53,23 @@ function buildActionContext(
   const repo = new TableRepository(ctx.db);
   return {
     ...buildHookContext(ctx, req),
-    updateOwned: async (values) => {
-      assertOwnedColumns(action, values);
+    update: async (values) => {
+      if (action.writes) assertOwnedColumns(action.writes, values);
       await repo.updatePartial(table, pkValues, values);
     },
   };
 }
 
-/** Guard `updateOwned` input against the action's declared ownership. */
+/** Reject any column in `values` outside the action's declared `writes`. */
 function assertOwnedColumns(
-  action: RowAction,
+  writes: string[],
   values: Record<string, CellValue>,
 ): void {
-  if (!action.writes) {
-    throw new Error("updateOwned requires the action to declare `writes`");
-  }
-  const owned = new Set(action.writes);
+  const owned = new Set(writes);
   const stray = Object.keys(values).filter((key) => !owned.has(key));
   if (stray.length > 0) {
     throw new Error(
-      `updateOwned: column(s) not in this action's \`writes\`: ${stray.join(", ")}`,
+      `update: column(s) not in this action's \`writes\`: ${stray.join(", ")}`,
     );
   }
 }

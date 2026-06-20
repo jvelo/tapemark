@@ -246,15 +246,15 @@ export interface ActionResult {
 }
 
 /** Context passed to action handlers. Extends {@link HookContext} with
- *  `updateOwned`, a guarded partial write scoped to the columns the action
- *  declares in `writes`. */
+ *  `update`, a guarded partial write to the action's row. */
 export interface ActionContext extends HookContext {
   /** Update this action's row, writing only the columns in `values` and leaving
    *  every other column untouched, so an action never clobbers a column it
-   *  doesn't set. Every key must appear in the action's `writes`; passing one
-   *  that doesn't, naming a column that isn't on the table, or calling this
-   *  without declaring `writes`, throws — as does a row that doesn't exist. */
-  updateOwned: (values: Record<string, CellValue>) => Promise<void>;
+   *  doesn't set. Throws unless the row exists, every key is a real non-PK
+   *  column on the table, and at least one settable column is given; PK columns
+   *  in `values` are ignored. If the action declares `writes`, any provided
+   *  column outside that list is additionally rejected. */
+  update: (values: Record<string, CellValue>) => Promise<void>;
 }
 
 /** A user-triggered named operation on a row, rendered as a button. */
@@ -266,10 +266,10 @@ export interface RowAction {
     pkValues: Record<string, string>,
     ctx: ActionContext,
   ) => Promise<ActionResult> | ActionResult;
-  /** Columns this action may write through `ctx.updateOwned`. Declaring it both
-   *  documents the action's write footprint and gates `updateOwned` against
-   *  touching columns the action doesn't own. Optional: omit it to keep the
-   *  handler fully free-form (no `updateOwned`). */
+  /** Restricts `ctx.update` to this set of columns, documenting the action's
+   *  write footprint and rejecting any write outside it. Optional: when omitted,
+   *  `ctx.update` may touch any real non-PK column (and `ctx.db` is always
+   *  available for fully custom SQL regardless). */
   writes?: string[];
   /** Where to render this action button. Defaults: `detail: true`, `list: false`.
    *  Invocations from the list view redirect back to the list. */

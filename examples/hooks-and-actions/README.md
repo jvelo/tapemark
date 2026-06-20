@@ -18,19 +18,19 @@ tables: {
       afterDelete: async (pk, ctx) => { /* … */ },
     },
     actions: {
-      // Declares the column it owns and writes through ctx.updateOwned, so it
+      // Declares the column it owns and writes through ctx.update, so it
       // only ever touches `status` — never the `notes` that `clear_notes` owns.
       mark_done: {
         label: "mark done",
         group: "status",
         display: { list: true },
         writes: ["status"],
-        handler: async (pk, ctx) => { await ctx.updateOwned({ status: "done" }); /* … */ },
+        handler: async (pk, ctx) => { await ctx.update({ status: "done" }); /* … */ },
       },
       clear_notes: {
         label: "clear notes",
         writes: ["notes"],
-        handler: async (pk, ctx) => { await ctx.updateOwned({ notes: null }); /* … */ },
+        handler: async (pk, ctx) => { await ctx.update({ notes: null }); /* … */ },
       },
       // No `writes` — an insert, so it stays free-form raw SQL.
       duplicate: { label: "duplicate", handler: async (pk, ctx) => { /* … */ } },
@@ -39,4 +39,4 @@ tables: {
 },
 ```
 
-`writes` + `ctx.updateOwned` scope an action's writes to the columns it declares: the call updates the row in place, touching only the keys you pass, and throws on a column outside `writes`, a column the table doesn't have, or a missing row — so sibling actions sharing a table can't clobber each other and typos fail loudly.
+`writes` + `ctx.update` scope an action's writes to the columns it declares: the call updates the row in place, touching only the keys you pass, and throws on a column outside `writes`, a column the table doesn't have, or a missing row — so sibling actions sharing a table can't clobber each other and typos fail loudly.

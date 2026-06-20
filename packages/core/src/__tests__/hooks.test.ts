@@ -805,7 +805,7 @@ describe("Custom row actions", () => {
     });
   });
 
-  describe("column ownership (writes / updateOwned)", () => {
+  describe("ctx.update (writes ownership)", () => {
     function withAction(action: RowAction): TapemarkCore {
       return createTapemark({
         db,
@@ -823,12 +823,12 @@ describe("Custom row actions", () => {
       );
     }
 
-    it("updateOwned writes only the declared columns", async () => {
+    it("writes only the declared columns, leaving siblings untouched", async () => {
       core = withAction({
         label: "act",
         writes: ["tag"],
         handler: async (_pk, ctx) => {
-          await ctx.updateOwned({ tag: "published" });
+          await ctx.update({ tag: "published" });
           return { success: true };
         },
       });
@@ -840,12 +840,27 @@ describe("Custom row actions", () => {
       expect(row.body).toBe("first"); // sibling column untouched
     });
 
+    it("updates any real non-PK column when no writes is declared", async () => {
+      core = withAction({
+        label: "act",
+        handler: async (_pk, ctx) => {
+          await ctx.update({ tag: "x" });
+          return { success: true };
+        },
+      });
+
+      const res = await invoke(core);
+      expect(res.redirect).toContain("flash=success");
+      const row = await new TableRepository(db).getRow("notes", { id: "1" });
+      expect(row.tag).toBe("x");
+    });
+
     it("rejects a column outside the action's writes and writes nothing", async () => {
       core = withAction({
         label: "act",
         writes: ["tag"],
         handler: async (_pk, ctx) => {
-          await ctx.updateOwned({ body: "clobbered" });
+          await ctx.update({ body: "clobbered" });
           return { success: true };
         },
       });
@@ -862,7 +877,7 @@ describe("Custom row actions", () => {
         label: "act",
         writes: ["tga"], // typo for "tag"
         handler: async (_pk, ctx) => {
-          await ctx.updateOwned({ tga: "oops" });
+          await ctx.update({ tga: "oops" });
           return { success: true };
         },
       });
@@ -872,18 +887,37 @@ describe("Custom row actions", () => {
       expect(decodeURIComponent(res.redirect!)).toContain("tga");
     });
 
-    it("fails when updateOwned is called without declaring writes", async () => {
+    it("rejects an unknown column even without a writes declaration", async () => {
       core = withAction({
         label: "act",
         handler: async (_pk, ctx) => {
-          await ctx.updateOwned({ tag: "x" });
+          await ctx.update({ nope: "x" });
           return { success: true };
         },
       });
 
       const res = await invoke(core);
       expect(res.redirect).toContain("flash=error");
-      expect(decodeURIComponent(res.redirect!)).toContain("writes");
+      expect(decodeURIComponent(res.redirect!)).toContain("nope");
+    });
+
+    it("fails on a row that doesn't exist", async () => {
+      core = withAction({
+        label: "act",
+        handler: async (_pk, ctx) => {
+          await ctx.update({ tag: "x" });
+          return { success: true };
+        },
+      });
+
+      const res = await core.handle(
+        req({
+          method: "POST",
+          path: "/notes/999/_action/act",
+          params: { table: "notes", pk: "999", actionName: "act" },
+        }),
+      );
+      expect(res.redirect).toContain("flash=error");
     });
   });
 });
