@@ -14,6 +14,7 @@ import { SchemaIntrospector } from "../schema";
 import { TableRepository, decodePk, encodePk } from "../repository";
 import { ConfigStore, orderColumns } from "../config";
 import { fireAfterDelete, fireAfterUpdate, flashForHookResult, isActionVisibleFor } from "../hooks";
+import { groupActions, menuSlug } from "../actions";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
 import type { TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
@@ -85,17 +86,46 @@ export async function rowDetailRoute(
             </button>
           </div>
           <div class="tm-row-actions-row">
-            {visibleActions.map(([name, action]) => (
-              <form
-                method="post"
-                action={`${ctx.prefix}/${table}/${encodedPk}/_action/${name}`}
-                class="tm-action-inline"
-              >
-                <button type="submit" class="tm-btn">
-                  {action.label}
-                </button>
-              </form>
-            ))}
+            {groupActions(visibleActions).map((item, index) => {
+              if (item.kind === "single") {
+                return (
+                  <form
+                    method="post"
+                    action={`${ctx.prefix}/${table}/${encodedPk}/_action/${item.name}`}
+                    class="tm-action-inline"
+                  >
+                    <button type="submit" class="tm-btn">
+                      {item.action.label}
+                    </button>
+                  </form>
+                );
+              }
+              const menuId = `tm-menu-${index}-${menuSlug(item.label)}`;
+              return (
+                <>
+                  <button
+                    type="button"
+                    class="tm-btn tm-menu-trigger"
+                    popovertarget={menuId}
+                  >
+                    {item.label} ▾
+                  </button>
+                  <div id={menuId} popover="auto" class="tm-menu">
+                    {item.entries.map(([name, action]) => (
+                      <form
+                        method="post"
+                        action={`${ctx.prefix}/${table}/${encodedPk}/_action/${name}`}
+                        class="tm-action-inline"
+                      >
+                        <button type="submit" class="tm-btn tm-menu-item">
+                          {action.label}
+                        </button>
+                      </form>
+                    ))}
+                  </div>
+                </>
+              );
+            })}
             <form
               method="post"
               action={`${ctx.prefix}/${table}/${encodedPk}/delete`}

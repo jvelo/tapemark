@@ -722,4 +722,85 @@ describe("Custom row actions", () => {
       expect(res.redirect).toContain("/notes/1?flash=success");
     });
   });
+
+  describe("dropdown grouping", () => {
+    it("collapses list actions sharing a group into one popover menu", async () => {
+      core = createTapemark({
+        db,
+        tables: {
+          notes: {
+            actions: {
+              csv: { label: "CSV", group: "Export", display: { list: true }, handler: () => ({ success: true }) },
+              json: { label: "JSON", group: "Export", display: { list: true }, handler: () => ({ success: true }) },
+              archive: { label: "Archive", display: { list: true }, handler: () => ({ success: true }) },
+            },
+          },
+        },
+      });
+
+      const res = await core.handle(req({ path: "/notes", params: { table: "notes" } }));
+      expect(res.status).toBe(200);
+      // One trigger labeled by the group, wired to a popover panel of the same id
+      // (pk + render index + readable slug).
+      expect(res.html).toContain('popovertarget="tm-menu-1-0-export"');
+      expect(res.html).toContain('id="tm-menu-1-0-export"');
+      expect(res.html).toContain("Export ▾");
+      // Grouped items submit the per-row action forms by reference.
+      expect(res.html).toContain('form="tm-act-1-csv"');
+      expect(res.html).toContain('form="tm-act-1-json"');
+      // The ungrouped action stays a standalone inline button.
+      expect(res.html).toContain('form="tm-act-1-archive"');
+      expect(res.html).not.toContain("Archive ▾");
+    });
+
+    it("groups detail actions under a popover menu while keeping their endpoints", async () => {
+      core = createTapemark({
+        db,
+        tables: {
+          notes: {
+            actions: {
+              csv: { label: "CSV", group: "Export", handler: () => ({ success: true }) },
+              json: { label: "JSON", group: "Export", handler: () => ({ success: true }) },
+            },
+          },
+        },
+      });
+
+      const res = await core.handle(
+        req({ path: "/notes/1", params: { table: "notes", pk: "1" } }),
+      );
+      expect(res.status).toBe(200);
+      expect(res.html).toContain('popovertarget="tm-menu-0-export"');
+      expect(res.html).toContain('id="tm-menu-0-export"');
+      expect(res.html).toContain("Export ▾");
+      // Each menu item still posts to its own action endpoint.
+      expect(res.html).toContain("/notes/1/_action/csv");
+      expect(res.html).toContain("/notes/1/_action/json");
+    });
+
+    it("gives groups with slug-colliding labels distinct popover ids", async () => {
+      core = createTapemark({
+        db,
+        tables: {
+          notes: {
+            actions: {
+              a: { label: "A", group: "Export!", display: { list: true }, handler: () => ({ success: true }) },
+              b: { label: "B", group: "Export?", display: { list: true }, handler: () => ({ success: true }) },
+            },
+          },
+        },
+      });
+
+      const res = await core.handle(req({ path: "/notes", params: { table: "notes" } }));
+      expect(res.status).toBe(200);
+      const ids = [...res.html!.matchAll(/id="(tm-menu-[^"]*)"/g)].map((m) => m[1]);
+      // Two groups per row whose slugs both reduce to "export", across two rows:
+      // four panels, all uniquely addressable by popovertarget.
+      expect(ids).toHaveLength(4);
+      expect(new Set(ids).size).toBe(ids.length);
+      for (const id of ids) {
+        expect(res.html).toContain(`popovertarget="${id}"`);
+      }
+    });
+  });
 });
