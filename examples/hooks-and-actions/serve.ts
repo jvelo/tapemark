@@ -17,6 +17,8 @@
  *   • Create/edit/delete rows in `tasks` → watch `task_events` fill up automatically (hooks).
  *   • Use the "status ▾" dropdown (grouped actions) or the "duplicate" button (custom actions),
  *     on both the list and a task's detail page.
+ *   • The status actions and "clear notes" declare `writes` and write through
+ *     `ctx.updateOwned`, so each touches only the column it owns.
  */
 import { createServer, type IncomingMessage } from "node:http";
 import BetterSqlite3 from "better-sqlite3";
@@ -95,17 +97,19 @@ const core = createTapemark({
       },
       actions: {
         // Status transitions collapse into a single "status ▾" dropdown via the
-        // shared `group`, on both the list and detail views. (Add a `visible`
-        // predicate to hide a transition that doesn't apply to a given row.)
+        // shared `group`, on both the list and detail views. Each declares
+        // `writes: ["status"]` and writes through `ctx.updateOwned`, so the
+        // framework guards the write to the status column alone — it can't
+        // touch the `notes` a sibling action owns, and a typo in the column
+        // name fails the action instead of silently doing nothing. (Add a
+        // `visible` predicate to hide a transition that doesn't apply to a row.)
         start: {
           label: "start",
           group: "status",
           display: { list: true },
+          writes: ["status"],
           handler: async (pk, ctx) => {
-            await ctx.db
-              .prepare("UPDATE tasks SET status = 'in_progress' WHERE id = ?")
-              .bind(pk.id)
-              .run();
+            await ctx.updateOwned({ status: "in_progress" });
             await logEvent(ctx, Number(pk.id), "started", null);
             return { success: true, message: `task ${pk.id} started` };
           },
@@ -114,11 +118,9 @@ const core = createTapemark({
           label: "mark done",
           group: "status",
           display: { list: true },
+          writes: ["status"],
           handler: async (pk, ctx) => {
-            await ctx.db
-              .prepare("UPDATE tasks SET status = 'done' WHERE id = ?")
-              .bind(pk.id)
-              .run();
+            await ctx.updateOwned({ status: "done" });
             await logEvent(ctx, Number(pk.id), "marked_done", null);
             return { success: true, message: `task ${pk.id} marked done` };
           },
@@ -127,16 +129,27 @@ const core = createTapemark({
           label: "reopen",
           group: "status",
           display: { list: true },
+          writes: ["status"],
           handler: async (pk, ctx) => {
-            await ctx.db
-              .prepare("UPDATE tasks SET status = 'todo' WHERE id = ?")
-              .bind(pk.id)
-              .run();
+            await ctx.updateOwned({ status: "todo" });
             await logEvent(ctx, Number(pk.id), "reopened", null);
             return { success: true, message: `task ${pk.id} reopened` };
           },
         },
-        // No `group` — stays a standalone inline button next to the dropdown.
+        // A sibling action owning a different column. It clears `notes` via
+        // `updateOwned` and leaves `status` exactly as the status actions set
+        // it — neither clobbers the other, which is the whole point of `writes`.
+        clear_notes: {
+          label: "clear notes",
+          writes: ["notes"],
+          handler: async (pk, ctx) => {
+            await ctx.updateOwned({ notes: null });
+            await logEvent(ctx, Number(pk.id), "notes_cleared", null);
+            return { success: true, message: `task ${pk.id} notes cleared` };
+          },
+        },
+        // No `writes` — `duplicate` inserts a new row, so it stays free-form
+        // raw SQL. `updateOwned` is opt-in and only fits in-place row updates.
         duplicate: {
           label: "duplicate",
           handler: async (pk, ctx) => {
