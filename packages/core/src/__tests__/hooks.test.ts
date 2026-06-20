@@ -805,7 +805,7 @@ describe("Custom row actions", () => {
     });
   });
 
-  describe("column ownership (writes / upsertOwned)", () => {
+  describe("column ownership (writes / updateOwned)", () => {
     function withAction(action: RowAction): TapemarkCore {
       return createTapemark({
         db,
@@ -823,12 +823,12 @@ describe("Custom row actions", () => {
       );
     }
 
-    it("upsertOwned writes only the declared columns", async () => {
+    it("updateOwned writes only the declared columns", async () => {
       core = withAction({
         label: "act",
         writes: ["tag"],
         handler: async (_pk, ctx) => {
-          await ctx.upsertOwned({ tag: "published" });
+          await ctx.updateOwned({ tag: "published" });
           return { success: true };
         },
       });
@@ -845,7 +845,7 @@ describe("Custom row actions", () => {
         label: "act",
         writes: ["tag"],
         handler: async (_pk, ctx) => {
-          await ctx.upsertOwned({ body: "clobbered" });
+          await ctx.updateOwned({ body: "clobbered" });
           return { success: true };
         },
       });
@@ -857,11 +857,26 @@ describe("Custom row actions", () => {
       expect(row.body).toBe("first");
     });
 
-    it("fails when upsertOwned is called without declaring writes", async () => {
+    it("rejects a declared column that isn't on the table", async () => {
+      core = withAction({
+        label: "act",
+        writes: ["tga"], // typo for "tag"
+        handler: async (_pk, ctx) => {
+          await ctx.updateOwned({ tga: "oops" });
+          return { success: true };
+        },
+      });
+
+      const res = await invoke(core);
+      expect(res.redirect).toContain("flash=error");
+      expect(decodeURIComponent(res.redirect!)).toContain("tga");
+    });
+
+    it("fails when updateOwned is called without declaring writes", async () => {
       core = withAction({
         label: "act",
         handler: async (_pk, ctx) => {
-          await ctx.upsertOwned({ tag: "x" });
+          await ctx.updateOwned({ tag: "x" });
           return { success: true };
         },
       });

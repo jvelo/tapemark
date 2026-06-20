@@ -339,7 +339,7 @@ describe("TableRepository", () => {
     });
   });
 
-  describe("upsertPartial", () => {
+  describe("updatePartial", () => {
     const METADATA_SCHEMA = `
       CREATE TABLE url_metadata (
         url TEXT PRIMARY KEY,
@@ -356,23 +356,33 @@ describe("TableRepository", () => {
     });
 
     it("updates only the provided columns, leaving siblings untouched", async () => {
-      await repo.upsertPartial("url_metadata", { url: "a" }, { title: "New" });
+      await repo.updatePartial("url_metadata", { url: "a" }, { title: "New" });
       const row = await repo.getRow("url_metadata", { url: "a" });
       expect(row.title).toBe("New");
       expect(row.description).toBe("A desc");
       expect(row.screenshot_url).toBe("shot-a");
     });
 
-    it("inserts a fresh row when the PK is absent, unwritten columns null", async () => {
-      await repo.upsertPartial("url_metadata", { url: "b" }, { title: "B" });
-      const row = await repo.getRow("url_metadata", { url: "b" });
-      expect(row.title).toBe("B");
-      expect(row.description).toBeNull();
-      expect(row.screenshot_url).toBeNull();
+    it("throws rather than inventing a row when the PK is absent", async () => {
+      await expect(
+        repo.updatePartial("url_metadata", { url: "b" }, { title: "B" }),
+      ).rejects.toThrow(NotFoundError);
+      await expect(repo.getRow("url_metadata", { url: "b" })).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it("rejects an unknown column instead of silently dropping it", async () => {
+      await expect(
+        repo.updatePartial("url_metadata", { url: "a" }, { titel: "typo" }),
+      ).rejects.toThrow(ValidationError);
+      expect(await repo.getRow("url_metadata", { url: "a" })).toMatchObject({
+        title: "A title",
+      });
     });
 
     it("never overwrites a PK column supplied in values", async () => {
-      await repo.upsertPartial("url_metadata", { url: "a" }, { url: "b", title: "T" });
+      await repo.updatePartial("url_metadata", { url: "a" }, { url: "b", title: "T" });
       expect(await repo.getRow("url_metadata", { url: "a" })).toMatchObject({ title: "T" });
       await expect(repo.getRow("url_metadata", { url: "b" })).rejects.toThrow(
         NotFoundError,
@@ -381,7 +391,7 @@ describe("TableRepository", () => {
 
     it("rejects a write with no settable columns", async () => {
       await expect(
-        repo.upsertPartial("url_metadata", { url: "a" }, {}),
+        repo.updatePartial("url_metadata", { url: "a" }, {}),
       ).rejects.toThrow(ValidationError);
     });
   });

@@ -186,17 +186,15 @@ export class TableRepository {
       .run();
   }
 
-  /** Insert-or-update `values` keyed on the table's primary key, writing only
-   *  the provided columns. An existing row keeps every column absent from
-   *  `values`; a fresh row is inserted with just the PK and written columns
-   *  (others NULL/default) when none exists. PK columns come from `pkValues`
-   *  and are never taken from `values`. Values bind as-is — callers pass typed
-   *  cell values, not the form strings `insertRow`/`updateRow` cast.
+  /** Update the existing row at `pkValues`, writing only the provided columns
+   *  and leaving every column absent from `values` untouched. PK columns come
+   *  from `pkValues`, never from `values`. Values bind as-is — callers pass
+   *  typed cell values, not the form strings `insertRow`/`updateRow` cast.
    *
-   *  An `UPDATE … RETURNING` probes for the row first; the INSERT runs only on a
-   *  genuine miss, so a NOT NULL column with no default fails only when there's
-   *  truly no row to update — never on the common in-place update. */
-  async upsertPartial(
+   *  Unknown columns are rejected, not dropped, so a typo can't silently skip a
+   *  write. Operates only on a row that exists: a missing PK throws rather than
+   *  inventing a row. */
+  async updatePartial(
     tableName: string,
     pkValues: Record<string, string>,
     values: Record<string, CellValue>,
@@ -208,33 +206,33 @@ export class TableRepository {
 
     const columnMap = new Map(table.columns.map((c) => [c.name, c]));
     const pkSet = new Set(table.primaryKey);
-    const entries = Object.entries(values).filter(
-      ([key]) => columnMap.has(key) && !pkSet.has(key),
-    );
 
+    const unknown = Object.keys(values).filter((key) => !columnMap.has(key));
+    if (unknown.length > 0) {
+      throw new ValidationError(
+        `Unknown column(s) for "${tableName}": ${unknown.join(", ")}`,
+      );
+    }
+
+    const entries = Object.entries(values).filter(([key]) => !pkSet.has(key));
     if (entries.length === 0) {
       throw new ValidationError("No valid columns to write");
     }
-
-    const writeValues = entries.map(([, v]) => v);
-    const pkBinds = table.primaryKey.map((col) => pkValues[col]);
 
     const setClause = entries.map(([k]) => `"${k}" = ?`).join(", ");
     const updated = await this.db
       .prepare(
         `UPDATE "${tableName}" SET ${setClause} WHERE ${pkWhere(table.primaryKey)} RETURNING *`,
       )
-      .bind(...writeValues, ...pkBinds)
+      .bind(...entries.map(([, v]) => v), ...table.primaryKey.map((col) => pkValues[col]))
       .first();
-    if (updated) return;
 
-    const insertCols = [...table.primaryKey, ...entries.map(([k]) => k)];
-    const colList = insertCols.map((c) => `"${c}"`).join(", ");
-    const placeholders = insertCols.map(() => "?").join(", ");
-    await this.db
-      .prepare(`INSERT INTO "${tableName}" (${colList}) VALUES (${placeholders})`)
-      .bind(...pkBinds, ...writeValues)
-      .run();
+    if (!updated) {
+      throw new NotFoundError(
+        `Row not found in "${tableName}"`,
+        `PK: ${JSON.stringify(pkValues)}`,
+      );
+    }
   }
 
   /** Delete a single row by primary key. */
