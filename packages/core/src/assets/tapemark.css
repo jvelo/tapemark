@@ -164,7 +164,9 @@ html {
   white-space: nowrap;
   text-align: right;
 }
-.tm .tm-row-action-col > button + button {
+/* Every action button but the first gets left spacing; `button + button` would
+   miss buttons separated from the prior one by a group's popover <div>. */
+.tm .tm-row-action-col > button:not(:first-child) {
   margin-left: 0.36rem;
 }
 .tm-btn-sm {
