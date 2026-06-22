@@ -194,7 +194,7 @@ export class TableRepository {
    *  Unknown columns are rejected, not dropped, so a typo can't silently skip a
    *  write. Operates only on a row that exists: a missing PK throws rather than
    *  inventing a row. */
-  async updatePartial(
+  async patchRow(
     tableName: string,
     pkValues: Record<string, string>,
     values: Record<string, CellValue>,

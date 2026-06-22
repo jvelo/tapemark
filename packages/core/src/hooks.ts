@@ -55,7 +55,7 @@ function buildActionContext(
     ...buildHookContext(ctx, req),
     update: async (values) => {
       if (action.writes) assertOwnedColumns(action.writes, values);
-      await repo.updatePartial(table, pkValues, values);
+      await repo.patchRow(table, pkValues, values);
     },
   };
 }
