@@ -936,7 +936,7 @@ describe("Custom row actions", () => {
       expect(res.redirect).toContain("flash=error");
     });
 
-    it("fires afterUpdate with the written patch", async () => {
+    it("fires afterUpdate with the effective patch, excluding PK columns", async () => {
       const received: { pk: Record<string, string>; patch: Record<string, CellValue> }[] = [];
       core = createTapemark({
         db,
@@ -952,7 +952,7 @@ describe("Custom row actions", () => {
                 label: "act",
                 writes: ["tag"],
                 handler: async (_pk, ctx) => {
-                  await ctx.update({ tag: "x" });
+                  await ctx.update({ id: "1", tag: "x" });
                   return { success: true };
                 },
               },
@@ -965,6 +965,7 @@ describe("Custom row actions", () => {
       expect(res.redirect).toContain("flash=success");
       expect(received).toHaveLength(1);
       expect(received[0].pk).toEqual({ id: "1" });
+      // PK column is filtered out — the hook sees only what was written
       expect(received[0].patch).toEqual({ tag: "x" });
     });
 

@@ -58,8 +58,8 @@ function buildActionContext(
       if (action.writes) {
         assertOwnedColumns(action.writes, values, Object.keys(pkValues));
       }
-      await repo.patchRow(table, pkValues, values);
-      const hookError = await fireAfterUpdate(table, pkValues, values, ctx, req);
+      const patch = await repo.patchRow(table, pkValues, values);
+      const hookError = await fireAfterUpdate(table, pkValues, patch, ctx, req);
       return { hookError };
     },
   };

@@ -210,6 +210,16 @@ describe("TableRepository", () => {
       expect(row.name).toBe("Alicia");
     });
 
+    it("updateRow returns the cast patch, minus PK columns", async () => {
+      const patch = await repo.updateRow(
+        "users",
+        { id: "1" },
+        { id: "999", name: "Alicia", score: "10" },
+      );
+      // strings cast to the column's type; PK dropped
+      expect(patch).toEqual({ name: "Alicia", score: 10 });
+    });
+
     it("deleteRow removes a row", async () => {
       await repo.deleteRow("users", { id: "2" });
       const result = await repo.getRows("users");
@@ -382,7 +392,8 @@ describe("TableRepository", () => {
     });
 
     it("never overwrites a PK column supplied in values", async () => {
-      await repo.patchRow("url_metadata", { url: "a" }, { url: "b", title: "T" });
+      const patch = await repo.patchRow("url_metadata", { url: "a" }, { url: "b", title: "T" });
+      expect(patch).toEqual({ title: "T" }); // returned patch excludes the PK
       expect(await repo.getRow("url_metadata", { url: "a" })).toMatchObject({ title: "T" });
       await expect(repo.getRow("url_metadata", { url: "b" })).rejects.toThrow(
         NotFoundError,

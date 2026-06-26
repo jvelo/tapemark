@@ -8,7 +8,7 @@
 
 import { NotFoundError, ValidationError } from "./errors";
 import { SchemaIntrospector } from "./schema";
-import type { CellValue, Column, Database, RowResult } from "./types";
+import type { CellValue, Column, Database, RowPatch, RowResult } from "./types";
 
 // ---------------------------------------------------------------------------
 // PK encoding / decoding for URLs
@@ -154,12 +154,14 @@ export class TableRepository {
     return inserted ?? (data as Record<string, CellValue>);
   }
 
-  /** Update a row. PK columns in data are ignored. */
+  /** Update a row, returning the effective patch written: the non-PK columns
+   *  with their values cast to each column's type — the values the database
+   *  actually stored, not the raw form strings. PK columns in data are ignored. */
   async updateRow(
     tableName: string,
     pkValues: Record<string, string>,
     data: Record<string, string>,
-  ): Promise<void> {
+  ): Promise<RowPatch> {
     const table = await this.schema.getTable(tableName);
     const pkSet = new Set(table.primaryKey);
     const columnMap = new Map(table.columns.map((c) => [c.name, c]));
@@ -172,18 +174,22 @@ export class TableRepository {
       throw new ValidationError("No valid columns to update");
     }
 
+    const patch: RowPatch = {};
+    for (const [k, v] of entries) {
+      patch[k] = castValue(v, columnMap.get(k)!);
+    }
+
     const setClause = entries.map(([k]) => `"${k}" = ?`).join(", ");
-    const setValues = entries.map(([k, v]) =>
-      castValue(v, columnMap.get(k)!),
-    );
     const whereBinds = table.primaryKey.map((col) => pkValues[col]);
 
     await this.db
       .prepare(
         `UPDATE "${tableName}" SET ${setClause} WHERE ${pkWhere(table.primaryKey)}`,
       )
-      .bind(...setValues, ...whereBinds)
+      .bind(...entries.map(([k]) => patch[k]), ...whereBinds)
       .run();
+
+    return patch;
   }
 
   /** Update the existing row at `pkValues`, writing only the provided columns
@@ -193,12 +199,13 @@ export class TableRepository {
    *
    *  Unknown columns are rejected, not dropped, so a typo can't silently skip a
    *  write. Operates only on a row that exists: a missing PK throws rather than
-   *  inventing a row. */
+   *  inventing a row. Returns the effective patch written — the given values
+   *  minus the ignored PK columns. */
   async patchRow(
     tableName: string,
     pkValues: Record<string, string>,
     values: Record<string, CellValue>,
-  ): Promise<void> {
+  ): Promise<RowPatch> {
     const table = await this.schema.getTable(tableName);
     if (table.primaryKey.length === 0) {
       throw new ValidationError(`Table "${tableName}" has no primary key`);
@@ -233,6 +240,8 @@ export class TableRepository {
         `PK: ${JSON.stringify(pkValues)}`,
       );
     }
+
+    return Object.fromEntries(entries);
   }
 
   /** Delete a single row by primary key. */

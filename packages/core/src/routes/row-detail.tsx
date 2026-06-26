@@ -172,9 +172,9 @@ export async function rowUpdateRoute(
     }
   }
 
-  await repo.updateRow(table, pkValues, data);
+  const patch = await repo.updateRow(table, pkValues, data);
 
-  const hookError = await fireAfterUpdate(table, pkValues, data, ctx, req);
+  const hookError = await fireAfterUpdate(table, pkValues, patch, ctx, req);
   const { flash, message } = flashForHookResult("row updated", hookError);
 
   const newPk = encodePk(tableInfo.primaryKey, { ...pkValues, ...data });
