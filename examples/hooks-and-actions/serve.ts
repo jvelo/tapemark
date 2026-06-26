@@ -85,10 +85,8 @@ const core = createTapemark({
         afterInsert: async (row, ctx) => {
           await logEvent(ctx, row.id as number, "created", `title="${row.title as string}"`);
         },
-        // Fires after a task is updated — through a form edit or an action's
-        // `ctx.update`. `patch` holds the written column values, so a status
-        // action below also lands here automatically (the audit log captures
-        // the write without the action having to log it itself).
+        // Fires after a task is updated — whether through a form edit or an
+        // action's `ctx.update`. `patch` holds the written column values.
         afterUpdate: async (pk, patch, ctx) => {
           const fields = Object.keys(patch).join(", ");
           await logEvent(ctx, Number(pk.id), "updated", `fields: ${fields}`);
@@ -100,12 +98,9 @@ const core = createTapemark({
       },
       actions: {
         // Status transitions collapse into a single "status ▾" dropdown via the
-        // shared `group`, on both the list and detail views. Each declares
-        // `writes: ["status"]` and writes through `ctx.update`, so the
-        // framework guards the write to the status column alone — it can't
-        // touch the `notes` a sibling action owns, and a typo in the column
-        // name fails the action instead of silently doing nothing. (Add a
-        // `visible` predicate to hide a transition that doesn't apply to a row.)
+        // shared `group`, on both the list and detail views. Each writes through
+        // `ctx.update` fenced to `writes: ["status"]`. (Add a `visible` predicate
+        // to hide a transition that doesn't apply to a row.)
         start: {
           label: "start",
           group: "status",
@@ -139,9 +134,8 @@ const core = createTapemark({
             return { success: true, message: `task ${pk.id} reopened` };
           },
         },
-        // A sibling action owning a different column. It clears `notes` via
-        // `update` and leaves `status` exactly as the status actions set
-        // it — neither clobbers the other, which is the whole point of `writes`.
+        // A sibling action fenced to a different column: it clears `notes` and
+        // leaves `status` untouched, so neither action clobbers the other.
         clear_notes: {
           label: "clear notes",
           writes: ["notes"],

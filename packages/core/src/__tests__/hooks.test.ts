@@ -837,7 +837,7 @@ describe("Custom row actions", () => {
       expect(res.redirect).toContain("flash=success");
       const row = await new TableRepository(db).getRow("notes", { id: "1" });
       expect(row.tag).toBe("published");
-      expect(row.body).toBe("first"); // sibling column untouched
+      expect(row.body).toBe("first");
     });
 
     it("updates any real non-PK column when no writes is declared", async () => {
@@ -965,7 +965,6 @@ describe("Custom row actions", () => {
       expect(res.redirect).toContain("flash=success");
       expect(received).toHaveLength(1);
       expect(received[0].pk).toEqual({ id: "1" });
-      // PK column is filtered out — the hook sees only what was written
       expect(received[0].patch).toEqual({ tag: "x" });
     });
 
@@ -983,8 +982,6 @@ describe("Custom row actions", () => {
               act: {
                 label: "act",
                 handler: async (_pk, ctx) => {
-                  // The handler stays focused on the action; Tapemark surfaces
-                  // the hook failure on its own.
                   await ctx.update({ tag: "x" });
                   return { success: true, message: "tagged" };
                 },
@@ -997,9 +994,9 @@ describe("Custom row actions", () => {
       const res = await invoke(core);
       const redirect = decodeURIComponent(res.redirect!);
       expect(redirect).toContain("flash=warning");
-      expect(redirect).toContain("tagged"); // the action's own message is kept
-      expect(redirect).toContain("index down"); // hook failure appended
-      // the row write committed even though the hook failed
+      expect(redirect).toContain("tagged");
+      expect(redirect).toContain("index down");
+      // the write committed even though the hook failed
       const row = await new TableRepository(db).getRow("notes", { id: "1" });
       expect(row.tag).toBe("x");
     });

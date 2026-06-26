@@ -216,7 +216,6 @@ describe("TableRepository", () => {
         { id: "1" },
         { id: "999", name: "Alicia", score: "10" },
       );
-      // strings cast to the column's type; PK dropped
       expect(patch).toEqual({ name: "Alicia", score: 10 });
     });
 
@@ -393,7 +392,7 @@ describe("TableRepository", () => {
 
     it("never overwrites a PK column supplied in values", async () => {
       const patch = await repo.patchRow("url_metadata", { url: "a" }, { url: "b", title: "T" });
-      expect(patch).toEqual({ title: "T" }); // returned patch excludes the PK
+      expect(patch).toEqual({ title: "T" });
       expect(await repo.getRow("url_metadata", { url: "a" })).toMatchObject({ title: "T" });
       await expect(repo.getRow("url_metadata", { url: "b" })).rejects.toThrow(
         NotFoundError,
