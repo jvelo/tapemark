@@ -174,22 +174,18 @@ export class TableRepository {
       throw new ValidationError("No valid columns to update");
     }
 
-    const patch: RowPatch = {};
-    for (const [k, v] of entries) {
-      patch[k] = castValue(v, columnMap.get(k)!);
-    }
-
     const setClause = entries.map(([k]) => `"${k}" = ?`).join(", ");
+    const setValues = entries.map(([k, v]) => castValue(v, columnMap.get(k)!));
     const whereBinds = table.primaryKey.map((col) => pkValues[col]);
 
     await this.db
       .prepare(
         `UPDATE "${tableName}" SET ${setClause} WHERE ${pkWhere(table.primaryKey)}`,
       )
-      .bind(...entries.map(([k]) => patch[k]), ...whereBinds)
+      .bind(...setValues, ...whereBinds)
       .run();
 
-    return patch;
+    return Object.fromEntries(entries.map(([k], i) => [k, setValues[i]]));
   }
 
   /** Update the existing row at `pkValues`, writing only the provided columns
@@ -227,11 +223,14 @@ export class TableRepository {
     }
 
     const setClause = entries.map(([k]) => `"${k}" = ?`).join(", ");
+    const setValues = entries.map(([, v]) => v);
+    const whereBinds = table.primaryKey.map((col) => pkValues[col]);
+
     const updated = await this.db
       .prepare(
         `UPDATE "${tableName}" SET ${setClause} WHERE ${pkWhere(table.primaryKey)} RETURNING *`,
       )
-      .bind(...entries.map(([, v]) => v), ...table.primaryKey.map((col) => pkValues[col]))
+      .bind(...setValues, ...whereBinds)
       .first();
 
     if (!updated) {

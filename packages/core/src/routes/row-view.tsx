@@ -180,10 +180,9 @@ export async function rowViewUpdateRoute(
   }
 
   const pkValues = pkValuesFromRow(tableInfo.primaryKey, originalRow);
-  const patch: RowPatch = {};
-  entries.forEach(([k], i) => {
-    patch[k] = setValues[i];
-  });
+  const patch: RowPatch = Object.fromEntries(
+    entries.map(([k], i) => [k, setValues[i]]),
+  );
   const hookError = pkValues
     ? await fireAfterUpdate(table, pkValues, patch, ctx, req)
     : null;

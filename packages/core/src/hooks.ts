@@ -44,15 +44,15 @@ function getHooks(table: string, ctx: TapemarkContext): TableHooks | undefined {
 
 /** Build the ActionContext: a HookContext plus `update`, the guarded partial
  *  write to the action's row that also fires `afterUpdate`. A hook that fails
- *  during a write is pushed onto `hookWarnings` rather than thrown — the row
- *  write has already committed — so the caller can fold it into the flash. */
+ *  during a write is pushed onto `warnings` rather than thrown — the row write
+ *  has already committed — so the caller can fold it into the flash. */
 function buildActionContext(
   ctx: TapemarkContext,
   req: TapemarkRequest,
   action: RowAction,
   table: string,
   pkValues: Record<string, string>,
-  hookWarnings: string[],
+  warnings: string[],
 ): ActionContext {
   const repo = new TableRepository(ctx.db);
   return {
@@ -63,7 +63,7 @@ function buildActionContext(
       }
       const patch = await repo.patchRow(table, pkValues, values);
       const hookError = await fireAfterUpdate(table, pkValues, patch, ctx, req);
-      if (hookError) hookWarnings.push(hookError);
+      if (hookError) warnings.push(hookError);
     },
   };
 }
@@ -163,18 +163,18 @@ export async function runAction(
   if (!action) {
     return { flash: "error", message: `Action "${actionName}" not found on "${table}"` };
   }
-  const hookWarnings: string[] = [];
+  const warnings: string[] = [];
   try {
     const result = await action.handler(
       pkValues,
-      buildActionContext(ctx, req, action, table, pkValues, hookWarnings),
+      buildActionContext(ctx, req, action, table, pkValues, warnings),
     );
     if (!result.success) {
       return { flash: "error", message: result.message ?? "action failed" };
     }
     return flashForHookResult(
       result.message ?? "action completed",
-      hookWarnings.length > 0 ? hookWarnings.join("; ") : null,
+      warnings.length ? warnings.join("; ") : null,
     );
   } catch (err) {
     return { flash: "error", message: err instanceof Error ? err.message : String(err) };
