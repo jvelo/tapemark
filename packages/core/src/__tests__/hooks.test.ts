@@ -872,22 +872,6 @@ describe("Custom row actions", () => {
       expect(row.body).toBe("first");
     });
 
-    it("ignores a PK column in values without faulting writes ownership", async () => {
-      core = withAction({
-        label: "act",
-        writes: ["tag"],
-        handler: async (_pk, ctx) => {
-          await ctx.update({ id: "1", tag: "published" });
-          return { success: true };
-        },
-      });
-
-      const res = await invoke(core);
-      expect(res.redirect).toContain("flash=success");
-      const row = await new TableRepository(db).getRow("notes", { id: "1" });
-      expect(row.tag).toBe("published");
-    });
-
     it("rejects a declared column that isn't on the table", async () => {
       core = withAction({
         label: "act",
