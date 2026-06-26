@@ -174,7 +174,19 @@ Where each action renders is controlled by `display`: defaults are `{ detail: tr
 
 The optional `visible(row) => boolean` predicate hides the button when the action wouldn't make sense for the current row (e.g. "mark done" on a task that's already done). It's a UI hint only — handlers are still reachable by direct POST and should validate their own invariants if they need to. A predicate that throws is treated as "not visible" so a buggy condition can't break the page render.
 
-A handler can run whatever SQL it likes against `ctx.db`, but for the common case of patching the current row there's `ctx.update(values)`. It updates the action's row in place, writing only the keys you pass and leaving every other column untouched — so sibling actions that share a table don't clobber each other's columns, and a failure path that returns before calling `update` writes nothing. It throws if the row doesn't exist, a key isn't a real column on the table, or no settable column is given, so a typo or a stale request fails loudly instead of writing the wrong thing.
+A handler can run whatever SQL it likes against `ctx.db`, but for the common case of patching the current row there's `ctx.update(values)`. It updates the action's row in place, writing only the keys you pass and leaving every other column untouched — so sibling actions that share a table don't clobber each other's columns, and a failure path that returns before calling `update` writes nothing. It throws if the row doesn't exist, a key isn't a real column on the table, or no settable column is given, so a typo or a stale request fails loudly instead of writing the wrong thing. (Raw `ctx.db` SQL is the escape hatch for anything else — inserts, multi-row writes — and stays outside the hook machinery.)
+
+Because `ctx.update` is a Tapemark write, it fires the table's `afterUpdate` hook, so audit and indexing hooks run regardless of whether a row changed via the edit form or an action. A hook failure isn't thrown — the row write has already committed — but returned as `hookError` so the handler can fold it into its flash message:
+
+```typescript
+handler: async (pk, ctx) => {
+  const { hookError } = await ctx.update({ status: "done" });
+  return {
+    success: true,
+    message: hookError ? `marked done; hook failed: ${hookError}` : "marked done",
+  };
+},
+```
 
 ```typescript
 actions: {

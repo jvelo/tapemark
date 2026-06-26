@@ -85,7 +85,10 @@ const core = createTapemark({
         afterInsert: async (row, ctx) => {
           await logEvent(ctx, row.id as number, "created", `title="${row.title as string}"`);
         },
-        // Fires after a task is updated. `patch` is the submitted form data.
+        // Fires after a task is updated — through a form edit or an action's
+        // `ctx.update`. `patch` holds the written column values, so a status
+        // action below also lands here automatically (the audit log captures
+        // the write without the action having to log it itself).
         afterUpdate: async (pk, patch, ctx) => {
           const fields = Object.keys(patch).join(", ");
           await logEvent(ctx, Number(pk.id), "updated", `fields: ${fields}`);
@@ -120,9 +123,17 @@ const core = createTapemark({
           display: { list: true },
           writes: ["status"],
           handler: async (pk, ctx) => {
-            await ctx.update({ status: "done" });
+            // `update` fires `afterUpdate` and hands back any hook failure
+            // instead of throwing — the row write already committed — so the
+            // action can fold it into its own flash message.
+            const { hookError } = await ctx.update({ status: "done" });
             await logEvent(ctx, Number(pk.id), "marked_done", null);
-            return { success: true, message: `task ${pk.id} marked done` };
+            return {
+              success: true,
+              message: hookError
+                ? `task ${pk.id} marked done; hook failed: ${hookError}`
+                : `task ${pk.id} marked done`,
+            };
           },
         },
         reopen: {

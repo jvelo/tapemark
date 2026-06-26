@@ -12,6 +12,7 @@ import type {
   CellValue,
   HookContext,
   RowAction,
+  RowPatch,
   TableHooks,
   TapemarkContext,
   TapemarkRequest,
@@ -42,7 +43,7 @@ function getHooks(table: string, ctx: TapemarkContext): TableHooks | undefined {
 }
 
 /** Build the ActionContext: a HookContext plus `update`, the guarded partial
- *  write to the action's row. */
+ *  write to the action's row that also fires `afterUpdate`. */
 function buildActionContext(
   ctx: TapemarkContext,
   req: TapemarkRequest,
@@ -54,19 +55,29 @@ function buildActionContext(
   return {
     ...buildHookContext(ctx, req),
     update: async (values) => {
-      if (action.writes) assertOwnedColumns(action.writes, values);
+      if (action.writes) {
+        assertOwnedColumns(action.writes, values, Object.keys(pkValues));
+      }
       await repo.patchRow(table, pkValues, values);
+      const hookError = await fireAfterUpdate(table, pkValues, values, ctx, req);
+      return { hookError };
     },
   };
 }
 
-/** Reject any column in `values` outside the action's declared `writes`. */
+/** Reject any non-PK column in `values` outside the action's declared `writes`.
+ *  PK columns are exempt: `patchRow` ignores them, so the contract treats them
+ *  as no-ops rather than ownership violations. */
 function assertOwnedColumns(
   writes: string[],
   values: Record<string, CellValue>,
+  pkColumns: string[],
 ): void {
   const owned = new Set(writes);
-  const stray = Object.keys(values).filter((key) => !owned.has(key));
+  const pk = new Set(pkColumns);
+  const stray = Object.keys(values).filter(
+    (key) => !owned.has(key) && !pk.has(key),
+  );
   if (stray.length > 0) {
     throw new Error(
       `update: column(s) not in this action's \`writes\`: ${stray.join(", ")}`,
@@ -99,7 +110,7 @@ export async function fireAfterInsert(
 export async function fireAfterUpdate(
   table: string,
   pkValues: Record<string, string>,
-  patch: Record<string, string>,
+  patch: RowPatch,
   ctx: TapemarkContext,
   req: TapemarkRequest,
 ): Promise<string | null> {

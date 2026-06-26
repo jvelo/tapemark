@@ -25,6 +25,7 @@ export type {
   RequestOverrides,
   RouteHandler,
   RowAction,
+  RowPatch,
   TableHooks,
   TapemarkBaseOptions,
   RowData,

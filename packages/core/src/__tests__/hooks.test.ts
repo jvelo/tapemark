@@ -238,7 +238,7 @@ describe("Lifecycle hooks", () => {
 
   describe("afterUpdate", () => {
     it("fires with pkValues and patch", async () => {
-      const received: { pk: Record<string, string>; patch: Record<string, string> }[] = [];
+      const received: { pk: Record<string, string>; patch: Record<string, CellValue> }[] = [];
       const core = createTapemark({
         db,
         tables: {
@@ -872,6 +872,22 @@ describe("Custom row actions", () => {
       expect(row.body).toBe("first");
     });
 
+    it("ignores a PK column in values without faulting writes ownership", async () => {
+      core = withAction({
+        label: "act",
+        writes: ["tag"],
+        handler: async (_pk, ctx) => {
+          await ctx.update({ id: "1", tag: "published" });
+          return { success: true };
+        },
+      });
+
+      const res = await invoke(core);
+      expect(res.redirect).toContain("flash=success");
+      const row = await new TableRepository(db).getRow("notes", { id: "1" });
+      expect(row.tag).toBe("published");
+    });
+
     it("rejects a declared column that isn't on the table", async () => {
       core = withAction({
         label: "act",
@@ -918,6 +934,71 @@ describe("Custom row actions", () => {
         }),
       );
       expect(res.redirect).toContain("flash=error");
+    });
+
+    it("fires afterUpdate with the written patch", async () => {
+      const received: { pk: Record<string, string>; patch: Record<string, CellValue> }[] = [];
+      core = createTapemark({
+        db,
+        tables: {
+          notes: {
+            hooks: {
+              afterUpdate: (pk, patch) => {
+                received.push({ pk, patch });
+              },
+            },
+            actions: {
+              act: {
+                label: "act",
+                writes: ["tag"],
+                handler: async (_pk, ctx) => {
+                  await ctx.update({ tag: "x" });
+                  return { success: true };
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const res = await invoke(core);
+      expect(res.redirect).toContain("flash=success");
+      expect(received).toHaveLength(1);
+      expect(received[0].pk).toEqual({ id: "1" });
+      expect(received[0].patch).toEqual({ tag: "x" });
+    });
+
+    it("returns a failing afterUpdate as hookError instead of throwing", async () => {
+      let seen: string | null | undefined;
+      core = createTapemark({
+        db,
+        tables: {
+          notes: {
+            hooks: {
+              afterUpdate: () => {
+                throw new Error("index down");
+              },
+            },
+            actions: {
+              act: {
+                label: "act",
+                handler: async (_pk, ctx) => {
+                  const { hookError } = await ctx.update({ tag: "x" });
+                  seen = hookError;
+                  return { success: true, message: hookError ?? "ok" };
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const res = await invoke(core);
+      expect(res.redirect).toContain("flash=success");
+      expect(seen).toBe("index down");
+      // the row write committed even though the hook failed
+      const row = await new TableRepository(db).getRow("notes", { id: "1" });
+      expect(row.tag).toBe("x");
     });
   });
 });

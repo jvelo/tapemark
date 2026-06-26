@@ -239,6 +239,12 @@ export interface HookContext {
   request: TapemarkRequest;
 }
 
+/** A set of column writes — column name to value — as the payload for an
+ *  update and what the `afterUpdate` hook receives. Values are typed cell
+ *  values (`null`/numbers included), not just the form strings a submitted
+ *  edit carries. */
+export type RowPatch = Record<string, CellValue>;
+
 /** Result returned by an action handler. Surfaced as a flash message. */
 export interface ActionResult {
   success: boolean;
@@ -253,8 +259,13 @@ export interface ActionContext extends HookContext {
    *  doesn't set. Throws unless the row exists, every key is a real non-PK
    *  column on the table, and at least one settable column is given; PK columns
    *  in `values` are ignored. If the action declares `writes`, any provided
-   *  column outside that list is additionally rejected. */
-  update: (values: Record<string, CellValue>) => Promise<void>;
+   *  column outside that list is additionally rejected.
+   *
+   *  Fires the table's `afterUpdate` hook after the write. A hook failure is
+   *  returned as `hookError` rather than thrown — the row write has already
+   *  committed — so a handler can fold it into its own result; `null` means the
+   *  hook succeeded or none is defined. */
+  update: (values: RowPatch) => Promise<{ hookError: string | null }>;
 }
 
 /** A user-triggered named operation on a row, rendered as a button. */
@@ -283,17 +294,19 @@ export interface RowAction {
   group?: string;
 }
 
-/** Row-level lifecycle hooks. Only fire on writes that go through Tapemark. */
+/** Row-level lifecycle hooks. Only fire on writes that go through Tapemark —
+ *  the admin form routes and an action's `ctx.update`; raw `ctx.db` SQL is an
+ *  escape hatch and bypasses them. */
 export interface TableHooks {
   /** After a row has been inserted. Receives the full inserted row. */
   afterInsert?: (
     row: Record<string, CellValue>,
     ctx: HookContext,
   ) => Promise<void> | void;
-  /** After a row has been updated. Receives the PK and the submitted patch. */
+  /** After a row has been updated. Receives the PK and the written patch. */
   afterUpdate?: (
     pkValues: Record<string, string>,
-    patch: Record<string, string>,
+    patch: RowPatch,
     ctx: HookContext,
   ) => Promise<void> | void;
   /** After a row has been deleted. Receives the PK of the deleted row. */
