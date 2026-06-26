@@ -43,13 +43,16 @@ function getHooks(table: string, ctx: TapemarkContext): TableHooks | undefined {
 }
 
 /** Build the ActionContext: a HookContext plus `update`, the guarded partial
- *  write to the action's row that also fires `afterUpdate`. */
+ *  write to the action's row that also fires `afterUpdate`. A hook that fails
+ *  during a write is pushed onto `hookWarnings` rather than thrown — the row
+ *  write has already committed — so the caller can fold it into the flash. */
 function buildActionContext(
   ctx: TapemarkContext,
   req: TapemarkRequest,
   action: RowAction,
   table: string,
   pkValues: Record<string, string>,
+  hookWarnings: string[],
 ): ActionContext {
   const repo = new TableRepository(ctx.db);
   return {
@@ -60,7 +63,7 @@ function buildActionContext(
       }
       const patch = await repo.patchRow(table, pkValues, values);
       const hookError = await fireAfterUpdate(table, pkValues, patch, ctx, req);
-      return { hookError };
+      if (hookError) hookWarnings.push(hookError);
     },
   };
 }
@@ -144,26 +147,37 @@ export function isActionVisibleFor(
   }
 }
 
-/** Run a named action. Returns `{ success, message }`; thrown handlers and
- *  unknown action names both surface as `{ success: false }`. */
+/** Run a named action and resolve it to a flash kind + message. The action's
+ *  own `success` decides success vs. error; a hook that failed during the run
+ *  (via `ctx.update`) downgrades a success to a warning, so the failure reaches
+ *  the user without the handler having to thread it through its result. Thrown
+ *  handlers and unknown action names surface as an error. */
 export async function runAction(
   table: string,
   actionName: string,
   pkValues: Record<string, string>,
   ctx: TapemarkContext,
   req: TapemarkRequest,
-): Promise<{ success: boolean; message?: string }> {
+): Promise<{ flash: "success" | "warning" | "error"; message: string }> {
   const action = ctx.tableOptions.get(table)?.actions?.[actionName];
   if (!action) {
-    return { success: false, message: `Action "${actionName}" not found on "${table}"` };
+    return { flash: "error", message: `Action "${actionName}" not found on "${table}"` };
   }
+  const hookWarnings: string[] = [];
   try {
-    return await action.handler(
+    const result = await action.handler(
       pkValues,
-      buildActionContext(ctx, req, action, table, pkValues),
+      buildActionContext(ctx, req, action, table, pkValues, hookWarnings),
+    );
+    if (!result.success) {
+      return { flash: "error", message: result.message ?? "action failed" };
+    }
+    return flashForHookResult(
+      result.message ?? "action completed",
+      hookWarnings.length > 0 ? hookWarnings.join("; ") : null,
     );
   } catch (err) {
-    return { success: false, message: err instanceof Error ? err.message : String(err) };
+    return { flash: "error", message: err instanceof Error ? err.message : String(err) };
   }
 }
 

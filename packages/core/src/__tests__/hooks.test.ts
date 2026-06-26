@@ -969,8 +969,7 @@ describe("Custom row actions", () => {
       expect(received[0].patch).toEqual({ tag: "x" });
     });
 
-    it("returns a failing afterUpdate as hookError instead of throwing", async () => {
-      let seen: string | null | undefined;
+    it("surfaces a failing afterUpdate as a warning flash, not an error", async () => {
       core = createTapemark({
         db,
         tables: {
@@ -984,9 +983,10 @@ describe("Custom row actions", () => {
               act: {
                 label: "act",
                 handler: async (_pk, ctx) => {
-                  const { hookError } = await ctx.update({ tag: "x" });
-                  seen = hookError;
-                  return { success: true, message: hookError ?? "ok" };
+                  // The handler stays focused on the action; Tapemark surfaces
+                  // the hook failure on its own.
+                  await ctx.update({ tag: "x" });
+                  return { success: true, message: "tagged" };
                 },
               },
             },
@@ -995,8 +995,10 @@ describe("Custom row actions", () => {
       });
 
       const res = await invoke(core);
-      expect(res.redirect).toContain("flash=success");
-      expect(seen).toBe("index down");
+      const redirect = decodeURIComponent(res.redirect!);
+      expect(redirect).toContain("flash=warning");
+      expect(redirect).toContain("tagged"); // the action's own message is kept
+      expect(redirect).toContain("index down"); // hook failure appended
       // the row write committed even though the hook failed
       const row = await new TableRepository(db).getRow("notes", { id: "1" });
       expect(row.tag).toBe("x");

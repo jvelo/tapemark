@@ -176,15 +176,13 @@ The optional `visible(row) => boolean` predicate hides the button when the actio
 
 A handler can run whatever SQL it likes against `ctx.db`, but for the common case of patching the current row there's `ctx.update(values)`. It updates the action's row in place, writing only the keys you pass and leaving every other column untouched — so sibling actions that share a table don't clobber each other's columns, and a failure path that returns before calling `update` writes nothing. It throws if the row doesn't exist, a key isn't a real column on the table, or no settable column is given, so a typo or a stale request fails loudly instead of writing the wrong thing. (Raw `ctx.db` SQL is the escape hatch for anything else — inserts, multi-row writes — and stays outside the hook machinery.)
 
-Because `ctx.update` is a Tapemark write, it fires the table's `afterUpdate` hook, so audit and indexing hooks run regardless of whether a row changed via the edit form or an action. A hook failure isn't thrown — the row write has already committed — but returned as `hookError` so the handler can fold it into its flash message:
+Because `ctx.update` is a Tapemark write, it fires the table's `afterUpdate` hook, so audit and indexing hooks run regardless of whether a row changed via the edit form or an action. A failing hook doesn't throw — the row write has already committed — and you don't have to handle it: the action stays focused on its own job, and Tapemark surfaces the hook failure as a warning on the action's flash, the same way it does for form edits.
 
 ```typescript
 handler: async (pk, ctx) => {
-  const { hookError } = await ctx.update({ status: "done" });
-  return {
-    success: true,
-    message: hookError ? `marked done; hook failed: ${hookError}` : "marked done",
-  };
+  await ctx.update({ status: "done" });
+  return { success: true, message: "marked done" };
+  // if afterUpdate fails, the flash becomes a warning: "marked done — hook failed: …"
 },
 ```
 

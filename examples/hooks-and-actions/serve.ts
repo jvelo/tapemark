@@ -123,17 +123,9 @@ const core = createTapemark({
           display: { list: true },
           writes: ["status"],
           handler: async (pk, ctx) => {
-            // `update` fires `afterUpdate` and hands back any hook failure
-            // instead of throwing — the row write already committed — so the
-            // action can fold it into its own flash message.
-            const { hookError } = await ctx.update({ status: "done" });
+            await ctx.update({ status: "done" });
             await logEvent(ctx, Number(pk.id), "marked_done", null);
-            return {
-              success: true,
-              message: hookError
-                ? `task ${pk.id} marked done; hook failed: ${hookError}`
-                : `task ${pk.id} marked done`,
-            };
+            return { success: true, message: `task ${pk.id} marked done` };
           },
         },
         reopen: {

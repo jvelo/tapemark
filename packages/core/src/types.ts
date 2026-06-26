@@ -261,11 +261,11 @@ export interface ActionContext extends HookContext {
    *  in `values` are ignored. If the action declares `writes`, any provided
    *  column outside that list is additionally rejected.
    *
-   *  Fires the table's `afterUpdate` hook after the write. A hook failure is
-   *  returned as `hookError` rather than thrown — the row write has already
-   *  committed — so a handler can fold it into its own result; `null` means the
-   *  hook succeeded or none is defined. */
-  update: (values: RowPatch) => Promise<{ hookError: string | null }>;
+   *  Fires the table's `afterUpdate` hook after the write. A hook failure does
+   *  not throw — the row write has already committed — and Tapemark surfaces it
+   *  as a warning on the action's flash, so a handler stays focused on the
+   *  action and need not thread the hook outcome through its own result. */
+  update: (values: RowPatch) => Promise<void>;
 }
 
 /** A user-triggered named operation on a row, rendered as a button. */
