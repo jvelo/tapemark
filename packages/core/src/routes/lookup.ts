@@ -41,7 +41,7 @@ export async function lookupRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const tableName = req.params.table;
+  const tableName = decodeURIComponent(req.params.table);
   const q = req.query.q ?? "";
   const valueFilter = req.query.value;
   const limitParam = parseInt(req.query.limit ?? String(DEFAULT_LIMIT), 10);

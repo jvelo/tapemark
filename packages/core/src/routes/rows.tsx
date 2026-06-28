@@ -21,7 +21,7 @@ export async function rowsRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
+  const table = decodeURIComponent(req.params.table);
   const page = parseInt(req.query.page || "1", 10) || 1;
   const pageSize = 50;
 

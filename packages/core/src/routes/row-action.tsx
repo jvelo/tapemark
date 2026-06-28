@@ -18,9 +18,9 @@ export async function rowActionRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
-  const pkParam = req.params.pk;
-  const actionName = req.params.actionName;
+  const table = decodeURIComponent(req.params.table);
+  const pkParam = req.params.pk; // raw; decodePk decodes each part
+  const actionName = decodeURIComponent(req.params.actionName);
   assertWritable(table, ctx);
 
   const action = ctx.tableOptions.get(table)?.actions?.[actionName];

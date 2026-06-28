@@ -21,7 +21,7 @@ export async function rowCreateRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
+  const table = decodeURIComponent(req.params.table);
 
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);
@@ -71,7 +71,7 @@ export async function rowInsertRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
+  const table = decodeURIComponent(req.params.table);
   assertWritable(table, ctx);
 
   const introspector = new SchemaIntrospector(ctx.db);

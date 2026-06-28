@@ -214,7 +214,9 @@ const referenceDisplay: DisplayType = {
     const str = String(value);
     const label = labels?.[str] ?? str;
     if (!table) return escapeHtml(label);
-    return `<a href="${escapeHtml(table)}/${escapeHtml(str)}" class="tm-cell-ref">${escapeHtml(label)}</a>`;
+    // Encode the value segment like `encodePk`, so a `/` in it can't break the path.
+    const href = `${escapeHtml(table)}/${escapeHtml(encodeURIComponent(str))}`;
+    return `<a href="${href}" class="tm-cell-ref">${escapeHtml(label)}</a>`;
   },
   renderInput(column, value, options) {
     const table = options.table as string | undefined;
