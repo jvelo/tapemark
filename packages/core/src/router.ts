@@ -88,7 +88,11 @@ function matchRoute(
       const val = pathParts[i];
 
       if (pat.startsWith(":")) {
-        params[pat.slice(1)] = decodeURIComponent(val);
+        const name = pat.slice(1);
+        // `pk` is comma-joined and per-part percent-encoded by `encodePk`;
+        // `decodePk` splits then decodes each part, so leave it raw here to
+        // avoid a double-decode that mangles values containing `,` or `%`.
+        params[name] = name === "pk" ? val : decodeURIComponent(val);
       } else if (pat !== val) {
         match = false;
         break;

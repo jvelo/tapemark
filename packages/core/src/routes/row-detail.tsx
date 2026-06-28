@@ -32,6 +32,9 @@ export async function rowDetailRoute(
   const configStore = new ConfigStore(ctx.db);
   const pkValues = decodePk(tableInfo.primaryKey, pkParam);
   const encodedPk = encodePk(tableInfo.primaryKey, pkValues);
+  // Human label for display: the decoded PK value(s); `pkParam` is the raw,
+  // still-encoded URL segment.
+  const pkLabel = Object.values(pkValues).join(", ");
   const row = await repo.getRow(table, pkValues);
   const tableConfig = await configStore.getTableConfig(table);
 
@@ -46,12 +49,12 @@ export async function rowDetailRoute(
   const crumbs = [
     { label: "tables", href: ctx.prefix || "/" },
     { label: table, href: `${ctx.prefix}/${table}` },
-    { label: pkParam },
+    { label: pkLabel },
   ];
 
   const html = renderPage(
     <TapemarkLayout
-      title={`${table} / ${pkParam}`}
+      title={`${table} / ${pkLabel}`}
       prefix={ctx.prefix}
       name={ctx.name}
       symbol={ctx.symbol}
@@ -131,7 +134,7 @@ export async function rowDetailRoute(
               action={`${ctx.prefix}/${table}/${encodedPk}/delete`}
               class="tm-delete-inline"
             >
-              <tm-confirm-button data-message={`delete row ${pkParam}?`}>
+              <tm-confirm-button data-message={`delete row ${pkLabel}?`}>
                 <button type="submit" class="tm-btn tm-btn-danger">
                   delete row
                 </button>

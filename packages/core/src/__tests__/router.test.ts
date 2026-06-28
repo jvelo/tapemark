@@ -8,6 +8,7 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTapemark } from "../router";
+import { encodePk } from "../repository";
 import { createTestDb } from "../test-utils";
 import type { Database, TapemarkRequest } from "../types";
 
@@ -199,6 +200,64 @@ describe("createTapemark", () => {
       const core = createTapemark({ db });
       const res = await core.handle(makeReq({ path: "/users" }));
       expect(res.status).toBe(200);
+    });
+  });
+
+  // A PK value can contain URL-special chars (`/`, `,`, `%`, …). `encodePk`
+  // percent-encodes each part; the router must round-trip that back to the
+  // exact value via `decodePk`, not a mangled one.
+  describe("primary keys with URL-special characters", () => {
+    const PK_SCHEMA = `
+      CREATE TABLE author (id TEXT PRIMARY KEY, name TEXT);
+      INSERT INTO author VALUES ('person/1', 'Slashed');
+      INSERT INTO author VALUES ('a', 'JustA');
+      INSERT INTO author VALUES ('a,b', 'Comma');
+      INSERT INTO author VALUES ('a%b', 'Percent');
+
+      CREATE TABLE membership (org TEXT, member TEXT, role TEXT, PRIMARY KEY (org, member));
+      INSERT INTO membership VALUES ('acme', 'x', 'guest');
+      INSERT INTO membership VALUES ('acme', 'x,y', 'admin');
+    `;
+
+    function detail(table: string, pk: Record<string, string>) {
+      const core = createTapemark({ db: db2 });
+      const primaryKey = Object.keys(pk);
+      return core.handle(
+        makeReq({ path: `/${table}/${encodePk(primaryKey, pk)}` }),
+      );
+    }
+
+    let db2: Database;
+    beforeEach(() => {
+      ({ db: db2 } = createTestDb(PK_SCHEMA));
+    });
+
+    it("round-trips a value containing a slash", async () => {
+      const res = await detail("author", { id: "person/1" });
+      expect(res.status).toBe(200);
+      expect(res.html).toContain("Slashed");
+    });
+
+    it("round-trips a value containing a comma without collapsing to the first part", async () => {
+      const res = await detail("author", { id: "a,b" });
+      expect(res.status).toBe(200);
+      expect(res.html).toContain("Comma");
+      // a naive split-on-comma would resolve { id: "a" } → the wrong row
+      expect(res.html).not.toContain("JustA");
+    });
+
+    it("round-trips a value containing a percent sign", async () => {
+      const res = await detail("author", { id: "a%b" });
+      expect(res.status).toBe(200);
+      expect(res.html).toContain("Percent");
+    });
+
+    it("round-trips a composite PK whose value contains the separator char", async () => {
+      const res = await detail("membership", { org: "acme", member: "x,y" });
+      expect(res.status).toBe(200);
+      expect(res.html).toContain("admin");
+      // must not collapse member "x,y" into the separate-row member "x"
+      expect(res.html).not.toContain("guest");
     });
   });
 });
