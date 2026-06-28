@@ -32,8 +32,7 @@ export async function rowDetailRoute(
   const configStore = new ConfigStore(ctx.db);
   const pkValues = decodePk(tableInfo.primaryKey, pkParam);
   const encodedPk = encodePk(tableInfo.primaryKey, pkValues);
-  // Human label for display: the decoded PK value(s); `pkParam` is the raw,
-  // still-encoded URL segment.
+  // Display label from the decoded values; `pkParam` is now the raw URL segment.
   const pkLabel = Object.values(pkValues).join(", ");
   const row = await repo.getRow(table, pkValues);
   const tableConfig = await configStore.getTableConfig(table);

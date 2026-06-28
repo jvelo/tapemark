@@ -110,9 +110,7 @@ describe("builtinDisplayTypes", () => {
 
     it("URL-encodes a value containing path-special characters", () => {
       const html = builtinDisplayTypes.reference.render("person/1", { table: "/author" });
-      // value segment encoded so the link resolves to /:table/:pk, not a 4-segment 404
       expect(html).toContain('href="/author/person%2F1"');
-      // …while the visible label stays the raw value
       expect(html).toContain(">person/1</a>");
     });
 

@@ -203,9 +203,8 @@ describe("createTapemark", () => {
     });
   });
 
-  // A PK value can contain URL-special chars (`/`, `,`, `%`, …). `encodePk`
-  // percent-encodes each part; the router must round-trip that back to the
-  // exact value via `decodePk`, not a mangled one.
+  // `encodePk` percent-encodes each PK part; the router must round-trip a
+  // value containing `/`, `,`, or `%` back via `decodePk`, not a mangled one.
   describe("primary keys with URL-special characters", () => {
     const PK_SCHEMA = `
       CREATE TABLE author (id TEXT PRIMARY KEY, name TEXT);
