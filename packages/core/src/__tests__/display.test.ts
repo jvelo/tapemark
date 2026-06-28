@@ -101,6 +101,34 @@ describe("builtinDisplayTypes", () => {
       expect(type.schema.properties).toBeDefined();
     }
   });
+
+  describe("reference", () => {
+    it("links to the referenced row", () => {
+      const html = builtinDisplayTypes.reference.render("42", { table: "/author" });
+      expect(html).toBe('<a href="/author/42" class="tm-cell-ref">42</a>');
+    });
+
+    it("URL-encodes a value containing path-special characters", () => {
+      const html = builtinDisplayTypes.reference.render("person/1", { table: "/author" });
+      // value segment encoded so the link resolves to /:table/:pk, not a 4-segment 404
+      expect(html).toContain('href="/author/person%2F1"');
+      // …while the visible label stays the raw value
+      expect(html).toContain(">person/1</a>");
+    });
+
+    it("encodes the value but keeps a provided label", () => {
+      const html = builtinDisplayTypes.reference.render("person/1", {
+        table: "/author",
+        _labels: { "person/1": "Ada" },
+      });
+      expect(html).toContain('href="/author/person%2F1"');
+      expect(html).toContain(">Ada</a>");
+    });
+
+    it("renders just the label when no table is configured", () => {
+      expect(builtinDisplayTypes.reference.render("person/1", {})).toBe("person/1");
+    });
+  });
 });
 
 describe("createDisplayTypeRegistry", () => {
