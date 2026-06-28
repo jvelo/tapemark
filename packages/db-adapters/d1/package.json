@@ -1,6 +1,6 @@
 {
   "name": "@jvelo/tapemark-d1",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "type": "module",
   "description": "Cloudflare D1 database adapter for Tapemark.",
   "keywords": [
