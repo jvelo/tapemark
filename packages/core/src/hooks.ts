@@ -42,9 +42,27 @@ function getHooks(table: string, ctx: TapemarkContext): TableHooks | undefined {
   return ctx.tableOptions.get(table)?.hooks;
 }
 
+/** Collects hook failures raised while an action runs so `runAction` can fold
+ *  them into the flash, without re-exposing them to the action handler. */
+interface ActionWarnings {
+  add(message: string): void;
+  /** The warnings joined into one message, or null when none were collected. */
+  joined(): string | null;
+}
+
+function createActionWarnings(): ActionWarnings {
+  const messages: string[] = [];
+  return {
+    add: (message) => {
+      messages.push(message);
+    },
+    joined: () => (messages.length ? messages.join("; ") : null),
+  };
+}
+
 /** Build the ActionContext: a HookContext plus `update`, the guarded partial
  *  write to the action's row that also fires `afterUpdate`. A hook that fails
- *  during a write is pushed onto `warnings` rather than thrown — the row write
+ *  during a write is recorded on `warnings` rather than thrown — the row write
  *  has already committed — so the caller can fold it into the flash. */
 function buildActionContext(
   ctx: TapemarkContext,
@@ -52,7 +70,7 @@ function buildActionContext(
   action: RowAction,
   table: string,
   pkValues: Record<string, string>,
-  warnings: string[],
+  warnings: ActionWarnings,
 ): ActionContext {
   const repo = new TableRepository(ctx.db);
   return {
@@ -63,7 +81,7 @@ function buildActionContext(
       }
       const patch = await repo.patchRow(table, pkValues, values);
       const hookError = await fireAfterUpdate(table, pkValues, patch, ctx, req);
-      if (hookError) warnings.push(hookError);
+      if (hookError) warnings.add(hookError);
     },
   };
 }
@@ -163,7 +181,7 @@ export async function runAction(
   if (!action) {
     return { flash: "error", message: `Action "${actionName}" not found on "${table}"` };
   }
-  const warnings: string[] = [];
+  const warnings = createActionWarnings();
   try {
     const result = await action.handler(
       pkValues,
@@ -174,7 +192,7 @@ export async function runAction(
     }
     return flashForHookResult(
       result.message ?? "action completed",
-      warnings.length ? warnings.join("; ") : null,
+      warnings.joined(),
     );
   } catch (err) {
     return { flash: "error", message: err instanceof Error ? err.message : String(err) };
