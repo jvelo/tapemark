@@ -8,6 +8,7 @@
 
 // Types
 export type {
+  ActionContext,
   ActionResult,
   CellValue,
   Column,
@@ -24,6 +25,7 @@ export type {
   RequestOverrides,
   RouteHandler,
   RowAction,
+  RowPatch,
   TableHooks,
   TapemarkBaseOptions,
   RowData,

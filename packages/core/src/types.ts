@@ -239,10 +239,33 @@ export interface HookContext {
   request: TapemarkRequest;
 }
 
+/** A set of column writes — column name to value — as the payload for an
+ *  update and what the `afterUpdate` hook receives. Values are typed cell
+ *  values (`null`/numbers included), not just the form strings a submitted
+ *  edit carries. */
+export type RowPatch = Record<string, CellValue>;
+
 /** Result returned by an action handler. Surfaced as a flash message. */
 export interface ActionResult {
   success: boolean;
   message?: string;
+}
+
+/** Context passed to action handlers. Extends {@link HookContext} with
+ *  `update`, a guarded partial write to the action's row. */
+export interface ActionContext extends HookContext {
+  /** Update this action's row, writing only the columns in `values` and leaving
+   *  every other column untouched, so an action never clobbers a column it
+   *  doesn't set. Throws unless the row exists, every key is a real non-PK
+   *  column on the table, and at least one settable column is given; PK columns
+   *  in `values` are ignored. If the action declares `writes`, any provided
+   *  column outside that list is additionally rejected.
+   *
+   *  Fires the table's `afterUpdate` hook after the write. A hook failure does
+   *  not throw — the row write has already committed — and Tapemark surfaces it
+   *  as a warning on the action's flash, so a handler stays focused on the
+   *  action and need not thread the hook outcome through its own result. */
+  update: (values: RowPatch) => Promise<void>;
 }
 
 /** A user-triggered named operation on a row, rendered as a button. */
@@ -252,8 +275,13 @@ export interface RowAction {
   /** Handler invoked when the button is clicked. */
   handler: (
     pkValues: Record<string, string>,
-    ctx: HookContext,
+    ctx: ActionContext,
   ) => Promise<ActionResult> | ActionResult;
+  /** Restricts `ctx.update` to this set of columns, documenting the action's
+   *  write footprint and rejecting any write outside it. Optional: when omitted,
+   *  `ctx.update` may touch any real non-PK column (and `ctx.db` is always
+   *  available for fully custom SQL regardless). */
+  writes?: string[];
   /** Where to render this action button. Defaults: `detail: true`, `list: false`.
    *  Invocations from the list view redirect back to the list. */
   display?: { detail?: boolean; list?: boolean };
@@ -266,17 +294,19 @@ export interface RowAction {
   group?: string;
 }
 
-/** Row-level lifecycle hooks. Only fire on writes that go through Tapemark. */
+/** Row-level lifecycle hooks. Only fire on writes that go through Tapemark —
+ *  the admin form routes and an action's `ctx.update`; raw `ctx.db` SQL is an
+ *  escape hatch and bypasses them. */
 export interface TableHooks {
   /** After a row has been inserted. Receives the full inserted row. */
   afterInsert?: (
     row: Record<string, CellValue>,
     ctx: HookContext,
   ) => Promise<void> | void;
-  /** After a row has been updated. Receives the PK and the submitted patch. */
+  /** After a row has been updated. Receives the PK and the written patch. */
   afterUpdate?: (
     pkValues: Record<string, string>,
-    patch: Record<string, string>,
+    patch: RowPatch,
     ctx: HookContext,
   ) => Promise<void> | void;
   /** After a row has been deleted. Receives the PK of the deleted row. */

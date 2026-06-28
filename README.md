@@ -146,7 +146,7 @@ tapemark({
 
 Hook failures don't roll back the write — the row operation has already committed by the time the hook runs. Synchronous hook errors surface as a warning flash on the admin page; errors inside `ctx.background()` work are visible only when running inline (logged by the runtime when running via `waitUntil`).
 
-**Custom row actions** render as extra buttons on the row detail page, separated visually from the form's `save` button. The handler receives the primary key and a `HookContext`, and returns an `ActionResult` that becomes the flash message.
+**Custom row actions** render as extra buttons on the row detail page, separated visually from the form's `save` button. The handler receives the primary key and an `ActionContext` (a `HookContext` plus `update`, below), and returns an `ActionResult` that becomes the flash message.
 
 ```typescript
 tables: {
@@ -173,6 +173,51 @@ tables: {
 Where each action renders is controlled by `display`: defaults are `{ detail: true, list: false }`. Set `display.list: true` to expose the button per-row in the list view (invocations from there redirect back to the list); set `display.detail: false` to hide it from the row form. Actions are gated by the same `readonly` rules as updates and deletes.
 
 The optional `visible(row) => boolean` predicate hides the button when the action wouldn't make sense for the current row (e.g. "mark done" on a task that's already done). It's a UI hint only — handlers are still reachable by direct POST and should validate their own invariants if they need to. A predicate that throws is treated as "not visible" so a buggy condition can't break the page render.
+
+A handler can run whatever SQL it likes against `ctx.db`, but for the common case of patching the current row there's `ctx.update(values)`. It updates the action's row in place, writing only the keys you pass and leaving every other column untouched — so sibling actions that share a table don't clobber each other's columns, and a failure path that returns before calling `update` writes nothing. It throws if the row doesn't exist, a key isn't a real column on the table, or no settable column is given, so a typo or a stale request fails loudly instead of writing the wrong thing. (Raw `ctx.db` SQL is the escape hatch for anything else — inserts, multi-row writes — and stays outside the hook machinery.)
+
+Because `ctx.update` is a Tapemark write, it fires the table's `afterUpdate` hook, so audit and indexing hooks run regardless of whether a row changed via the edit form or an action. A failing hook doesn't throw — the row write has already committed — and you don't have to handle it: the action stays focused on its own job, and Tapemark surfaces the hook failure as a warning on the action's flash, the same way it does for form edits.
+
+```typescript
+handler: async (pk, ctx) => {
+  await ctx.update({ status: "done" });
+  return { success: true, message: "marked done" };
+  // if afterUpdate fails, the flash becomes a warning: "marked done — hook failed: …"
+},
+```
+
+```typescript
+actions: {
+  touch: {
+    label: "mark reviewed",
+    handler: async (pk, ctx) => {
+      await ctx.update({ reviewed_at: new Date().toISOString() });
+      return { success: true };
+    },
+  },
+}
+```
+
+Add `writes: [...]` to fence the action to a set of columns: `ctx.update` then additionally rejects any column outside the list, both documenting the action's footprint and guarding against an accidental write to a column it doesn't own.
+
+```typescript
+actions: {
+  refetch: {
+    label: "re-fetch metadata",
+    writes: ["title", "description", "favicon_url"],
+    handler: async (pk, ctx) => {
+      const data = await fetchOpenGraph(pk.url);
+      if (!data) return { success: false, message: "fetch failed" };
+      await ctx.update({
+        title: data.title,
+        description: data.description,
+        favicon_url: data.favicon,
+      });
+      return { success: true };
+    },
+  },
+}
+```
 
 Set `group: "<label>"` to collapse several actions into one dropdown labeled by that string; actions sharing a group render together, ungrouped ones stay standalone, and the dropdown takes the position of the group's first member. The menu uses the native popover API with CSS anchor positioning — no client JavaScript. Browsers without anchor positioning (Firefox, as of early 2026) center the menu instead of anchoring it under the trigger; it still opens, dismisses, and works.
 

@@ -17,7 +17,7 @@ import { castValue } from "../repository";
 import { fireAfterDelete, fireAfterUpdate, flashForHookResult } from "../hooks";
 import { assertWritable } from "./guard";
 import { redirect } from "./response";
-import type { CellValue, TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
+import type { CellValue, RowPatch, TapemarkContext, TapemarkRequest, TapemarkResponse } from "../types";
 
 function pkValuesFromRow(
   primaryKey: string[],
@@ -180,8 +180,9 @@ export async function rowViewUpdateRoute(
   }
 
   const pkValues = pkValuesFromRow(tableInfo.primaryKey, originalRow);
-  const patch: Record<string, string> = {};
-  for (const [k, v] of entries) patch[k] = String(v ?? "");
+  const patch: RowPatch = Object.fromEntries(
+    entries.map(([k], i) => [k, setValues[i]]),
+  );
   const hookError = pkValues
     ? await fireAfterUpdate(table, pkValues, patch, ctx, req)
     : null;

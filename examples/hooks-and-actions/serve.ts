@@ -17,6 +17,8 @@
  *   • Create/edit/delete rows in `tasks` → watch `task_events` fill up automatically (hooks).
  *   • Use the "status ▾" dropdown (grouped actions) or the "duplicate" button (custom actions),
  *     on both the list and a task's detail page.
+ *   • The status actions and "clear notes" declare `writes` and write through
+ *     `ctx.update`, so each touches only the column it owns.
  */
 import { createServer, type IncomingMessage } from "node:http";
 import BetterSqlite3 from "better-sqlite3";
@@ -83,7 +85,8 @@ const core = createTapemark({
         afterInsert: async (row, ctx) => {
           await logEvent(ctx, row.id as number, "created", `title="${row.title as string}"`);
         },
-        // Fires after a task is updated. `patch` is the submitted form data.
+        // Fires after a task is updated — whether through a form edit or an
+        // action's `ctx.update`. `patch` holds the written column values.
         afterUpdate: async (pk, patch, ctx) => {
           const fields = Object.keys(patch).join(", ");
           await logEvent(ctx, Number(pk.id), "updated", `fields: ${fields}`);
@@ -95,17 +98,16 @@ const core = createTapemark({
       },
       actions: {
         // Status transitions collapse into a single "status ▾" dropdown via the
-        // shared `group`, on both the list and detail views. (Add a `visible`
-        // predicate to hide a transition that doesn't apply to a given row.)
+        // shared `group`, on both the list and detail views. Each writes through
+        // `ctx.update` fenced to `writes: ["status"]`. (Add a `visible` predicate
+        // to hide a transition that doesn't apply to a row.)
         start: {
           label: "start",
           group: "status",
           display: { list: true },
+          writes: ["status"],
           handler: async (pk, ctx) => {
-            await ctx.db
-              .prepare("UPDATE tasks SET status = 'in_progress' WHERE id = ?")
-              .bind(pk.id)
-              .run();
+            await ctx.update({ status: "in_progress" });
             await logEvent(ctx, Number(pk.id), "started", null);
             return { success: true, message: `task ${pk.id} started` };
           },
@@ -114,11 +116,9 @@ const core = createTapemark({
           label: "mark done",
           group: "status",
           display: { list: true },
+          writes: ["status"],
           handler: async (pk, ctx) => {
-            await ctx.db
-              .prepare("UPDATE tasks SET status = 'done' WHERE id = ?")
-              .bind(pk.id)
-              .run();
+            await ctx.update({ status: "done" });
             await logEvent(ctx, Number(pk.id), "marked_done", null);
             return { success: true, message: `task ${pk.id} marked done` };
           },
@@ -127,16 +127,26 @@ const core = createTapemark({
           label: "reopen",
           group: "status",
           display: { list: true },
+          writes: ["status"],
           handler: async (pk, ctx) => {
-            await ctx.db
-              .prepare("UPDATE tasks SET status = 'todo' WHERE id = ?")
-              .bind(pk.id)
-              .run();
+            await ctx.update({ status: "todo" });
             await logEvent(ctx, Number(pk.id), "reopened", null);
             return { success: true, message: `task ${pk.id} reopened` };
           },
         },
-        // No `group` — stays a standalone inline button next to the dropdown.
+        // A sibling action fenced to a different column: it clears `notes` and
+        // leaves `status` untouched, so neither action clobbers the other.
+        clear_notes: {
+          label: "clear notes",
+          writes: ["notes"],
+          handler: async (pk, ctx) => {
+            await ctx.update({ notes: null });
+            await logEvent(ctx, Number(pk.id), "notes_cleared", null);
+            return { success: true, message: `task ${pk.id} notes cleared` };
+          },
+        },
+        // No `writes` — `duplicate` inserts a new row, so it stays free-form
+        // raw SQL. `update` is opt-in and only fits in-place row updates.
         duplicate: {
           label: "duplicate",
           handler: async (pk, ctx) => {

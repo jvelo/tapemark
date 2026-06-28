@@ -210,6 +210,15 @@ describe("TableRepository", () => {
       expect(row.name).toBe("Alicia");
     });
 
+    it("updateRow returns the cast patch, minus PK columns", async () => {
+      const patch = await repo.updateRow(
+        "users",
+        { id: "1" },
+        { id: "999", name: "Alicia", score: "10" },
+      );
+      expect(patch).toEqual({ name: "Alicia", score: 10 });
+    });
+
     it("deleteRow removes a row", async () => {
       await repo.deleteRow("users", { id: "2" });
       const result = await repo.getRows("users");
@@ -336,6 +345,64 @@ describe("TableRepository", () => {
       const row = await repo.insertRow("items", { slug: "manual", name: "x" });
       expect(row.slug).toBe("manual");
       expect(row.name).toBe("x");
+    });
+  });
+
+  describe("patchRow", () => {
+    const METADATA_SCHEMA = `
+      CREATE TABLE url_metadata (
+        url TEXT PRIMARY KEY,
+        title TEXT,
+        description TEXT,
+        screenshot_url TEXT
+      );
+      INSERT INTO url_metadata VALUES ('a', 'A title', 'A desc', 'shot-a');
+    `;
+
+    beforeEach(() => {
+      ({ db } = createTestDb(METADATA_SCHEMA));
+      repo = new TableRepository(db);
+    });
+
+    it("updates only the provided columns, leaving siblings untouched", async () => {
+      await repo.patchRow("url_metadata", { url: "a" }, { title: "New" });
+      const row = await repo.getRow("url_metadata", { url: "a" });
+      expect(row.title).toBe("New");
+      expect(row.description).toBe("A desc");
+      expect(row.screenshot_url).toBe("shot-a");
+    });
+
+    it("throws rather than inventing a row when the PK is absent", async () => {
+      await expect(
+        repo.patchRow("url_metadata", { url: "b" }, { title: "B" }),
+      ).rejects.toThrow(NotFoundError);
+      await expect(repo.getRow("url_metadata", { url: "b" })).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it("rejects an unknown column instead of silently dropping it", async () => {
+      await expect(
+        repo.patchRow("url_metadata", { url: "a" }, { titel: "typo" }),
+      ).rejects.toThrow(ValidationError);
+      expect(await repo.getRow("url_metadata", { url: "a" })).toMatchObject({
+        title: "A title",
+      });
+    });
+
+    it("never overwrites a PK column supplied in values", async () => {
+      const patch = await repo.patchRow("url_metadata", { url: "a" }, { url: "b", title: "T" });
+      expect(patch).toEqual({ title: "T" });
+      expect(await repo.getRow("url_metadata", { url: "a" })).toMatchObject({ title: "T" });
+      await expect(repo.getRow("url_metadata", { url: "b" })).rejects.toThrow(
+        NotFoundError,
+      );
+    });
+
+    it("rejects a write with no settable columns", async () => {
+      await expect(
+        repo.patchRow("url_metadata", { url: "a" }, {}),
+      ).rejects.toThrow(ValidationError);
     });
   });
 });

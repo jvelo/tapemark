@@ -6,10 +6,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  */
 
+import { TableRepository } from "./repository";
 import type {
+  ActionContext,
   CellValue,
   HookContext,
   RowAction,
+  RowPatch,
   TableHooks,
   TapemarkContext,
   TapemarkRequest,
@@ -39,6 +42,70 @@ function getHooks(table: string, ctx: TapemarkContext): TableHooks | undefined {
   return ctx.tableOptions.get(table)?.hooks;
 }
 
+/** Collects hook failures raised while an action runs so `runAction` can fold
+ *  them into the flash, without re-exposing them to the action handler. */
+interface ActionWarnings {
+  add(message: string): void;
+  /** The warnings joined into one message, or null when none were collected. */
+  joined(): string | null;
+}
+
+function createActionWarnings(): ActionWarnings {
+  const messages: string[] = [];
+  return {
+    add: (message) => {
+      messages.push(message);
+    },
+    joined: () => (messages.length ? messages.join("; ") : null),
+  };
+}
+
+/** Build the ActionContext: a HookContext plus `update`, the guarded partial
+ *  write to the action's row that also fires `afterUpdate`. A hook that fails
+ *  during a write is recorded on `warnings` rather than thrown — the row write
+ *  has already committed — so the caller can fold it into the flash. */
+function buildActionContext(
+  ctx: TapemarkContext,
+  req: TapemarkRequest,
+  action: RowAction,
+  table: string,
+  pkValues: Record<string, string>,
+  warnings: ActionWarnings,
+): ActionContext {
+  const repo = new TableRepository(ctx.db);
+  return {
+    ...buildHookContext(ctx, req),
+    update: async (values) => {
+      if (action.writes) {
+        assertOwnedColumns(action.writes, values, Object.keys(pkValues));
+      }
+      const patch = await repo.patchRow(table, pkValues, values);
+      const hookError = await fireAfterUpdate(table, pkValues, patch, ctx, req);
+      if (hookError) warnings.add(hookError);
+    },
+  };
+}
+
+/** Reject any non-PK column in `values` outside the action's declared `writes`.
+ *  PK columns are exempt: `patchRow` ignores them, so the contract treats them
+ *  as no-ops rather than ownership violations. */
+function assertOwnedColumns(
+  writes: string[],
+  values: Record<string, CellValue>,
+  pkColumns: string[],
+): void {
+  const owned = new Set(writes);
+  const pk = new Set(pkColumns);
+  const stray = Object.keys(values).filter(
+    (key) => !owned.has(key) && !pk.has(key),
+  );
+  if (stray.length > 0) {
+    throw new Error(
+      `update: column(s) not in this action's \`writes\`: ${stray.join(", ")}`,
+    );
+  }
+}
+
 /** Run a hook; return null on success or an error message on failure.
  *  Never throws — the row write has already committed by the time we're here. */
 async function runHook(fn: () => Promise<void> | void): Promise<string | null> {
@@ -64,7 +131,7 @@ export async function fireAfterInsert(
 export async function fireAfterUpdate(
   table: string,
   pkValues: Record<string, string>,
-  patch: Record<string, string>,
+  patch: RowPatch,
   ctx: TapemarkContext,
   req: TapemarkRequest,
 ): Promise<string | null> {
@@ -98,23 +165,37 @@ export function isActionVisibleFor(
   }
 }
 
-/** Run a named action. Returns `{ success, message }`; thrown handlers and
- *  unknown action names both surface as `{ success: false }`. */
+/** Run a named action and resolve it to a flash kind + message. The action's
+ *  own `success` decides success vs. error; a hook that failed during the run
+ *  (via `ctx.update`) downgrades a success to a warning, so the failure reaches
+ *  the user without the handler having to thread it through its result. Thrown
+ *  handlers and unknown action names surface as an error. */
 export async function runAction(
   table: string,
   actionName: string,
   pkValues: Record<string, string>,
   ctx: TapemarkContext,
   req: TapemarkRequest,
-): Promise<{ success: boolean; message?: string }> {
+): Promise<{ flash: "success" | "warning" | "error"; message: string }> {
   const action = ctx.tableOptions.get(table)?.actions?.[actionName];
   if (!action) {
-    return { success: false, message: `Action "${actionName}" not found on "${table}"` };
+    return { flash: "error", message: `Action "${actionName}" not found on "${table}"` };
   }
+  const warnings = createActionWarnings();
   try {
-    return await action.handler(pkValues, buildHookContext(ctx, req));
+    const result = await action.handler(
+      pkValues,
+      buildActionContext(ctx, req, action, table, pkValues, warnings),
+    );
+    if (!result.success) {
+      return { flash: "error", message: result.message ?? "action failed" };
+    }
+    return flashForHookResult(
+      result.message ?? "action completed",
+      warnings.joined(),
+    );
   } catch (err) {
-    return { success: false, message: err instanceof Error ? err.message : String(err) };
+    return { flash: "error", message: err instanceof Error ? err.message : String(err) };
   }
 }
 
