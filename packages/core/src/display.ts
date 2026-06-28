@@ -214,8 +214,7 @@ const referenceDisplay: DisplayType = {
     const str = String(value);
     const label = labels?.[str] ?? str;
     if (!table) return escapeHtml(label);
-    // Encode the value segment like `encodePk` does, so a referenced PK
-    // containing a URL-special char (`/`, `?`, `#`, …) links to the right path.
+    // Encode the value segment like `encodePk`, so a `/` in it can't break the path.
     const href = `${escapeHtml(table)}/${escapeHtml(encodeURIComponent(str))}`;
     return `<a href="${href}" class="tm-cell-ref">${escapeHtml(label)}</a>`;
   },
