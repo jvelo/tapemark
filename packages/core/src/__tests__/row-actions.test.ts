@@ -40,9 +40,8 @@ describe("Custom row actions", () => {
     ({ db } = createTestDb(SCHEMA));
   });
 
-  // Mount a `notes` table with the given actions (and optional readonly/hooks).
-  // The router derives route params from the path, so dispatch helpers below
-  // only need a path.
+  // The router fills route params from the path, so `get`/`post` only need a
+  // path — no explicit `params`.
   function mount(
     actions: Record<string, RowAction>,
     opts: { readonly?: boolean; hooks?: TableHooks } = {},
