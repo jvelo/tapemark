@@ -58,8 +58,8 @@ export async function rowViewRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
-  const index = parseInt(req.params.index, 10);
+  const table = decodeURIComponent(req.params.table);
+  const index = parseInt(decodeURIComponent(req.params.index), 10);
 
   if (Number.isNaN(index) || index < 0) {
     throw new NotFoundError("Invalid row index");
@@ -142,8 +142,8 @@ export async function rowViewUpdateRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
-  const index = parseInt(req.params.index, 10);
+  const table = decodeURIComponent(req.params.table);
+  const index = parseInt(decodeURIComponent(req.params.index), 10);
   assertWritable(table, ctx);
 
   const introspector = new SchemaIntrospector(ctx.db);
@@ -197,9 +197,9 @@ export async function rowViewDeleteRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
+  const table = decodeURIComponent(req.params.table);
   assertWritable(table, ctx);
-  const index = parseInt(req.params.index, 10);
+  const index = parseInt(decodeURIComponent(req.params.index), 10);
 
   // Fetch row to get rowid
   const introspector = new SchemaIntrospector(ctx.db);

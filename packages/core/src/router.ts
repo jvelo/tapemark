@@ -88,9 +88,8 @@ function matchRoute(
       const val = pathParts[i];
 
       if (pat.startsWith(":")) {
-        const name = pat.slice(1);
-        // Leave `pk` raw — `decodePk` splits then decodes each part itself.
-        params[name] = name === "pk" ? val : decodeURIComponent(val);
+        // Raw, still-encoded; each route decodes its own params.
+        params[pat.slice(1)] = val;
       } else if (pat !== val) {
         match = false;
         break;
@@ -197,7 +196,7 @@ export function createTapemark(options: TapemarkBaseOptions & { db?: Database | 
 
     // A hidden table is treated as absent: every route for it 404s,
     // matching the listing, which already omits it.
-    if (match.params.table && tableOptionsMap.get(match.params.table)?.hidden) {
+    if (match.params.table && tableOptionsMap.get(decodeURIComponent(match.params.table))?.hidden) {
       return renderErrorPage(404, "Not Found", errorCtx);
     }
 

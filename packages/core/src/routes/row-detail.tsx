@@ -23,8 +23,8 @@ export async function rowDetailRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
-  const pkParam = req.params.pk;
+  const table = decodeURIComponent(req.params.table);
+  const pkParam = req.params.pk; // raw; decodePk decodes each part
 
   const introspector = new SchemaIntrospector(ctx.db);
   const tableInfo = await introspector.getTable(table);
@@ -156,8 +156,8 @@ export async function rowUpdateRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
-  const pkParam = req.params.pk;
+  const table = decodeURIComponent(req.params.table);
+  const pkParam = req.params.pk; // raw; decodePk decodes each part
   assertWritable(table, ctx);
 
   const introspector = new SchemaIntrospector(ctx.db);
@@ -189,8 +189,8 @@ export async function rowDeleteRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
-  const pkParam = req.params.pk;
+  const table = decodeURIComponent(req.params.table);
+  const pkParam = req.params.pk; // raw; decodePk decodes each part
   assertWritable(table, ctx);
 
   const introspector = new SchemaIntrospector(ctx.db);

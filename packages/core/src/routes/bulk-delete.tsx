@@ -15,7 +15,7 @@ export async function bulkDeleteRoute(
   req: TapemarkRequest,
   ctx: TapemarkContext,
 ): Promise<TapemarkResponse> {
-  const table = req.params.table;
+  const table = decodeURIComponent(req.params.table);
   assertWritable(table, ctx);
   const repo = new TableRepository(ctx.db);
 
